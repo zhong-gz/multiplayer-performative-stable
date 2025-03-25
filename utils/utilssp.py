@@ -56,8 +56,9 @@ class ddstrategic_prediction:
         self.mu_theta=mu_theta
 
     def distribution_map(self,x,theta):
-        z1 = self.D_w(0) + self.A1@x[0]**3+self.Ac1@x[1]**3 +theta.T@self.B.flatten()
-        z2 = self.D_w(1) + self.A2@x[1]**3+self.Ac2@x[0]**3 +theta.T@self.B.flatten()
+        exp = 1
+        z1 = self.D_w(0) + self.A1@x[0]**exp +self.Ac1@x[1]**exp +theta.T@self.B.flatten()
+        z2 = self.D_w(1) + self.A2@x[1]**exp +self.Ac2@x[0]**exp +theta.T@self.B.flatten()
         return z1,z2
 
     def D_theta(self):
@@ -70,17 +71,17 @@ class ddstrategic_prediction:
             return np.random.normal(self.mu_w2,self.sigma_w,size=(self.m,))
 
 
-    def proj(self,x):
-        y=np.zeros(np.shape(x))
-        for i in range(self.n):
-            for j in range(self.d):
-                if x[i][j]<=self.l[j]:
-                    y[i][j]=self.l[j]
-                elif self.l[j]<x[i][j] and x[i][j]<self.u[j]:
-                    y[i][j]=x[i][j]
-                else:
-                    y[i][j]=self.u[j]
-        return y
+    # def proj(self,x):
+    #     y=np.zeros(np.shape(x))
+    #     for i in range(self.n):
+    #         for j in range(self.d):
+    #             if x[i][j]<=self.l[j]:
+    #                 y[i][j]=self.l[j]
+    #             elif self.l[j]<x[i][j] and x[i][j]<self.u[j]:
+    #                 y[i][j]=x[i][j]
+    #             else:
+    #                 y[i][j]=self.u[j]
+    #     return y
 
     def getgrad_so(self,x,theta):
         w=self.D_w(0)
