@@ -81,7 +81,6 @@ for seed in seeds:
                                                             A2hat=A_dic['A2_hats'][-1], Ac2hat=A_dic['Ac2_hats'][-1], passvals=True)))
         A1_hat,Ac1_hat,A2_hat,Ac2_hat = ddg.update_estimate(x_agd[-1], z1, z2,th,nu=nu,mu=mu, A1hat=A_dic['A1_hats'][-1],Ac1hat=A_dic['Ac1_hats'][-1],
                                                             A2hat=A_dic['A2_hats'][-1], Ac2hat=A_dic['Ac2_hats'][-1], passvals=True,UNCORR=False)
-        # print('x_agd:',x_agd[-1])
 
         A_dic['A1_hats'].append(A1_hat)
         A_dic['Ac1_hats'].append(Ac1_hat)
