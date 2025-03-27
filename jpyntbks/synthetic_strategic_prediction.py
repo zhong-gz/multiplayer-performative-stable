@@ -17,33 +17,29 @@ from utilssp import *
 seed = 42
 np.random.seed(seed)
 seeds= range(42,92)
-sigma_theta=0.1
+sigma_theta= 0.01
 sigma_w=0.01
-density=0.5
+density=0.1
 nu=1e-3
 m=10 # both players dimension of z_i
 d=2 # size of each players action
-# B=np.ones((d,1)) #np.array([[1],[1]]) #np.random.rand(d,1)
-B=np.random.rand(d,1)
+B=0*np.ones((d,1)) #np.array([[1],[1]]) #np.random.rand(d,1)
+# B=np.random.rand(d,1)
+lam=[1.0,1.0]
+# lam=[0.1,0.1]
+# lam=[0,0]
 
 A1=1*scirand(m,d,density=density).A
 Ac1=0.5*scirand(m,d,density=density).A
 A2=1*scirand(m,d,density=density).A
 Ac2=0.5*scirand(m,d,density=density).A
 params={'A1':A1,'A2':A2,'Ac1':Ac1,'Ac2':Ac2} 
-# print('B:',B)
-# print('A1:',A1)
-# print('A2:',A2)
 
-# lam=[1.0,1.0]
-lam=[0.1,0.1]
-
-# lam=[0,0]
 MAXITER=1000
 n=2
 ddg=ddstrategic_prediction(MAXITER=MAXITER, sigma_theta=sigma_theta,sigma_w=sigma_w,density=density,
                        B=B,nu=nu, lam=lam,n=n, m=m, d=d, params=params,
-                           mu_w1=0, mu_w2=0, mu_theta=0)
+                           mu_w1=2, mu_w2=1, mu_theta=0)
 
 _,S1,_=la.svd(A1)
 _,S2,_=la.svd(A2)
@@ -63,7 +59,6 @@ all_data={}
 
 for seed in seeds:
     np.random.seed(seed)
-    # x0=np.zeros((2,d))
     x0=np.random.rand(2,d)
     all_data[seed]={}
     all_data[seed]['x0']=x0
@@ -100,10 +95,10 @@ for seed in seeds:
         # repeat retraining
         z1_t_1,z2_t_1 = ddg.distribution_map(x_rr[-1],th)
         rr_model_1 = Ridge(alpha = alpha)
-        rr_model_1.fit(th.T,z1_t_1)
+        rr_model_1.fit(th.T,z1_t_1,sample_weight=1/m)
         rr_coef_1 = rr_model_1.coef_
         rr_model_2 = Ridge(alpha = alpha)
-        rr_model_2.fit(th.T,z2_t_1)
+        rr_model_2.fit(th.T,z2_t_1,sample_weight=1/m)
         rr_coef_2 = rr_model_2.coef_
         x_rr.append(np.vstack((rr_model_1.coef_,rr_model_2.coef_)))
 
@@ -158,8 +153,12 @@ for seed in seeds:
     all_data[seed]['error_rgd']=err_rgd
     all_data[seed]['error_rr']=err_rr
 
+file_name_npy = 'aaa.npz'
+np.savez(file_name_npy, all_data=all_data)
+print(f"Data saved to {file_name_npy}")
+
 ## Generate Plots
-filename='./figs/convergence_final.'
+filename='./figs/sp_code.'
 SAVE=1
 
 errs_agd=[]
@@ -199,8 +198,8 @@ fig=plt.figure(figsize=(10,7))
 #     plt.plot(errs_rgd[i,:], linewidth=3, alpha=0.1, color='xkcd:light green')
     
 
-# plt.plot(errs_sgd_mean, linewidth=3,color='xkcd:cerulean', label='SGM')
-# plt.fill_between(iterations,errs_sgd_mean+errs_sgd_var,errs_sgd_mean-errs_sgd_var, alpha=0.5, linewidth=0,color='xkcd:cerulean')
+plt.plot(errs_sgd_mean, linewidth=3,color='xkcd:cerulean', label='SGM')
+plt.fill_between(iterations,errs_sgd_mean+errs_sgd_var,errs_sgd_mean-errs_sgd_var, alpha=0.5, linewidth=0,color='xkcd:cerulean')
 plt.plot(errs_agd_mean, linewidth=3, color='xkcd:light orange', label='AGM')
 plt.plot(errs_rgd_mean, linewidth=3, color='xkcd:light green', label='RGD')
 plt.plot(errs_rr_mean, linewidth=3, color='xkcd:light blue', label='Ours_RR')
@@ -212,7 +211,7 @@ plt.grid(True)
 
 plt.tick_params(labelsize=fs-2)
 # plt.ylabel(r'$\mathbb{E}\sum_{i=1}^n \Vert z_i^t- \theta^\top x_i^t\Vert^2$', fontsize=fs)
-plt.ylabel(r'average loss', fontsize=fs)
+plt.ylabel(r'MSE', fontsize=fs)
 plt.xlabel(r'iterations', fontsize=fs)
 plt.legend(fontsize=fs-2, loc='upper right',ncol=2)
 if SAVE:
