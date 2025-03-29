@@ -18,16 +18,16 @@ seed = 42
 np.random.seed(seed)
 seeds= range(42,92)
 sigma_theta= 0.01
-sigma_w=0.01
+sigma_w=0.1
 density=0.1
 nu=1e-3
-m=10 # both players dimension of z_i
+m=5 # both players dimension of z_i
 d=2 # size of each players action
-B=0*np.ones((d,1)) #np.array([[1],[1]]) #np.random.rand(d,1)
+B=np.ones((d,1)) #np.array([[1],[1]]) #np.random.rand(d,1)
 # B=np.random.rand(d,1)
-lam=[1.0,1.0]
+# lam=[1.0,1.0]
 # lam=[0.1,0.1]
-# lam=[0,0]
+lam=[0,0]
 
 A1=1*scirand(m,d,density=density).A
 Ac1=0.5*scirand(m,d,density=density).A
@@ -39,7 +39,7 @@ MAXITER=1000
 n=2
 ddg=ddstrategic_prediction(MAXITER=MAXITER, sigma_theta=sigma_theta,sigma_w=sigma_w,density=density,
                        B=B,nu=nu, lam=lam,n=n, m=m, d=d, params=params,
-                           mu_w1=2, mu_w2=1, mu_theta=0)
+                           mu_w1=0, mu_w2=0, mu_theta=0)
 
 _,S1,_=la.svd(A1)
 _,S2,_=la.svd(A2)
@@ -110,7 +110,7 @@ for seed in seeds:
         epsilon_1 = max(epsilon_1,la.norm(g1_t-g1_t_1)/la.norm(x_rr[-1][0]-x_rr[-2][0]))
         epsilon_2 = max(epsilon_2,la.norm(g2_t-g2_t_1)/la.norm(x_rr[-1][0]-x_rr[-2][0]))
         if la.norm(x_rr[-1][0]-x_rr[-2][0]) > 1e-6 or la.norm(x_rr[-1][1]-x_rr[-2][1]) > 1e-6:
-            alpha = gamma*((epsilon_1**2+epsilon_2**2)**0.5)/n
+            alpha = gamma*((epsilon_1**2+epsilon_2**2)**0.5)
 
     x_sgd=np.asarray(x_sgd)
     x_agd=np.asarray(x_agd)
@@ -153,12 +153,12 @@ for seed in seeds:
     all_data[seed]['error_rgd']=err_rgd
     all_data[seed]['error_rr']=err_rr
 
-file_name_npy = 'aaa.npz'
+file_name_npy = 'aaa_paper.npz'
 np.savez(file_name_npy, all_data=all_data)
 print(f"Data saved to {file_name_npy}")
 
 ## Generate Plots
-filename='./figs/sp_code.'
+filename='./figs/sp_paper.'
 SAVE=1
 
 errs_agd=[]
