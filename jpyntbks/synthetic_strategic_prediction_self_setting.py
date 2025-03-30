@@ -19,20 +19,22 @@ np.random.seed(seed)
 seeds= range(42,92)
 sigma_theta= 0.1 ###
 sigma_w=0.01
-density=0.1 ###
+density=0.5 ###
 nu=1e-3
-m=10 # both players dimension of z_i
+m=100 # both players dimension of z_i
 d=2 # size of each players action
 # B=np.ones((d,1)) #np.array([[1],[1]]) #np.random.rand(d,1)
-B= np.random.rand(d,1) ###
+B=np.random.rand(d,1) ###
 # lam=[1.0,1.0]
 # lam=[0.1,0.1]
 lam=[0,0]
+mu_A = 1
+mu_AC = 2
 
-A1=1*scirand(m,d,density=density).A ###
-Ac1=0.5*scirand(m,d,density=density).A ###
-A2=1*scirand(m,d,density=density).A ###
-Ac2=0.5*scirand(m,d,density=density).A  ###
+A1=mu_A*scirand(m,d,density=density).A ###
+Ac1=mu_AC*scirand(m,d,density=density).A ###
+A2=mu_A*scirand(m,d,density=density).A ###
+Ac2=mu_AC*scirand(m,d,density=density).A  ###
 params={'A1':A1,'A2':A2,'Ac1':Ac1,'Ac2':Ac2} 
 
 MAXITER=1000
@@ -158,7 +160,7 @@ np.savez(file_name_npy, all_data=all_data)
 print(f"Data saved to {file_name_npy}")
 
 ## Generate Plots
-filename='./figs/sp_theta_'+str(sigma_theta)+'_density_'+str(density)+'.'
+filename='./figs/sp_theta_'+str(sigma_theta)+'_density_'+str(density)+'_mu_A_'+str(mu_A)+'_mu_AC_'+str(mu_AC)+'.'
 print(f"Figure plot to {filename}")
 SAVE=1
 
