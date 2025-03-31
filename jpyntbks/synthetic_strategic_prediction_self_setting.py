@@ -19,17 +19,17 @@ np.random.seed(seed)
 seeds= range(42,92)
 sigma_theta= 0.1 ###
 sigma_w=0.01
-density=0.5 ###
+density=0.1 ###
 nu=1e-3
-m=100 # both players dimension of z_i
+m=10 # both players dimension of z_i
 d=2 # size of each players action
 # B=np.ones((d,1)) #np.array([[1],[1]]) #np.random.rand(d,1)
 B=np.random.rand(d,1) ###
-# lam=[1.0,1.0]
+lam=[1.0,1.0]
 # lam=[0.1,0.1]
-lam=[0,0]
-mu_A = 1
-mu_AC = 2
+# lam=[0,0]
+mu_A = 0.1
+mu_AC = 0.1
 
 A1=mu_A*scirand(m,d,density=density).A ###
 Ac1=mu_AC*scirand(m,d,density=density).A ###
@@ -111,7 +111,7 @@ for seed in seeds:
         g2_t_1=-th@(z2_t_1-th.T@x_rr[-1][1])
         epsilon_1 = max(epsilon_1,la.norm(g1_t-g1_t_1)/la.norm(x_rr[-1][0]-x_rr[-2][0]))
         epsilon_2 = max(epsilon_2,la.norm(g2_t-g2_t_1)/la.norm(x_rr[-1][0]-x_rr[-2][0]))
-        if la.norm(x_rr[-1][0]-x_rr[-2][0]) > 1e-6 or la.norm(x_rr[-1][1]-x_rr[-2][1]) > 1e-6:
+        if la.norm(x_rr[-1][0]-x_rr[-2][0]) > 1e-3 or la.norm(x_rr[-1][1]-x_rr[-2][1]) > 1e-3:
             alpha = gamma*((epsilon_1**2+epsilon_2**2)**0.5)
             
     x_sgd=np.asarray(x_sgd)
