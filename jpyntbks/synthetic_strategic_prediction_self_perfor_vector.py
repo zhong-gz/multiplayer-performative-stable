@@ -7,6 +7,7 @@ import scipy.linalg  as sla
 import seaborn as sns
 from sklearn.linear_model import Ridge
 import random
+import winsound
 import sys, os
 # insert at 1, 0 is the script path (or '' in REPL)
 sys.path.insert(1,'./utils/' )
@@ -21,15 +22,16 @@ sigma_theta= 1 ###
 sigma_w=0.01
 density=1 ###
 nu=1e-3
-m=100 # both players dimension of z_i
+m= 50 # both players dimension of z_i
 d=2 # size of each players action
 # B=np.ones((d,1)) #np.array([[1],[1]]) #np.random.rand(d,1)
-B=np.random.rand(d,1) ###
-lam=[1.0,1.0]
+# B=np.random.rand(d,1) ###
+B=np.random.uniform(size=(d,1))
+# lam=[1.0,1.0]
 # lam=[0.1,0.1]
-# lam=[0,0]
-mu_A = 1
-mu_AC = 1
+lam=[0,0]
+mu_A = 1.0
+mu_AC = 11.0
 
 A1=mu_A*scirand(1,d,density=density).A ###
 Ac1=mu_AC*scirand(1,d,density=density).A ###
@@ -37,7 +39,7 @@ A2=mu_A*scirand(1,d,density=density).A ###
 Ac2=mu_AC*scirand(1,d,density=density).A  ###
 params={'A1':A1,'A2':A2,'Ac1':Ac1,'Ac2':Ac2} 
 
-MAXITER=1000
+MAXITER=100
 n=2
 ddg=ddstrategic_prediction(MAXITER=MAXITER, sigma_theta=sigma_theta,sigma_w=sigma_w,density=density,
                        B=B,nu=nu, lam=lam,n=n, m=m, d=d, params=params,
@@ -61,7 +63,7 @@ all_data={}
 
 for seed in seeds:
     np.random.seed(seed)
-    x0=np.random.rand(2,d)
+    x0=np.random.uniform(size=(2,d))
     all_data[seed]={}
     all_data[seed]['x0']=x0
 
@@ -76,7 +78,8 @@ for seed in seeds:
 
     for i in range(MAXITER):
         nu=2*nu0/(len(x_agd)+2*3*d)
-        th=1*np.random.normal(0,sigma_theta,size=(d,m))
+        th=1*np.random.uniform(size=(d,m))
+        # th=1*np.random.normal(0,sigma_theta,size=(d,m))
         z1=ddg.D_w(0)
         z2=ddg.D_w(1)
         x_sgd.append(ddg.proj(x_sgd[-1]-eta*ddg.getgrad(x_sgd[-1],th)))
@@ -131,19 +134,20 @@ for seed in seeds:
     error_rr=[]
 
     # estimate the loss
-    th=1*np.random.normal(0,sigma_theta,size=(d,m))
+    # th=1*np.random.normal(0,sigma_theta,size=(d,m))
+    th=1*np.random.uniform(size=(d,m))
     for x,y,z,rr in zip(x_sgd,x_agd,x_rgd,x_rr):
         z1,z2 = ddg.distribution_map(x,th)
-        error_sgd.append((la.norm(z1-th.T@x[0])**2 + la.norm(z2-th.T@x[1])**2)/m)
+        error_sgd.append((la.norm(z1-th.T@x[0])**2 + la.norm(z2-th.T@x[1])**2)/(2*m))
 
         z1,z2 = ddg.distribution_map(y,th)
-        error_agd.append((la.norm(z1-th.T@y[0])**2 + la.norm(z2-th.T@y[1])**2)/m)
+        error_agd.append((la.norm(z1-th.T@y[0])**2 + la.norm(z2-th.T@y[1])**2)/(2*m))
 
         z1,z2 = ddg.distribution_map(z,th)
-        error_rgd.append((la.norm(z1-th.T@z[0])**2 + la.norm(z2-th.T@z[1])**2)/m)
+        error_rgd.append((la.norm(z1-th.T@z[0])**2 + la.norm(z2-th.T@z[1])**2)/(2*m))
 
         z1,z2 = ddg.distribution_map(rr,th)
-        error_rr.append((la.norm(z1-th.T@rr[0])**2 + la.norm(z2-th.T@rr[1])**2)/m)
+        error_rr.append((la.norm(z1-th.T@rr[0])**2 + la.norm(z2-th.T@rr[1])**2)/(2*m))
 
     err_agd=np.asarray(error_agd)
     err_sgd=np.asarray(error_sgd)#
@@ -160,7 +164,8 @@ np.savez(file_name_npy, all_data=all_data)
 print(f"Data saved to {file_name_npy}")
 
 ## Generate Plots
-filename='./figs/vector_sp_theta_'+str(sigma_theta)+'_density_'+str(density)+'_mu_A_'+str(mu_A)+'_mu_AC_'+str(mu_AC)+'.'
+# filename='./figs/vector_sp_theta_'+str(sigma_theta)+'_density_'+str(density)+'_mu_A_'+str(mu_A)+'_mu_AC_'+str(mu_AC)+'_m_'+str(m)+'.'
+filename='./figs/vector_sp_density_'+str(density)+'_mu_A_'+str(mu_A)+'_mu_AC_'+str(mu_AC)+'_m_'+str(m)+'.'
 print(f"Figure plot to {filename}")
 SAVE=1
 
@@ -220,3 +225,5 @@ plt.legend(fontsize=fs-2, loc='upper right',ncol=2)
 if SAVE:
     for tag in ['pdf']:
         plt.savefig(filename+tag,  bbox_inches='tight', dpi=300)
+
+winsound.Beep(1500, 500)
