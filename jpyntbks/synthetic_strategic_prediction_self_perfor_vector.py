@@ -17,7 +17,7 @@ from utilssp_vector_map import *
 seed = 42
 np.random.seed(seed)
 seeds= range(42,92)
-sigma_theta= 0.1 ###
+sigma_theta= 1 ###
 sigma_w=0.01
 density=1 ###
 nu=1e-3
@@ -29,7 +29,7 @@ lam=[1.0,1.0]
 # lam=[0.1,0.1]
 # lam=[0,0]
 mu_A = 1
-mu_AC = 2
+mu_AC = 1
 
 A1=mu_A*scirand(1,d,density=density).A ###
 Ac1=mu_AC*scirand(1,d,density=density).A ###
