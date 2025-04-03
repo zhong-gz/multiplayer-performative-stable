@@ -22,7 +22,7 @@ sigma_theta= 1 ###
 sigma_w=0.01
 density=1 ###
 nu=1e-3
-m= 50 # both players dimension of z_i
+m= 1000 # both players dimension of z_i
 d=2 # size of each players action
 # B=np.ones((d,1)) #np.array([[1],[1]]) #np.random.rand(d,1)
 # B=np.random.rand(d,1) ###
@@ -31,7 +31,7 @@ B=np.random.uniform(size=(d,1))
 # lam=[0.1,0.1]
 lam=[0,0]
 mu_A = 1.0
-mu_AC = 1.0
+mu_AC = 0.5
 
 A1=mu_A*scirand(1,d,density=density).A ###
 Ac1=mu_AC*scirand(1,d,density=density).A ###
@@ -75,11 +75,12 @@ for seed in seeds:
     epsilon_2 = 0
     gamma = 2.1
     alpha = 0.1
+    count = 0
 
     for i in range(MAXITER):
         nu=2*nu0/(len(x_agd)+2*3*d)
-        th=1*np.random.uniform(size=(d,m))
-        # th=1*np.random.normal(0,sigma_theta,size=(d,m))
+        # th=1*np.random.uniform(size=(d,m))
+        th=1*np.random.normal(0,sigma_theta,size=(d,m))
         z1=ddg.D_w(0)
         z2=ddg.D_w(1)
         x_sgd.append(ddg.proj(x_sgd[-1]-eta*ddg.getgrad(x_sgd[-1],th)))
@@ -115,7 +116,10 @@ for seed in seeds:
         epsilon_1 = max(epsilon_1,la.norm(g1_t-g1_t_1)/la.norm(x_rr[-1][0]-x_rr[-2][0]))
         epsilon_2 = max(epsilon_2,la.norm(g2_t-g2_t_1)/la.norm(x_rr[-1][0]-x_rr[-2][0]))
         if la.norm(x_rr[-1][0]-x_rr[-2][0]) > 1e-3 or la.norm(x_rr[-1][1]-x_rr[-2][1]) > 1e-3:
-            alpha = gamma*((epsilon_1**2+epsilon_2**2)**0.5)
+            count += 1
+            if count < 5:
+                # alpha = 0
+                alpha = gamma*((epsilon_1**2+epsilon_2**2)**0.5)
             
     x_sgd=np.asarray(x_sgd)
     x_agd=np.asarray(x_agd)
@@ -134,8 +138,8 @@ for seed in seeds:
     error_rr=[]
 
     # estimate the loss
-    # th=1*np.random.normal(0,sigma_theta,size=(d,m))
-    th=1*np.random.uniform(size=(d,m))
+    th=1*np.random.normal(0,sigma_theta,size=(d,m))
+    # th=1*np.random.uniform(size=(d,m))
     for x,y,z,rr in zip(x_sgd,x_agd,x_rgd,x_rr):
         z1,z2 = ddg.distribution_map(x,th)
         error_sgd.append((la.norm(z1-th.T@x[0])**2 + la.norm(z2-th.T@x[1])**2)/(2*m))
@@ -149,10 +153,10 @@ for seed in seeds:
         z1,z2 = ddg.distribution_map(rr,th)
         error_rr.append((la.norm(z1-th.T@rr[0])**2 + la.norm(z2-th.T@rr[1])**2)/(2*m))
 
-    err_agd=np.asarray(error_agd)
-    err_sgd=np.asarray(error_sgd)#
-    err_rgd=np.asarray(error_rgd)
-    err_rr=np.asarray(error_rr)
+    err_agd=np.asarray(np.sqrt(error_agd))
+    err_sgd=np.asarray(np.sqrt(error_sgd))
+    err_rgd=np.asarray(np.sqrt(error_rgd))
+    err_rr=np.asarray(np.sqrt(error_rr))
 
     all_data[seed]['error_agd']=err_agd
     all_data[seed]['error_sgd']=err_sgd
@@ -165,7 +169,7 @@ print(f"Data saved to {file_name_npy}")
 
 ## Generate Plots
 # filename='./figs/vector_sp_theta_'+str(sigma_theta)+'_density_'+str(density)+'_mu_A_'+str(mu_A)+'_mu_AC_'+str(mu_AC)+'_m_'+str(m)+'.'
-filename='./figs/vector_sp_density_'+str(density)+'_mu_A_'+str(mu_A)+'_mu_AC_'+str(mu_AC)+'_m_'+str(m)+'.'
+filename='./figs/vector_sp_mu_A_'+str(mu_A)+'_mu_AC_'+str(mu_AC)+'_m_'+str(m)+'.'
 print(f"Figure plot to {filename}")
 SAVE=1
 
@@ -200,6 +204,7 @@ errs_rr_var=np.std(errs_rr,axis=0)
 
 iterations=np.arange(0,MAXITER+1)
 fig=plt.figure(figsize=(10,7))
+plt.title(f'mu_A:{mu_A:.1f},mu_AC:{mu_AC:.1f},m:{m:.0f}') 
 # for i in range(len(errs_agd)):
 #     # plt.plot(errs_sgd[i,:], linewidth=3,color='xkcd:cerulean', alpha=0.1)
 #     plt.plot(errs_agd[i,:], linewidth=3, alpha=0.1, color='xkcd:light orange')
@@ -207,19 +212,19 @@ fig=plt.figure(figsize=(10,7))
     
 
 plt.plot(errs_sgd_mean, linewidth=3,color='xkcd:cerulean', label='SGM')
-plt.fill_between(iterations,errs_sgd_mean+errs_sgd_var,errs_sgd_mean-errs_sgd_var, alpha=0.5, linewidth=0,color='xkcd:cerulean')
 plt.plot(errs_agd_mean, linewidth=3, color='xkcd:light orange', label='AGM')
 plt.plot(errs_rgd_mean, linewidth=3, color='xkcd:light green', label='RGD')
 plt.plot(errs_rr_mean, linewidth=3, color='xkcd:light blue', label='Ours_RR')
-plt.fill_between(iterations,errs_agd_mean+errs_agd_var,errs_agd_mean-errs_agd_var, alpha=0.4, linewidth=0, color='xkcd:light orange')
-plt.fill_between(iterations,errs_rgd_mean+errs_rgd_var,errs_rgd_mean-errs_rgd_var, alpha=0.4, linewidth=0, color='xkcd:light green')
-plt.fill_between(iterations,errs_rr_mean+errs_rr_var,errs_rr_mean-errs_rr_var, alpha=0.4, linewidth=0, color='xkcd:light blue')
+# plt.fill_between(iterations,errs_sgd_mean+errs_sgd_var,errs_sgd_mean-errs_sgd_var, alpha=0.5, linewidth=0,color='xkcd:cerulean')
+# plt.fill_between(iterations,errs_agd_mean+errs_agd_var,errs_agd_mean-errs_agd_var, alpha=0.4, linewidth=0, color='xkcd:light orange')
+# plt.fill_between(iterations,errs_rgd_mean+errs_rgd_var,errs_rgd_mean-errs_rgd_var, alpha=0.4, linewidth=0, color='xkcd:light green')
+# plt.fill_between(iterations,errs_rr_mean+errs_rr_var,errs_rr_mean-errs_rr_var, alpha=0.4, linewidth=0, color='xkcd:light blue')
 plt.yscale('log')
 plt.grid(True)
 
 plt.tick_params(labelsize=fs-2)
 # plt.ylabel(r'$\mathbb{E}\sum_{i=1}^n \Vert z_i^t- \theta^\top x_i^t\Vert^2$', fontsize=fs)
-plt.ylabel(r'MSE', fontsize=fs)
+plt.ylabel(r'RMSE', fontsize=fs)
 plt.xlabel(r'iterations', fontsize=fs)
 plt.legend(fontsize=fs-2, loc='upper right',ncol=2)
 if SAVE:

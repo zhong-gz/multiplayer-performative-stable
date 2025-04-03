@@ -42,6 +42,8 @@ class ddstrategic_prediction:
         self.Ac1=params['Ac1']
         self.A2=params['A2']
         self.Ac2=params['Ac2']
+        self.B1_hat_ = np.zeros((self.d,1))
+        self.B2_hat_ = np.zeros((self.d,1))
         self.A1_hat_ = np.zeros((1,self.d)) #np.random.rand(m,d)
         self.Ac1_hat_ =np.zeros((1,self.d))# np.random.rand(m,d)
         self.A2_hat_ = np.zeros((1,self.d)) #np.random.rand(m,d)
@@ -56,9 +58,11 @@ class ddstrategic_prediction:
         self.mu_theta=mu_theta
 
     def distribution_map(self,x,theta):
-        exp = 1
-        z1 = self.D_w(0) + self.A1@x[0]**exp +self.Ac1@x[1]**exp +theta.T@self.B.flatten()
-        z2 = self.D_w(1) + self.A2@x[1]**exp +self.Ac2@x[0]**exp +theta.T@self.B.flatten()
+        # exp = 0.04203
+        exp = 0.1
+        # exp = 2
+        z1 = self.D_w(0) + self.A1@x[0] +self.Ac1@x[1] +theta.T@self.B.flatten() + exp*(self.A1@x[0])**3 + exp*(self.Ac1@x[1])**3
+        z2 = self.D_w(1) + self.A2@x[1] +self.Ac2@x[0] +theta.T@self.B.flatten() + exp*(self.A2@x[1])**3 + exp*(self.Ac2@x[0])**3
         return z1,z2
 
     def D_theta(self):
@@ -69,7 +73,6 @@ class ddstrategic_prediction:
             return np.random.normal(self.mu_w1,self.sigma_w,size=(self.m,))
         else:
             return np.random.normal(self.mu_w2,self.sigma_w,size=(self.m,))
-
 
     # def proj(self,x):
     #     y=np.zeros(np.shape(x))
@@ -95,11 +98,13 @@ class ddstrategic_prediction:
         return np.vstack((p1.T,p2.T))
 
     def getgrad(self,x,theta):
+        z1,z2 = self.distribution_map(x,theta)
+
         w=self.D_w(0)
-        p1=(self.A1-theta.T).T@(theta.T@self.B.flatten()+self.A1@x[0]+self.Ac1@x[1]+w-theta.T@x[0])+self.lam1*x[0]
+        p1=(self.A1-theta.T).T@(theta.T@self.B.flatten()+self.A1@x[0]+self.Ac1@x[1]+w-theta.T@x[0])/self.m+self.lam1*x[0]
 
         w=self.D_w(1)
-        p2=(self.A2-theta.T).T@(theta.T@self.B.flatten()+self.A2@x[1]+self.Ac2@x[0]+w-theta.T@x[1])+self.lam2*x[1]
+        p2=(self.A2-theta.T).T@(theta.T@self.B.flatten()+self.A2@x[1]+self.Ac2@x[0]+w-theta.T@x[1])/self.m+self.lam2*x[1]
 
         return np.vstack((p1.T,p2.T))
 
@@ -108,14 +113,29 @@ class ddstrategic_prediction:
         H2=(self.A2-th.T).T@(self.A2-th.T)+self.lam2*np.eye(self.d)
         return H1,H2
 
-    # def D_z(self,player):
-    #     if player==0:
-    #         return np.random.normal(10,self.sigma_z1,size=(self.m,))
-    #     else:
-    #         return np.random.normal(5,self.sigma_z2,size=(self.m,))
+    def getgrad_agd(self, x,theta, A1hat=[],Ac1hat=[],A2hat=[],Ac2hat=[],passvals=False ):
+        if not(passvals):
+            B1hat =self.B1_hat_[-1]
+            B2hat =self.B2_hat_[-1]
+            A1hat=self.A1_hat[-1]
+            Ac1hat=self.Ac1_hat[-1]
+            A2hat=self.A2_hat[-1]
+            Ac2hat=self.Ac2_hat[-1]
+
+        z1,z2 = self.distribution_map(x,theta)
+        
+        w=self.D_w(0)
+        p1=(A1hat-theta.T).T@(theta.T@self.B.flatten()+A1hat@x[0]+Ac1hat@x[1]+w-theta.T@x[0])/self.m+self.lam1*x[0]
+
+        w=self.D_w(1)
+        p2=(A2hat-theta.T).T@(theta.T@self.B.flatten()+A2hat@x[1]+Ac2hat@x[0]+w-theta.T@x[1])/self.m+self.lam2*x[1]
+
+        return np.vstack((p1.T,p2.T))
 
     def update_estimate(self,x, z1_, z2_, theta, nu=1e-3, mu=1,A1hat=[],Ac1hat=[],A2hat=[],Ac2hat=[], UNCORR=False, passvals=False):
         if not(passvals):
+            B1hat =self.B1_hat_[-1]
+            B2hat =self.B2_hat_[-1]
             A1hat =self.A1_hat[-1]
             Ac1hat=self.Ac1_hat[-1]
             A2hat =self.A2_hat[-1]
@@ -125,14 +145,6 @@ class ddstrategic_prediction:
         x_u = [x[0]+u1_,x[1]+u2_]
         q1,q2 = self.distribution_map(x_u,theta)
 
-        # q1_ = self.D_w(0)
-        # q2_ = self.D_w(1)
-        # #print(np.shape(q1_), np.shape(q2_))
-        # q1 = q1_+self.A1@(x[0]+u1_)+self.Ac1@(x[1]+u2_)+theta.T@self.B.flatten()
-        # q2 = q2_+self.A2@(x[1]+u2_)+self.Ac2@(x[0]+u1_)+theta.T@self.B.flatten()
-        
-        # z1 = z1_+self.A1@x[0] +self.Ac1@x[1] +theta.T@self.B.flatten()
-        # z2 = z2_+self.A2@x[1] +self.Ac2@x[0] +theta.T@self.B.flatten()
         z1,z2 = self.distribution_map(x,theta)
 
         barA1_hat = np.hstack((A1hat,Ac1hat))
@@ -176,20 +188,6 @@ class ddstrategic_prediction:
                     y[i][j]=self.u[j]
         return y
 
-    def getgrad_agd(self, x,theta, A1hat=[],Ac1hat=[],A2hat=[],Ac2hat=[],passvals=False ):
-        if not(passvals):
-            A1hat=self.A1_hat[-1]
-            Ac1hat=self.Ac1_hat[-1]
-            A2hat=self.A2_hat[-1]
-            Ac2hat=self.Ac2_hat[-1]
-        w=self.D_w(0)
-        p1=(A1hat-theta.T).T@(theta.T@self.B.flatten()+A1hat@x[0]+Ac1hat@x[1]+w-theta.T@x[0])+self.lam1*x[0]
-
-        w=self.D_w(1)
-        p2=(A2hat-theta.T).T@(theta.T@self.B.flatten()+A2hat@x[1]+Ac2hat@x[0]+w-theta.T@x[1])+self.lam2*x[1]
-
-        return np.vstack((p1.T,p2.T))
-
     def get_loss(self,x,z1_,z2_,theta):
         z1 = z1_+self.A1@(x[0])+self.Ac1@(x[1])+theta.T@self.B.flatten()
         l1 = 0.5*z1.T@z1+self.lam1*la.norm(x[0])
@@ -198,6 +196,6 @@ class ddstrategic_prediction:
         return l1,l2
 
     def getgrad_rgd(self,x,z1_,z2_,theta):
-        p1=-theta@(z1_-theta.T@x[0])+self.lam1*x[0]
-        p2=-theta@(z2_-theta.T@x[1])+self.lam2*x[1]
+        p1=-theta@(z1_-theta.T@x[0])/self.m+self.lam1*x[0]
+        p2=-theta@(z2_-theta.T@x[1])/self.m+self.lam2*x[1]
         return  np.vstack((p1.T,p2.T))
