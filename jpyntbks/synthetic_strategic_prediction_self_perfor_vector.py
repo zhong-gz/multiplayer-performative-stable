@@ -31,7 +31,7 @@ B=np.random.uniform(size=(d,1))
 # lam=[0.1,0.1]
 lam=[0,0]
 mu_A = 1.0
-mu_AC = 11.0
+mu_AC = 1.0
 
 A1=mu_A*scirand(1,d,density=density).A ###
 Ac1=mu_AC*scirand(1,d,density=density).A ###
@@ -108,10 +108,10 @@ for seed in seeds:
         x_rr.append(np.vstack((rr_model_1.coef_,rr_model_2.coef_)))
 
         z1_t,z2_t = ddg.distribution_map(x_rr[-1],th)
-        g1_t=-th@(z1_t-th.T@x_rr[-1][0])
-        g2_t=-th@(z2_t-th.T@x_rr[-1][1])
-        g1_t_1=-th@(z1_t_1-th.T@x_rr[-1][0])
-        g2_t_1=-th@(z2_t_1-th.T@x_rr[-1][1])
+        g1_t=-th@(z1_t-th.T@x_rr[-1][0])/m
+        g2_t=-th@(z2_t-th.T@x_rr[-1][1])/m
+        g1_t_1=-th@(z1_t_1-th.T@x_rr[-1][0])/m
+        g2_t_1=-th@(z2_t_1-th.T@x_rr[-1][1])/m
         epsilon_1 = max(epsilon_1,la.norm(g1_t-g1_t_1)/la.norm(x_rr[-1][0]-x_rr[-2][0]))
         epsilon_2 = max(epsilon_2,la.norm(g2_t-g2_t_1)/la.norm(x_rr[-1][0]-x_rr[-2][0]))
         if la.norm(x_rr[-1][0]-x_rr[-2][0]) > 1e-3 or la.norm(x_rr[-1][1]-x_rr[-2][1]) > 1e-3:
