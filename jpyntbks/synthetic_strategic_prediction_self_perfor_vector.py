@@ -31,13 +31,21 @@ B=np.random.uniform(size=(d,1))
 # lam=[0.1,0.1]
 lam=[0,0]
 mu_A = 1.0
-mu_AC = 6
+mu_AC = 0.5
+mu_C = 0.1
 
 A1=mu_A*scirand(1,d,density=density).A ###
 Ac1=mu_AC*scirand(1,d,density=density).A ###
 A2=mu_A*scirand(1,d,density=density).A ###
 Ac2=mu_AC*scirand(1,d,density=density).A  ###
 params={'A1':A1,'A2':A2,'Ac1':Ac1,'Ac2':Ac2} 
+
+C1=mu_C*scirand(1,d,density=1).A ###
+Cc1=mu_AC*scirand(1,d,density=1).A ###
+C2=mu_C*scirand(1,d,density=1).A ###
+Cc2=mu_AC*scirand(1,d,density=1).A 
+params={'A1':A1,'A2':A2,'Ac1':Ac1,'Ac2':Ac2,
+         'C1':C1,'C2':C2,'Cc1':Cc1,'Cc2':Cc2}
 
 MAXITER=1000
 n=2
@@ -96,24 +104,24 @@ for seed in seeds:
         A_dic['A2_hats'].append(A2_hat)
         A_dic['Ac2_hats'].append(Ac2_hat)
 
-        z1,z2 = ddg.distribution_map(x_rgd[-1],th)
-        x_rgd.append(ddg.proj(x_rgd[-1]-eta*ddg.getgrad_rgd(x_rgd[-1],z1,z2, th)))
+        z1,z2,theta_rgd = ddg.distribution_map(x_rgd[-1],th)
+        x_rgd.append(ddg.proj(x_rgd[-1]-eta*ddg.getgrad_rgd(x_rgd[-1],z1,z2, theta_rgd)))
 
         # repeat retraining
-        z1_t_1,z2_t_1 = ddg.distribution_map(x_rr[-1],th)
+        z1_t_1,z2_t_1,theta_t_1 = ddg.distribution_map(x_rr[-1],th)
         rr_model_1 = Ridge(alpha = alpha)
-        rr_model_1.fit(th.T,z1_t_1,sample_weight=1/m)
+        rr_model_1.fit(theta_t_1.T,z1_t_1,sample_weight=1/m)
         rr_coef_1 = rr_model_1.coef_
         rr_model_2 = Ridge(alpha = alpha)
-        rr_model_2.fit(th.T,z2_t_1,sample_weight=1/m)
+        rr_model_2.fit(theta_t_1.T,z2_t_1,sample_weight=1/m)
         rr_coef_2 = rr_model_2.coef_
         x_rr.append(np.vstack((rr_model_1.coef_,rr_model_2.coef_)))
 
-        z1_t,z2_t = ddg.distribution_map(x_rr[-1],th)
-        g1_t=-th@(z1_t-th.T@x_rr[-1][0])/m
-        g2_t=-th@(z2_t-th.T@x_rr[-1][1])/m
-        g1_t_1=-th@(z1_t_1-th.T@x_rr[-1][0])/m
-        g2_t_1=-th@(z2_t_1-th.T@x_rr[-1][1])/m
+        z1_t,z2_t,theta_t = ddg.distribution_map(x_rr[-1],th)
+        g1_t=-theta_t@(z1_t-theta_t.T@x_rr[-1][0])/m
+        g2_t=-theta_t@(z2_t-theta_t.T@x_rr[-1][1])/m
+        g1_t_1=-theta_t_1@(z1_t_1-theta_t_1.T@x_rr[-1][0])/m
+        g2_t_1=-theta_t_1@(z2_t_1-theta_t_1.T@x_rr[-1][1])/m
         epsilon_1 = max(epsilon_1,la.norm(g1_t-g1_t_1)/la.norm(x_rr[-1][0]-x_rr[-2][0]))
         epsilon_2 = max(epsilon_2,la.norm(g2_t-g2_t_1)/la.norm(x_rr[-1][0]-x_rr[-2][0]))
         if la.norm(x_rr[-1][0]-x_rr[-2][0]) > 1e-3 or la.norm(x_rr[-1][1]-x_rr[-2][1]) > 1e-3:
@@ -142,17 +150,17 @@ for seed in seeds:
     th=1*np.random.normal(0,sigma_theta,size=(d,m))
     # th=1*np.random.uniform(size=(d,m))
     for x,y,z,rr in zip(x_sgd,x_agd,x_rgd,x_rr):
-        z1,z2 = ddg.distribution_map(x,th)
-        error_sgd.append((la.norm(z1-th.T@x[0])**2 + la.norm(z2-th.T@x[1])**2)/(2*m))
+        z1,z2,th_x = ddg.distribution_map(x,th)
+        error_sgd.append((la.norm(z1-th_x.T@x[0])**2 + la.norm(z2-th_x.T@x[1])**2)/(2*m))
 
-        z1,z2 = ddg.distribution_map(y,th)
-        error_agd.append((la.norm(z1-th.T@y[0])**2 + la.norm(z2-th.T@y[1])**2)/(2*m))
+        z1,z2,th_y = ddg.distribution_map(y,th)
+        error_agd.append((la.norm(z1-th_y.T@y[0])**2 + la.norm(z2-th_y.T@y[1])**2)/(2*m))
 
-        z1,z2 = ddg.distribution_map(z,th)
-        error_rgd.append((la.norm(z1-th.T@z[0])**2 + la.norm(z2-th.T@z[1])**2)/(2*m))
+        z1,z2,th_z = ddg.distribution_map(z,th)
+        error_rgd.append((la.norm(z1-th_z.T@z[0])**2 + la.norm(z2-th_z.T@z[1])**2)/(2*m))
 
-        z1,z2 = ddg.distribution_map(rr,th)
-        error_rr.append((la.norm(z1-th.T@rr[0])**2 + la.norm(z2-th.T@rr[1])**2)/(2*m))
+        z1,z2,th_rr = ddg.distribution_map(rr,th)
+        error_rr.append((la.norm(z1-th_rr.T@rr[0])**2 + la.norm(z2-th_rr.T@rr[1])**2)/(2*m))
 
     err_agd=np.asarray(np.sqrt(error_agd))
     err_sgd=np.asarray(np.sqrt(error_sgd))
@@ -170,7 +178,7 @@ print(f"Data saved to {file_name_npy}")
 
 ## Generate Plots
 # filename='./figs/vector_sp_theta_'+str(sigma_theta)+'_density_'+str(density)+'_mu_A_'+str(mu_A)+'_mu_AC_'+str(mu_AC)+'_m_'+str(m)+'.'
-filename='./figs/vector_mu_A_'+str(mu_A)+'_mu_AC_'+str(mu_AC)+'_m_'+str(m)+'.'
+filename='./figs/ppw_mu_A_'+str(mu_A)+'_mu_AC_'+str(mu_AC)+'_m_'+str(m)+'_mu_C_'+str(mu_C)+'.'
 print(f"Figure plot to {filename}")
 SAVE=1
 

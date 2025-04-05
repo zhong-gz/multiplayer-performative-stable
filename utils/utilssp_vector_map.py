@@ -43,6 +43,10 @@ class ddstrategic_prediction:
         self.Ac1=params['Ac1']
         self.A2=params['A2']
         self.Ac2=params['Ac2']
+        self.C1=params['C1']
+        self.Cc1=params['Cc1']
+        self.C2=params['C2']
+        self.Cc2=params['Cc2']
         self.B1_hat_ = np.zeros((self.d,1))
         self.B2_hat_ = np.zeros((self.d,1))
         self.A1_hat_ = np.zeros((1,self.d)) #np.random.rand(m,d)
@@ -61,7 +65,10 @@ class ddstrategic_prediction:
     def distribution_map(self,x,theta):
         z1 = self.D_w(0) + self.A1@x[0] +self.Ac1@x[1] +theta.T@self.B.flatten() 
         z2 = self.D_w(1) + self.A2@x[1] +self.Ac2@x[0] +theta.T@self.B.flatten()
-        
+
+        u_i = np.random.normal(self.mu_w1,self.sigma_w,size=(self.d,))
+        theta = u_i + self.C1@x[0] + self.C2@x[1] + theta
+
         # exp = 0.04203
         exp = 0.5
         b = 9
@@ -74,7 +81,7 @@ class ddstrategic_prediction:
         
         # z1 = self.D_w(0) + self.A1@x[0] +self.Ac1@x[1] +theta.T@self.B.flatten() + exp*np.sin(9*self.A1@x[0]) + exp*np.sin(9*self.Ac1@x[1])
         # z2 = self.D_w(1) + self.A2@x[1] +self.Ac2@x[0] +theta.T@self.B.flatten() + exp*np.sin(9*self.A2@x[1]) + exp*np.sin(9*self.Ac2@x[0])
-        return z1,z2
+        return z1,z2,theta
 
     def D_theta(self):
         return np.random.normal(self.mu_theta,self.sigma_theta,size=(self.d,self.m))
@@ -109,7 +116,7 @@ class ddstrategic_prediction:
         return np.vstack((p1.T,p2.T))
 
     def getgrad(self,x,theta):
-        z1,z2 = self.distribution_map(x,theta)
+        z1,z2,theta = self.distribution_map(x,theta)
 
         w=self.D_w(0)
         p1=(self.A1-theta.T).T@(theta.T@self.B.flatten()+self.A1@x[0]+self.Ac1@x[1]+w-theta.T@x[0])/self.m+self.lam1*x[0]
@@ -133,7 +140,7 @@ class ddstrategic_prediction:
             A2hat=self.A2_hat[-1]
             Ac2hat=self.Ac2_hat[-1]
 
-        z1,z2 = self.distribution_map(x,theta)
+        z1,z2,theta = self.distribution_map(x,theta)
         
         w=self.D_w(0)
         p1=(A1hat-theta.T).T@(theta.T@self.B.flatten()+A1hat@x[0]+Ac1hat@x[1]+w-theta.T@x[0])/self.m+self.lam1*x[0]
@@ -154,9 +161,9 @@ class ddstrategic_prediction:
         u1_ = np.random.normal(0,mu,size=(self.d,))
         u2_ = np.random.normal(0,mu,size=(self.d,))
         x_u = [x[0]+u1_,x[1]+u2_]
-        q1,q2 = self.distribution_map(x_u,theta)
+        q1,q2,theta = self.distribution_map(x_u,theta)
 
-        z1,z2 = self.distribution_map(x,theta)
+        z1,z2,theta = self.distribution_map(x,theta)
 
         barA1_hat = np.hstack((A1hat,Ac1hat))
         u1 = np.hstack((u1_,u2_)).reshape(self.n*self.d,1)   
