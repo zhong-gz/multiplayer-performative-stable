@@ -31,7 +31,7 @@ B=np.random.uniform(size=(d,1))
 # lam=[0.1,0.1]
 lam=[0,0]
 mu_A = 1.0
-mu_AC = 0.5
+mu_AC = 6
 
 A1=mu_A*scirand(1,d,density=density).A ###
 Ac1=mu_AC*scirand(1,d,density=density).A ###
@@ -39,7 +39,7 @@ A2=mu_A*scirand(1,d,density=density).A ###
 Ac2=mu_AC*scirand(1,d,density=density).A  ###
 params={'A1':A1,'A2':A2,'Ac1':Ac1,'Ac2':Ac2} 
 
-MAXITER=100
+MAXITER=1000
 n=2
 ddg=ddstrategic_prediction(MAXITER=MAXITER, sigma_theta=sigma_theta,sigma_w=sigma_w,density=density,
                        B=B,nu=nu, lam=lam,n=n, m=m, d=d, params=params,
@@ -170,7 +170,7 @@ print(f"Data saved to {file_name_npy}")
 
 ## Generate Plots
 # filename='./figs/vector_sp_theta_'+str(sigma_theta)+'_density_'+str(density)+'_mu_A_'+str(mu_A)+'_mu_AC_'+str(mu_AC)+'_m_'+str(m)+'.'
-filename='./figs/softmax_mu_A_'+str(mu_A)+'_mu_AC_'+str(mu_AC)+'_m_'+str(m)+'_e_.'
+filename='./figs/vector_mu_A_'+str(mu_A)+'_mu_AC_'+str(mu_AC)+'_m_'+str(m)+'.'
 print(f"Figure plot to {filename}")
 SAVE=1
 

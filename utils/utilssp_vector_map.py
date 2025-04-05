@@ -62,15 +62,18 @@ class ddstrategic_prediction:
         z1 = self.D_w(0) + self.A1@x[0] +self.Ac1@x[1] +theta.T@self.B.flatten() 
         z2 = self.D_w(1) + self.A2@x[1] +self.Ac2@x[0] +theta.T@self.B.flatten()
         
-
         # exp = 0.04203
-        exp = 2
+        exp = 0.5
+        b = 9
         # exp = 2
         # z1 = self.D_w(0) + self.A1@x[0] +self.Ac1@x[1] +theta.T@self.B.flatten() + exp*(self.A1@x[0])**3 + exp*(self.Ac1@x[1])**3
         # z2 = self.D_w(1) + self.A2@x[1] +self.Ac2@x[0] +theta.T@self.B.flatten() + exp*(self.A2@x[1])**3 + exp*(self.Ac2@x[0])**3
 
         # z1 = self.D_w(0) + self.A1@x[0] +self.Ac1@x[1] +theta.T@self.B.flatten() + exp*(softmax(self.A1@x[0])*2-1) + exp*softmax((self.Ac1@x[1])*2-1)
         # z2 = self.D_w(1) + self.A2@x[1] +self.Ac2@x[0] +theta.T@self.B.flatten() + exp*(softmax(self.A2@x[1])*2-1) + exp*softmax((self.Ac2@x[0])*2-1)
+        
+        # z1 = self.D_w(0) + self.A1@x[0] +self.Ac1@x[1] +theta.T@self.B.flatten() + exp*np.sin(9*self.A1@x[0]) + exp*np.sin(9*self.Ac1@x[1])
+        # z2 = self.D_w(1) + self.A2@x[1] +self.Ac2@x[0] +theta.T@self.B.flatten() + exp*np.sin(9*self.A2@x[1]) + exp*np.sin(9*self.Ac2@x[0])
         return z1,z2
 
     def D_theta(self):
