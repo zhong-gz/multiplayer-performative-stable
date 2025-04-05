@@ -22,7 +22,7 @@ sigma_theta= 1 ###
 sigma_w=0.01
 density=1 ###
 nu=1e-3
-m= 1000 # both players dimension of z_i
+m= 100 # both players dimension of z_i
 d=2 # size of each players action
 # B=np.ones((d,1)) #np.array([[1],[1]]) #np.random.rand(d,1)
 # B=np.random.rand(d,1) ###
@@ -51,18 +51,19 @@ S1=np.sort(S1)[-1]
 S2=np.sort(S2)[-1]
 eta=0.01 #1/np.max([S1,S2])
 
-A1_hat = np.zeros((1,d)) #np.random.rand(m,d)
-Ac1_hat =np.zeros((1,d))# np.random.rand(m,d)
-A2_hat = np.zeros((1,d)) #np.random.rand(m,d)
-Ac2_hat = np.zeros((1,d)) #np.random.rand(m,d)
-
-A_dic={'A1_hats':[A1_hat], 'Ac1_hats': [Ac1_hat],'A2_hats': [A2_hat], 'Ac2_hats': [Ac2_hat] }
 mu=2
 nu0=1
 all_data={}
 
 for seed in seeds:
     np.random.seed(seed)
+    A1_hat = np.zeros((1,d)) #np.random.rand(m,d)
+    Ac1_hat =np.zeros((1,d))# np.random.rand(m,d)
+    A2_hat = np.zeros((1,d)) #np.random.rand(m,d)
+    Ac2_hat = np.zeros((1,d)) #np.random.rand(m,d)
+
+    A_dic={'A1_hats':[A1_hat], 'Ac1_hats': [Ac1_hat],'A2_hats': [A2_hat], 'Ac2_hats': [Ac2_hat] }
+    
     x0=np.random.uniform(size=(2,d))
     all_data[seed]={}
     all_data[seed]['x0']=x0
@@ -169,7 +170,7 @@ print(f"Data saved to {file_name_npy}")
 
 ## Generate Plots
 # filename='./figs/vector_sp_theta_'+str(sigma_theta)+'_density_'+str(density)+'_mu_A_'+str(mu_A)+'_mu_AC_'+str(mu_AC)+'_m_'+str(m)+'.'
-filename='./figs/vector_sp_mu_A_'+str(mu_A)+'_mu_AC_'+str(mu_AC)+'_m_'+str(m)+'.'
+filename='./figs/softmax_mu_A_'+str(mu_A)+'_mu_AC_'+str(mu_AC)+'_m_'+str(m)+'_e_.'
 print(f"Figure plot to {filename}")
 SAVE=1
 

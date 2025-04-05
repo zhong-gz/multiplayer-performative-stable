@@ -9,6 +9,7 @@ from numpy import linalg as la
 import argparse
 import scipy.linalg  as sla
 import random
+from scipy.special import softmax
 
 from scipy.sparse import random as scirand
 
@@ -58,11 +59,18 @@ class ddstrategic_prediction:
         self.mu_theta=mu_theta
 
     def distribution_map(self,x,theta):
+        z1 = self.D_w(0) + self.A1@x[0] +self.Ac1@x[1] +theta.T@self.B.flatten() 
+        z2 = self.D_w(1) + self.A2@x[1] +self.Ac2@x[0] +theta.T@self.B.flatten()
+        
+
         # exp = 0.04203
-        exp = 0.1
+        exp = 2
         # exp = 2
-        z1 = self.D_w(0) + self.A1@x[0] +self.Ac1@x[1] +theta.T@self.B.flatten() + exp*(self.A1@x[0])**3 + exp*(self.Ac1@x[1])**3
-        z2 = self.D_w(1) + self.A2@x[1] +self.Ac2@x[0] +theta.T@self.B.flatten() + exp*(self.A2@x[1])**3 + exp*(self.Ac2@x[0])**3
+        # z1 = self.D_w(0) + self.A1@x[0] +self.Ac1@x[1] +theta.T@self.B.flatten() + exp*(self.A1@x[0])**3 + exp*(self.Ac1@x[1])**3
+        # z2 = self.D_w(1) + self.A2@x[1] +self.Ac2@x[0] +theta.T@self.B.flatten() + exp*(self.A2@x[1])**3 + exp*(self.Ac2@x[0])**3
+
+        # z1 = self.D_w(0) + self.A1@x[0] +self.Ac1@x[1] +theta.T@self.B.flatten() + exp*(softmax(self.A1@x[0])*2-1) + exp*softmax((self.Ac1@x[1])*2-1)
+        # z2 = self.D_w(1) + self.A2@x[1] +self.Ac2@x[0] +theta.T@self.B.flatten() + exp*(softmax(self.A2@x[1])*2-1) + exp*softmax((self.Ac2@x[0])*2-1)
         return z1,z2
 
     def D_theta(self):
