@@ -32,7 +32,7 @@ B=np.random.uniform(size=(d,1))
 lam=[0,0]
 mu_A = 1.0
 mu_AC = 0.5
-mu_C = 0.1
+mu_C = 0.8
 
 A1=mu_A*scirand(1,d,density=density).A ###
 Ac1=mu_AC*scirand(1,d,density=density).A ###
@@ -40,10 +40,10 @@ A2=mu_A*scirand(1,d,density=density).A ###
 Ac2=mu_AC*scirand(1,d,density=density).A  ###
 params={'A1':A1,'A2':A2,'Ac1':Ac1,'Ac2':Ac2} 
 
-C1=mu_C*scirand(1,d,density=1).A ###
-Cc1=mu_AC*scirand(1,d,density=1).A ###
-C2=mu_C*scirand(1,d,density=1).A ###
-Cc2=mu_AC*scirand(1,d,density=1).A 
+C1=mu_C*scirand(d,d,density=1).A ###
+Cc1=mu_AC*scirand(d,d,density=1).A ###
+C2=mu_C*scirand(d,d,density=1).A ###
+Cc2=mu_AC*scirand(d,d,density=1).A 
 params={'A1':A1,'A2':A2,'Ac1':Ac1,'Ac2':Ac2,
          'C1':C1,'C2':C2,'Cc1':Cc1,'Cc2':Cc2}
 
@@ -160,7 +160,7 @@ for seed in seeds:
         error_rgd.append((la.norm(z1-th_z.T@z[0])**2 + la.norm(z2-th_z.T@z[1])**2)/(2*m))
 
         z1,z2,th_rr = ddg.distribution_map(rr,th)
-        error_rr.append((la.norm(z1-th_rr.T@rr[0])**2 + la.norm(z2-th_rr.T@rr[1])**2)/(2*m))
+        error_rr.append((la.norm(z1-rr_model_1.predict(th_rr.T))**2 + la.norm(z2-rr_model_2.predict(th_rr.T))**2)/(2*m))
 
     err_agd=np.asarray(np.sqrt(error_agd))
     err_sgd=np.asarray(np.sqrt(error_sgd))

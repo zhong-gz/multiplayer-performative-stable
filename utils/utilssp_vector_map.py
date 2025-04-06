@@ -67,7 +67,7 @@ class ddstrategic_prediction:
         z2 = self.D_w(1) + self.A2@x[1] +self.Ac2@x[0] +theta.T@self.B.flatten()
 
         u_i = np.random.normal(self.mu_w1,self.sigma_w,size=(self.d,))
-        theta = u_i + self.C1@x[0] + self.C2@x[1] + theta
+        thetaT = u_i + self.C1@x[0] + self.C2@x[1] + theta.T
 
         # exp = 0.04203
         exp = 0.5
@@ -81,7 +81,7 @@ class ddstrategic_prediction:
         
         # z1 = self.D_w(0) + self.A1@x[0] +self.Ac1@x[1] +theta.T@self.B.flatten() + exp*np.sin(9*self.A1@x[0]) + exp*np.sin(9*self.Ac1@x[1])
         # z2 = self.D_w(1) + self.A2@x[1] +self.Ac2@x[0] +theta.T@self.B.flatten() + exp*np.sin(9*self.A2@x[1]) + exp*np.sin(9*self.Ac2@x[0])
-        return z1,z2,theta
+        return z1,z2,thetaT.T
 
     def D_theta(self):
         return np.random.normal(self.mu_theta,self.sigma_theta,size=(self.d,self.m))
