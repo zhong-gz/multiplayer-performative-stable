@@ -44,9 +44,9 @@ class ddstrategic_prediction:
         self.A2=params['A2']
         self.Ac2=params['Ac2']
         self.C1=params['C1']
-        self.Cc1=params['Cc1']
+        # self.Cc1=params['Cc1']
         self.C2=params['C2']
-        self.Cc2=params['Cc2']
+        # self.Cc2=params['Cc2']
         self.B1_hat_ = np.zeros((self.d,1))
         self.B2_hat_ = np.zeros((self.d,1))
         self.A1_hat_ = np.zeros((1,self.d)) #np.random.rand(m,d)
