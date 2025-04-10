@@ -29,9 +29,9 @@ B = np.random.normal(0,sigma_theta,size=(d,1))
 # lam=[1.0,1.0]
 lam=[0,0]
 
-sigma_A = 1
-sigma_AC = 0.5
-sigma_C = 0.5
+sigma_A = 0.25
+sigma_AC = 1.5-sigma_A
+sigma_C = sigma_A/n
 A1= np.random.normal(0,np.sqrt(sigma_A),size=(1,d))
 Ac1= np.random.normal(0,np.sqrt(sigma_AC),size=(1,d))
 A2= np.random.normal(0,np.sqrt(sigma_A),size=(1,d))
@@ -45,7 +45,7 @@ ddg=ddstrategic_prediction(MAXITER=MAXITER, sigma_theta=sigma_theta,sigma_w=sigm
                        B=B,nu=nu, lam=lam,n=n, m=m, d=d, params=params,
                            mu_w1=0, mu_w2=0, mu_theta=0)
 
-eta=0.1 
+eta=0.1
 
 mu=2
 nu0=1
@@ -222,4 +222,4 @@ if SAVE:
     for tag in ['pdf']:
         plt.savefig(filename+tag,  bbox_inches='tight', dpi=300)
 
-winsound.Beep(1500, 500)
+# winsound.Beep(1500, 500)
