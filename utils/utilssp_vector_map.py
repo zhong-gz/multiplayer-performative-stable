@@ -19,7 +19,7 @@ def running_mean(x, N):
 
 class ddstrategic_prediction:
     def __init__(self,lam=[0.0,0.0], params={'A1':[],'A2':[],'Ac1':[],'Ac2':[]},maxx=10,n=2,d=10,m=2, N_test=100, 
-                 MAXITER=1000, sigma_theta=0.01,sigma_w=0.01,sigma_z1=0.01,sigma_z2=0.01,density=0.25,B=0*np.ones((10,1)),
+                 MAXITER=1000, sigma_theta=0.01,sigma_w=0.01,sigma_z1=0.01,sigma_z2=0.01,B=0*np.ones((10,1)),
                  seed=2,nu=1e-3, mu_w1=0, mu_w2=0, mu_theta=0):
         self.n=n
         self.d=d
@@ -37,7 +37,7 @@ class ddstrategic_prediction:
         self.sigma_z2=sigma_z1
         self.mu_w1=mu_w1
         self.mu_w2=mu_w2
-        self.density=density
+        # self.density=density
         self.B=B
         self.A1=params['A1']
         self.Ac1=params['Ac1']

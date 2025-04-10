@@ -17,23 +17,19 @@ from utilssp_vector_map import *
 
 seed = 42
 np.random.seed(seed)
-seeds= range(42,92)
-sigma_theta= 1 ###
-sigma_w=0.01
-density=1 ###
+seeds= range(42,52)
+sigma_theta= 0.1 ###
+sigma_w=0.001
 nu=1e-3
 n=2
 m= 100 # both players dimension of z_i
 d=2 # size of each players action
-# B=np.ones((d,1)) #np.array([[1],[1]]) #np.random.rand(d,1)
-# B=np.random.rand(d,1) ###
-# B=np.random.uniform(size=(d,1))
 B = np.random.normal(0,sigma_theta,size=(d,1))
 
 # lam=[1.0,1.0]
 lam=[0,0]
 
-sigma_A = 0.5
+sigma_A = 1
 sigma_AC = 0.5
 sigma_C = 0.5
 A1= np.random.normal(0,np.sqrt(sigma_A),size=(1,d))
@@ -44,16 +40,12 @@ C1= np.random.normal(0,np.sqrt(sigma_C),size=(d,d))
 C2= np.random.normal(0,np.sqrt(sigma_C),size=(d,d))
 params={'A1':A1,'A2':A2,'Ac1':Ac1,'Ac2':Ac2,'C1':C1,'C2':C2}
 
-MAXITER=1000
-ddg=ddstrategic_prediction(MAXITER=MAXITER, sigma_theta=sigma_theta,sigma_w=sigma_w,density=density,
+MAXITER=100
+ddg=ddstrategic_prediction(MAXITER=MAXITER, sigma_theta=sigma_theta,sigma_w=sigma_w,
                        B=B,nu=nu, lam=lam,n=n, m=m, d=d, params=params,
                            mu_w1=0, mu_w2=0, mu_theta=0)
 
-_,S1,_=la.svd(A1)
-_,S2,_=la.svd(A2)
-S1=np.sort(S1)[-1]
-S2=np.sort(S2)[-1]
-eta=0.01 #1/np.max([S1,S2])
+eta=0.1 
 
 mu=2
 nu0=1
@@ -76,16 +68,17 @@ for seed in seeds:
     x_agd=[x0]
     x_rgd=[x0]
     x_rr =[np.zeros((2,d))]
+    # x_rr =[x0]
     epsilon_1 = 0
     epsilon_2 = 0
     gamma = 2.1
-    alpha = 0.1
+    alpha = 0
     count = 0
 
     for i in range(MAXITER):
         nu=2*nu0/(len(x_agd)+2*3*d)
         # th=1*np.random.uniform(size=(d,m))
-        th=1*np.random.normal(0,sigma_theta,size=(d,m))
+        th=np.random.normal(0,sigma_theta,size=(d,m))
         z1=ddg.D_w(0)
         z2=ddg.D_w(1)
         x_sgd.append(ddg.proj(x_sgd[-1]-eta*ddg.getgrad(x_sgd[-1],th)))
@@ -130,12 +123,6 @@ for seed in seeds:
     x_agd=np.asarray(x_agd)
     x_rgd=np.asarray(x_rgd)
     x_rr=np.asarray(x_rr)
-    # nash=[]
-
-    # for i in range(n):
-    #     nash.append(np.mean(x_sgd[-100:,i,:],axis=0)) #np.mean(x_rgd_ps[-1000:,:,i],axis=0
-    # nash=np.asarray(nash)
-    # print(nash)
 
     error_sgd=[]
     error_agd=[]
@@ -173,8 +160,6 @@ np.savez(file_name_npy, all_data=all_data)
 print(f"Data saved to {file_name_npy}")
 
 ## Generate Plots
-# filename='./figs/vector_sp_theta_'+str(sigma_theta)+'_density_'+str(density)+'_mu_A_'+str(mu_A)+'_mu_AC_'+str(mu_AC)+'_m_'+str(m)+'.'
-# filename='./figs/ppw_mu_A_'+str(mu_A)+'_mu_AC_'+str(mu_AC)+'_m_'+str(m)+'_mu_C_'+str(mu_C)+'.'
 filename='./ppw_figs/ppw_sig_A_'+str(sigma_A)+'_sigma_AC_'+str(sigma_AC)+'_m_'+str(m)+'_sigma_C_'+str(sigma_C)+'.'
 print(f"Figure plot to {filename}")
 SAVE=1
@@ -184,7 +169,7 @@ errs_sgd=[]
 errs_dfo=[]
 errs_rgd=[]
 errs_rr = []
-fs=24
+fs=22
 for seed in seeds:
     errs_agd.append(all_data[seed]['error_agd'])
     errs_sgd.append(all_data[seed]['error_sgd'])
@@ -217,7 +202,7 @@ fig=plt.figure(figsize=(10,7))
 #     plt.plot(errs_rgd[i,:], linewidth=3, alpha=0.1, color='xkcd:light green')
     
 
-plt.plot(errs_sgd_mean, linewidth=3,color='xkcd:cerulean', label='SGM')
+# plt.plot(errs_sgd_mean, linewidth=3,color='xkcd:cerulean', label='SGM')
 plt.plot(errs_agd_mean, linewidth=3, color='xkcd:light orange', label='AGM')
 plt.plot(errs_rgd_mean, linewidth=3, color='xkcd:light green', label='RGD')
 plt.plot(errs_rr_mean, linewidth=3, color='xkcd:light blue', label='Ours_RR')
@@ -232,7 +217,7 @@ plt.tick_params(labelsize=fs-2)
 # plt.ylabel(r'$\mathbb{E}\sum_{i=1}^n \Vert z_i^t- \theta^\top x_i^t\Vert^2$', fontsize=fs)
 plt.ylabel(r'RMSE', fontsize=fs)
 plt.xlabel(r'iterations', fontsize=fs)
-plt.legend(fontsize=fs-2, loc='upper right',ncol=2)
+plt.legend(fontsize=fs-2, loc='upper right',ncol=1)
 if SAVE:
     for tag in ['pdf']:
         plt.savefig(filename+tag,  bbox_inches='tight', dpi=300)
