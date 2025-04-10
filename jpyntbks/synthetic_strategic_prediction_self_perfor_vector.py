@@ -45,7 +45,7 @@ ddg=ddstrategic_prediction(MAXITER=MAXITER, sigma_theta=sigma_theta,sigma_w=sigm
                        B=B,nu=nu, lam=lam,n=n, m=m, d=d, params=params,
                            mu_w1=0, mu_w2=0, mu_theta=0)
 
-eta=0.1
+eta=0.01
 
 mu=2
 nu0=1
@@ -98,7 +98,7 @@ for seed in seeds:
         x_rgd.append(ddg.proj(x_rgd[-1]-eta*ddg.getgrad_rgd(x_rgd[-1],z1,z2, theta_rgd)))
 
         z1,z2,theta_sfb = ddg.distribution_map(x_sfb[-1],th)
-        x_sfb.append(ddg.proj(x_sfb[-1]-((i+1)**(-3/4))*ddg.getgrad_rgd(x_sfb[-1],z1,z2, theta_sfb)))
+        x_sfb.append(ddg.proj(x_sfb[-1]-(eta*(i+1)**(-3/4))*ddg.getgrad_rgd(x_sfb[-1],z1,z2, theta_sfb)))
 
         # repeat retraining
         z1_t_1,z2_t_1,theta_t_1 = ddg.distribution_map(x_rr[-1],th)
