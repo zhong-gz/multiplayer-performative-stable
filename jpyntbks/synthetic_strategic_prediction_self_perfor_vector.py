@@ -29,8 +29,8 @@ B = np.random.normal(0,sigma_theta,size=(d,1))
 # lam=[1.0,1.0]
 lam=[0,0]
 
-sigma_A = 0.25
-sigma_AC = 1.5-sigma_A
+sigma_A = 0.75
+sigma_AC = 1.25-sigma_A
 sigma_C = sigma_A/n
 A1= np.random.normal(0,np.sqrt(sigma_A),size=(1,d))
 Ac1= np.random.normal(0,np.sqrt(sigma_AC),size=(1,d))
@@ -40,7 +40,7 @@ C1= np.random.normal(0,np.sqrt(sigma_C),size=(d,d))
 C2= np.random.normal(0,np.sqrt(sigma_C),size=(d,d))
 params={'A1':A1,'A2':A2,'Ac1':Ac1,'Ac2':Ac2,'C1':C1,'C2':C2}
 
-MAXITER=100
+MAXITER=1000
 ddg=ddstrategic_prediction(MAXITER=MAXITER, sigma_theta=sigma_theta,sigma_w=sigma_w,
                        B=B,nu=nu, lam=lam,n=n, m=m, d=d, params=params,
                            mu_w1=0, mu_w2=0, mu_theta=0)
@@ -67,6 +67,7 @@ for seed in seeds:
     x_sgd=[x0]
     x_agd=[x0]
     x_rgd=[x0]
+    x_sfb=[x0]
     x_rr =[np.zeros((2,d))]
     # x_rr =[x0]
     epsilon_1 = 0
@@ -96,6 +97,9 @@ for seed in seeds:
         z1,z2,theta_rgd = ddg.distribution_map(x_rgd[-1],th)
         x_rgd.append(ddg.proj(x_rgd[-1]-eta*ddg.getgrad_rgd(x_rgd[-1],z1,z2, theta_rgd)))
 
+        z1,z2,theta_sfb = ddg.distribution_map(x_sfb[-1],th)
+        x_sfb.append(ddg.proj(x_sfb[-1]-((i+1)**(-3/4))*ddg.getgrad_rgd(x_sfb[-1],z1,z2, theta_sfb)))
+
         # repeat retraining
         z1_t_1,z2_t_1,theta_t_1 = ddg.distribution_map(x_rr[-1],th)
         rr_model_1 = Ridge(alpha = alpha)
@@ -122,17 +126,19 @@ for seed in seeds:
     x_sgd=np.asarray(x_sgd)
     x_agd=np.asarray(x_agd)
     x_rgd=np.asarray(x_rgd)
+    x_sfb=np.asarray(x_sfb)
     x_rr=np.asarray(x_rr)
 
     error_sgd=[]
     error_agd=[]
     error_rgd=[]
+    error_sfb=[]
     error_rr=[]
 
     # estimate the loss
     th=1*np.random.normal(0,sigma_theta,size=(d,m))
     # th=1*np.random.uniform(size=(d,m))
-    for x,y,z,rr in zip(x_sgd,x_agd,x_rgd,x_rr):
+    for x,y,z,sfb,rr in zip(x_sgd,x_agd,x_rgd,x_sfb,x_rr):
         z1,z2,th_x = ddg.distribution_map(x,th)
         error_sgd.append((la.norm(z1-th_x.T@x[0])**2 + la.norm(z2-th_x.T@x[1])**2)/(2*m))
 
@@ -142,17 +148,22 @@ for seed in seeds:
         z1,z2,th_z = ddg.distribution_map(z,th)
         error_rgd.append((la.norm(z1-th_z.T@z[0])**2 + la.norm(z2-th_z.T@z[1])**2)/(2*m))
 
+        z1,z2,th_sfb = ddg.distribution_map(sfb,th)
+        error_sfb.append((la.norm(z1-th_sfb.T@sfb[0])**2 + la.norm(z2-th_sfb.T@sfb[1])**2)/(2*m))
+
         z1,z2,th_rr = ddg.distribution_map(rr,th)
         error_rr.append((la.norm(z1-rr_model_1.predict(th_rr.T))**2 + la.norm(z2-rr_model_2.predict(th_rr.T))**2)/(2*m))
 
     err_agd=np.asarray(np.sqrt(error_agd))
     err_sgd=np.asarray(np.sqrt(error_sgd))
     err_rgd=np.asarray(np.sqrt(error_rgd))
+    err_sfb=np.asarray(np.sqrt(error_sfb))
     err_rr=np.asarray(np.sqrt(error_rr))
 
     all_data[seed]['error_agd']=err_agd
     all_data[seed]['error_sgd']=err_sgd
     all_data[seed]['error_rgd']=err_rgd
+    all_data[seed]['error_sfb']=err_sfb
     all_data[seed]['error_rr']=err_rr
 
 file_name_npy = 'aaa.npz'
@@ -168,28 +179,33 @@ errs_agd=[]
 errs_sgd=[]
 errs_dfo=[]
 errs_rgd=[]
+errs_sfb=[]
 errs_rr = []
 fs=22
 for seed in seeds:
     errs_agd.append(all_data[seed]['error_agd'])
     errs_sgd.append(all_data[seed]['error_sgd'])
     errs_rgd.append(all_data[seed]['error_rgd'])
+    errs_sfb.append(all_data[seed]['error_sfb'])
     errs_rr.append(all_data[seed]['error_rr'])
 
 errs_agd=np.asarray(errs_agd)
 errs_sgd=np.asarray(errs_sgd)
 errs_rgd=np.asarray(errs_rgd)
+errs_sfb=np.asarray(errs_sfb)
 errs_rr=np.asarray(errs_rr)
 
 
 errs_agd_mean=np.mean(errs_agd,axis=0)
 errs_sgd_mean=np.mean(errs_sgd,axis=0)
 errs_rgd_mean=np.mean(errs_rgd,axis=0)
+errs_sfb_mean=np.mean(errs_sfb,axis=0)
 errs_rr_mean=np.mean(errs_rr,axis=0)
 
 errs_agd_var=np.std(errs_agd,axis=0)
 errs_sgd_var=np.std(errs_sgd,axis=0)
 errs_rgd_var=np.std(errs_rgd,axis=0)
+errs_sfb_var=np.std(errs_sfb,axis=0)
 errs_rr_var=np.std(errs_rr,axis=0)
 # print(np.shape(errs_agd_var))
 
@@ -205,6 +221,7 @@ fig=plt.figure(figsize=(10,7))
 # plt.plot(errs_sgd_mean, linewidth=3,color='xkcd:cerulean', label='SGM')
 plt.plot(errs_agd_mean, linewidth=3, color='xkcd:light orange', label='AGM')
 plt.plot(errs_rgd_mean, linewidth=3, color='xkcd:light green', label='RGD')
+plt.plot(errs_sfb_mean, linewidth=3, color='xkcd:light red', label='SFB')
 plt.plot(errs_rr_mean, linewidth=3, color='xkcd:light blue', label='Ours_RR')
 # plt.fill_between(iterations,errs_sgd_mean+errs_sgd_var,errs_sgd_mean-errs_sgd_var, alpha=0.5, linewidth=0,color='xkcd:cerulean')
 # plt.fill_between(iterations,errs_agd_mean+errs_agd_var,errs_agd_mean-errs_agd_var, alpha=0.4, linewidth=0, color='xkcd:light orange')
