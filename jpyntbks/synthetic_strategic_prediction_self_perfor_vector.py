@@ -19,7 +19,7 @@ seed = 42
 np.random.seed(seed)
 seeds= range(42,52)
 sigma_theta= 0.1 ###
-sigma_w=0.001
+sigma_w=0.0001
 nu=1e-3
 n=2
 m= 100 # both players dimension of z_i
@@ -29,7 +29,7 @@ B = np.random.normal(0,sigma_theta,size=(d,1))
 # lam=[1.0,1.0]
 lam=[0,0]
 
-sigma_A = 0.75
+sigma_A = 0.25
 sigma_AC = 1.25-sigma_A
 sigma_C = sigma_A/n
 A1= np.random.normal(0,np.sqrt(sigma_A),size=(1,d))
@@ -45,7 +45,7 @@ ddg=ddstrategic_prediction(MAXITER=MAXITER, sigma_theta=sigma_theta,sigma_w=sigm
                        B=B,nu=nu, lam=lam,n=n, m=m, d=d, params=params,
                            mu_w1=0, mu_w2=0, mu_theta=0)
 
-eta=0.01
+eta=0.1
 
 mu=2
 nu0=1
@@ -69,6 +69,7 @@ for seed in seeds:
     x_rgd=[x0]
     x_sfb=[x0]
     x_rr =[np.zeros((2,d))]
+    rr_model = []
     # x_rr =[x0]
     epsilon_1 = 0
     epsilon_2 = 0
@@ -84,7 +85,7 @@ for seed in seeds:
         z2=ddg.D_w(1)
         x_sgd.append(ddg.proj(x_sgd[-1]-eta*ddg.getgrad(x_sgd[-1],th)))
 
-        x_agd.append(ddg.proj(x_agd[-1]-eta*ddg.getgrad_agd(x_agd[-1],th,A1hat=A_dic['A1_hats'][-1],Ac1hat=A_dic['Ac1_hats'][-1],
+        x_agd.append(ddg.proj(x_agd[-1]-0.1*eta*ddg.getgrad_agd(x_agd[-1],th,A1hat=A_dic['A1_hats'][-1],Ac1hat=A_dic['Ac1_hats'][-1],
                                                             A2hat=A_dic['A2_hats'][-1], Ac2hat=A_dic['Ac2_hats'][-1], passvals=True)))
         A1_hat,Ac1_hat,A2_hat,Ac2_hat = ddg.update_estimate(x_agd[-1], z1, z2,th,nu=nu,mu=mu, A1hat=A_dic['A1_hats'][-1],Ac1hat=A_dic['Ac1_hats'][-1],
                                                             A2hat=A_dic['A2_hats'][-1], Ac2hat=A_dic['Ac2_hats'][-1], passvals=True,UNCORR=False)
@@ -104,11 +105,10 @@ for seed in seeds:
         z1_t_1,z2_t_1,theta_t_1 = ddg.distribution_map(x_rr[-1],th)
         rr_model_1 = Ridge(alpha = alpha)
         rr_model_1.fit(theta_t_1.T,z1_t_1,sample_weight=1/m)
-        rr_coef_1 = rr_model_1.coef_
         rr_model_2 = Ridge(alpha = alpha)
         rr_model_2.fit(theta_t_1.T,z2_t_1,sample_weight=1/m)
-        rr_coef_2 = rr_model_2.coef_
         x_rr.append(np.vstack((rr_model_1.coef_,rr_model_2.coef_)))
+        rr_model.append([rr_model_1,rr_model_2])
 
         z1_t,z2_t,theta_t = ddg.distribution_map(x_rr[-1],th)
         g1_t=-theta_t@(z1_t-theta_t.T@x_rr[-1][0])/m
@@ -117,12 +117,12 @@ for seed in seeds:
         g2_t_1=-theta_t_1@(z2_t_1-theta_t_1.T@x_rr[-1][1])/m
         epsilon_1 = max(epsilon_1,la.norm(g1_t-g1_t_1)/la.norm(x_rr[-1][0]-x_rr[-2][0]))
         epsilon_2 = max(epsilon_2,la.norm(g2_t-g2_t_1)/la.norm(x_rr[-1][0]-x_rr[-2][0]))
-        if la.norm(x_rr[-1][0]-x_rr[-2][0]) > 1e-3 or la.norm(x_rr[-1][1]-x_rr[-2][1]) > 1e-3:
+        if (la.norm(x_rr[-1][0]-x_rr[-2][0]) > 1e-3 or la.norm(x_rr[-1][1]-x_rr[-2][1]) > 1e-3):
             count += 1
             if count < 5:
-                # alpha = 0
-                alpha = gamma*((epsilon_1**2+epsilon_2**2)**0.5)
-            
+                alpha = gamma*((epsilon_1**2+epsilon_2**2)**0.5) #*0.01 + 0.99*alpha
+
+
     x_sgd=np.asarray(x_sgd)
     x_agd=np.asarray(x_agd)
     x_rgd=np.asarray(x_rgd)
@@ -138,7 +138,7 @@ for seed in seeds:
     # estimate the loss
     th=1*np.random.normal(0,sigma_theta,size=(d,m))
     # th=1*np.random.uniform(size=(d,m))
-    for x,y,z,sfb,rr in zip(x_sgd,x_agd,x_rgd,x_sfb,x_rr):
+    for x,y,z,sfb,rr_m in zip(x_sgd,x_agd,x_rgd,x_sfb,rr_model):
         z1,z2,th_x = ddg.distribution_map(x,th)
         error_sgd.append((la.norm(z1-th_x.T@x[0])**2 + la.norm(z2-th_x.T@x[1])**2)/(2*m))
 
@@ -151,8 +151,9 @@ for seed in seeds:
         z1,z2,th_sfb = ddg.distribution_map(sfb,th)
         error_sfb.append((la.norm(z1-th_sfb.T@sfb[0])**2 + la.norm(z2-th_sfb.T@sfb[1])**2)/(2*m))
 
+        rr = np.vstack((rr_m[0].coef_,rr_m[1].coef_))
         z1,z2,th_rr = ddg.distribution_map(rr,th)
-        error_rr.append((la.norm(z1-rr_model_1.predict(th_rr.T))**2 + la.norm(z2-rr_model_2.predict(th_rr.T))**2)/(2*m))
+        error_rr.append((la.norm(z1-rr_m[0].predict(th_rr.T))**2 + la.norm(z2-rr_m[1].predict(th_rr.T))**2)/(2*m))
 
     err_agd=np.asarray(np.sqrt(error_agd))
     err_sgd=np.asarray(np.sqrt(error_sgd))
