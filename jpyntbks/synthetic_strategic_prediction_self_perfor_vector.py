@@ -220,8 +220,8 @@ fig=plt.figure(figsize=(10,7))
     
 
 # plt.plot(errs_sgd_mean, linewidth=3,color='xkcd:cerulean', label='SGM')
-plt.plot(errs_agd_mean, linewidth=3, color='xkcd:light orange', label='AGM')
 plt.plot(errs_rgd_mean, linewidth=3, color='xkcd:light green', label='RGD')
+plt.plot(errs_agd_mean, linewidth=3, color='xkcd:light orange', label='AGM')
 plt.plot(errs_sfb_mean, linewidth=3, color='xkcd:light red', label='SFB')
 plt.plot(errs_rr_mean, linewidth=3, color='xkcd:light blue', label='Ours_RR')
 # plt.fill_between(iterations,errs_sgd_mean+errs_sgd_var,errs_sgd_mean-errs_sgd_var, alpha=0.5, linewidth=0,color='xkcd:cerulean')
@@ -234,6 +234,7 @@ plt.grid(True)
 plt.tick_params(labelsize=fs-2)
 # plt.ylabel(r'$\mathbb{E}\sum_{i=1}^n \Vert z_i^t- \theta^\top x_i^t\Vert^2$', fontsize=fs)
 plt.ylabel(r'RMSE', fontsize=fs)
+plt.ylim([2*1e-3,3*1e1])
 plt.xlabel(r'iterations', fontsize=fs)
 plt.legend(fontsize=fs-2, loc='upper right',ncol=1)
 if SAVE:
