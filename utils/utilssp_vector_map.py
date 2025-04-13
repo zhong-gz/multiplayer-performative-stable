@@ -118,18 +118,22 @@ class ddstrategic_prediction:
         H1=(self.A1-th.T).T@(self.A1-th.T)+self.lam1*np.eye(self.d)
         H2=(self.A2-th.T).T@(self.A2-th.T)+self.lam2*np.eye(self.d)
         return H1,H2
+    
+    def getgrad_opgd(self,x,theta,A1hat=[], A2hat=[]):
+        z1,z2,theta1 = self.distribution_map(x,theta)
+        w=self.D_w(0)
+        p1=(A1hat[-1,:]-2*A1hat[:-1,:]@x[0]-theta.T).T@((A1hat[-1,:]@x[0]+theta.T@self.B.flatten()+w)-(A1hat[:-1,:]@x[0]+theta.T)@x[0])
+        w=self.D_w(1)
+        p2=(A2hat[-1,:]-2*A2hat[:-1,:]@x[1]-theta.T).T@((A2hat[-1,:]@x[1]+theta.T@self.B.flatten()+w)-(A2hat[:-1,:]@x[1]+theta.T)@x[1])
+        return np.vstack((p1.T,p2.T))
 
     def getgrad_agd(self, x,theta, A1hat=[],Ac1hat=[],A2hat=[],Ac2hat=[],passvals=False ):
         if not(passvals):
-            B1hat =self.B1_hat_[-1]
-            B2hat =self.B2_hat_[-1]
             A1hat=self.A1_hat[-1]
             Ac1hat=self.Ac1_hat[-1]
             A2hat=self.A2_hat[-1]
             Ac2hat=self.Ac2_hat[-1]
 
-        z1,z2,theta = self.distribution_map(x,theta)
-        
         w=self.D_w(0)
         p1=(A1hat-theta.T).T@(theta.T@self.B.flatten()+A1hat@x[0]+Ac1hat@x[1]+w-theta.T@x[0])/self.m+self.lam1*x[0]
 
@@ -137,6 +141,15 @@ class ddstrategic_prediction:
         p2=(A2hat-theta.T).T@(theta.T@self.B.flatten()+A2hat@x[1]+Ac2hat@x[0]+w-theta.T@x[1])/self.m+self.lam2*x[1]
 
         return np.vstack((p1.T,p2.T))
+    
+    def update_estimate_opgd(self,x, z1_, z2_, theta,v_t = 1,A1hat=[],A2hat=[]):
+        u1 = np.random.normal(0,1,size=(self.d,))
+        u2 = np.random.normal(0,1,size=(self.d,))
+        x_u = [u1,u2]
+        q1,q2,theta = self.distribution_map(x_u,theta)
+        A1hat = A1hat - v_t*((A1hat@u1)[:, np.newaxis]-np.vstack((theta,q1))).mean(axis=1)[:, np.newaxis]@u1[:, np.newaxis].T
+        A2hat = A2hat - v_t*((A2hat@u2)[:, np.newaxis]-np.vstack((theta,q2))).mean(axis=1)[:, np.newaxis]@u2[:, np.newaxis].T
+        return A1hat, A2hat
 
     def update_estimate(self,x, z1_, z2_, theta, nu=1e-3, mu=1,A1hat=[],Ac1hat=[],A2hat=[],Ac2hat=[], UNCORR=False, passvals=False):
         if not(passvals):
