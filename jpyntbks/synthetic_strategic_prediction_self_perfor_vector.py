@@ -29,7 +29,7 @@ B = np.random.normal(0,sigma_theta,size=(d,1))
 # lam=[1.0,1.0]
 lam=[0,0]
 
-sigma_A = 1.0
+sigma_A = 0.25
 sigma_AC = 1.25-sigma_A
 sigma_C = sigma_A/n
 A1= np.random.normal(0,np.sqrt(sigma_A),size=(1,d))
@@ -182,7 +182,7 @@ for seed in seeds:
     all_data[seed]['error_opgd']=err_opgd
     all_data[seed]['error_rr']=err_rr
 
-filepath = './ppw_figs_log/'
+filepath = './ppw_figs/'
 file_name_npy = filepath+'ppw_sig_A_'+str(sigma_A)+'_sigma_AC_'+str(sigma_AC)+'_m_'+str(m)+'_sigma_C_'+str(sigma_C)+'.npz'
 np.savez(file_name_npy, all_data=all_data)
 print(f"Data saved to {file_name_npy}")
@@ -241,17 +241,17 @@ fig=plt.figure(figsize=(10,7))
     
 
 # plt.plot(errs_sgd_mean, linewidth=3,color='xkcd:cerulean', label='SGM')
-plt.plot(errs_rgd_mean, linewidth=3, color='xkcd:light green', label='RGD')
-plt.plot(errs_agd_mean, linewidth=3, color='xkcd:light orange', label='AGM')
-plt.plot(errs_sfb_mean, linewidth=3, color='xkcd:light red', label='SFB')
-plt.plot(errs_opgd_mean, linewidth=3, color='xkcd:light purple', label='OPGD')
-plt.plot(errs_rr_mean, linewidth=3, color='xkcd:light blue', label='Ours_RR')
+plt.plot(errs_rr_mean, linewidth=3.7, color='#FF7F50', label='Ours_RR')
+plt.plot(errs_rgd_mean, linewidth=3, color='#444444', label='RGD')
+plt.plot(errs_agd_mean, linewidth=3, color='#9467bd', label='AGM')
+plt.plot(errs_sfb_mean, linewidth=3, color='#2ca02c', label='SFB')
+plt.plot(errs_opgd_mean, linewidth=3, color='#1f77b4', label='OPGD')
 # plt.fill_between(iterations,errs_sgd_mean+errs_sgd_var,errs_sgd_mean-errs_sgd_var, alpha=0.5, linewidth=0,color='xkcd:cerulean')
 # plt.fill_between(iterations,errs_agd_mean+errs_agd_var,errs_agd_mean-errs_agd_var, alpha=0.4, linewidth=0, color='xkcd:light orange')
 # plt.fill_between(iterations,errs_rgd_mean+errs_rgd_var,errs_rgd_mean-errs_rgd_var, alpha=0.4, linewidth=0, color='xkcd:light green')
 # plt.fill_between(iterations,errs_rr_mean+errs_rr_var,errs_rr_mean-errs_rr_var, alpha=0.4, linewidth=0, color='xkcd:light blue')
 plt.yscale('log')
-plt.xscale('log')
+# plt.xscale('log')
 plt.grid(True)
 
 plt.tick_params(labelsize=fs-2)
