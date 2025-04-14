@@ -182,12 +182,13 @@ for seed in seeds:
     all_data[seed]['error_opgd']=err_opgd
     all_data[seed]['error_rr']=err_rr
 
-file_name_npy = 'aaa.npz'
+filepath = './ppw_figs_log/'
+file_name_npy = filepath+'ppw_sig_A_'+str(sigma_A)+'_sigma_AC_'+str(sigma_AC)+'_m_'+str(m)+'_sigma_C_'+str(sigma_C)+'.npz'
 np.savez(file_name_npy, all_data=all_data)
 print(f"Data saved to {file_name_npy}")
 
 ## Generate Plots
-filename='./ppw_figs_log/ppw_sig_A_'+str(sigma_A)+'_sigma_AC_'+str(sigma_AC)+'_m_'+str(m)+'_sigma_C_'+str(sigma_C)+'.'
+filename=filepath+'ppw_sig_A_'+str(sigma_A)+'_sigma_AC_'+str(sigma_AC)+'_m_'+str(m)+'_sigma_C_'+str(sigma_C)+'.'
 print(f"Figure plot to {filename}")
 SAVE=1
 
