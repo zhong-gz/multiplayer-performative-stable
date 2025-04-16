@@ -41,7 +41,7 @@ x0=np.random.rand(2,loc_cap)
 ## rr
 gamma = 2.1
 
-MAXITER=3000
+MAXITER=2000
 ddgame=ddrideshare(loc_lst_index,price_lst_index,seed=seed,lam=[lam1,lam2], base=True, params={'A1':[],'A2':[],'Ac1':[],'Ac2':[]},maxx=10)
 ddgame.setup_distribution()
 seeds=random.sample(range(100), num_experiments)
