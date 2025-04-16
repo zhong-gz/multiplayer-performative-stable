@@ -128,7 +128,7 @@ for sigma_A in [0.25, 0.5, 0.75,1.0]:
             g1_t_1=-theta_t_1@(z1_t_1-theta_t_1.T@x_rr[-1][0])/m
             g2_t_1=-theta_t_1@(z2_t_1-theta_t_1.T@x_rr[-1][1])/m
             epsilon_1 = max(epsilon_1,la.norm(g1_t-g1_t_1)/la.norm(x_rr[-1][0]-x_rr[-2][0]))
-            epsilon_2 = max(epsilon_2,la.norm(g2_t-g2_t_1)/la.norm(x_rr[-1][0]-x_rr[-2][0]))
+            epsilon_2 = max(epsilon_2,la.norm(g2_t-g2_t_1)/la.norm(x_rr[-1][1]-x_rr[-2][1]))
             if (la.norm(x_rr[-1][0]-x_rr[-2][0]) > 1e-3 or la.norm(x_rr[-1][1]-x_rr[-2][1]) > 1e-3):
                 count += 1
                 if count < 10:
