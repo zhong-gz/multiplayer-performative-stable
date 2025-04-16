@@ -34,6 +34,9 @@ for sigma_A in [0.25, 0.5, 0.75,1.0]:
     print('running sigma_A:',sigma_A)
     sigma_AC = 1.25-sigma_A
     sigma_C = sigma_A/n
+    filepath = './ppw_figs_'+str(MAXITER)+'/'
+    file_name_npy = filepath+'ppw_sig_A_'+str(sigma_A)+'_sigma_AC_'+str(sigma_AC)+'_m_'+str(m)+'_sigma_C_'+str(sigma_C)+'.npz'
+    filename=filepath+'ppw_sig_A_'+str(sigma_A)+'_sigma_AC_'+str(sigma_AC)+'_m_'+str(m)+'_sigma_C_'+str(sigma_C)+'.'
     A1= np.random.normal(0,np.sqrt(sigma_A),size=(1,d))
     Ac1= np.random.normal(0,np.sqrt(sigma_AC),size=(1,d))
     A2= np.random.normal(0,np.sqrt(sigma_A),size=(1,d))
@@ -183,13 +186,10 @@ for sigma_A in [0.25, 0.5, 0.75,1.0]:
         all_data[seed]['error_opgd']=err_opgd
         all_data[seed]['error_rr']=err_rr
 
-    filepath = './ppw_figs_'+str(MAXITER)+'/'
-    file_name_npy = filepath+'ppw_sig_A_'+str(sigma_A)+'_sigma_AC_'+str(sigma_AC)+'_m_'+str(m)+'_sigma_C_'+str(sigma_C)+'.npz'
     np.savez(file_name_npy, all_data=all_data)
     print(f"Data saved to {file_name_npy}")
 
     ## Generate Plots
-    filename=filepath+'ppw_sig_A_'+str(sigma_A)+'_sigma_AC_'+str(sigma_AC)+'_m_'+str(m)+'_sigma_C_'+str(sigma_C)+'.'
     print(f"Figure plot to {filename}")
     SAVE=1
 
