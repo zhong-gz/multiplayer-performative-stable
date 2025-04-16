@@ -20,23 +20,20 @@ from tqdm import tqdm, trange
 import plotly.express as px
 px.set_mapbox_access_token("pk.eyJ1IjoicmF0bGlmZmxqIiwiYSI6ImNqOGJ4cm8wcjAzN3QyeG1zcnZvMjB5bGUifQ.iRkpBPE-WANBkVc9ffI8ng")
 
-# set flags
-verbose=False # print out stuff for debugging
-centered=False # centering the data
-
+## Initialize the game class and set the random seed and initial point
 loc_cap=11
 loc_lst_index=list(range(0,loc_cap))
 price_lst_index=list(range(0,3))
 ddgame=ddrideshare(loc_lst_index,price_lst_index,seed=2,lam=[0.0,0.0], base=True, params={'A1':[],'A2':[],'Ac1':[],'Ac2':[]},maxx=10)
 ddgame.setup_distribution()
 
-verbose=False
 BATCH=10
 MAXITER=5000
 np.random.seed(10)
 eta=0.001 
 x0=np.random.rand(2,loc_cap)
 
+## Experiment 1: Convergence
 def zograd(x, z1_, z2_, A_1=ddgame.A1, A_1_=ddgame.Ac1, A_2=ddgame.A2, A_2_=ddgame.Ac2, delta=0.001, BATCH=1):
     p1 = np.zeros(ddgame.d)
     p2 = np.zeros(ddgame.d)
@@ -58,10 +55,7 @@ def zograd(x, z1_, z2_, A_1=ddgame.A1, A_1_=ddgame.Ac1, A_2=ddgame.A2, A_2_=ddga
     p2=p2/BATCH
     return np.vstack((p1,p2))
 
-verbose=False
 BATCH=20
-
-
 loc_cap=11
 nu=0.0001 #0.001 and B=4 #0.0005 B=5 #0.00025 B=5/6
 eta= 5e-5 #1e-4
@@ -156,7 +150,7 @@ for seed in seeds:
     all_data[seed]['error_sgd']=err_sgd
     all_data[seed]['error_dfo']=err_dfo
 
-filename='./figs_rider_share/convergence_rideshare_DFO_loc11.'
+filename='./figs_ride_share/convergence_rideshare_DFO_loc11.'
 errs_agd=[]
 errs_sgd=[]
 errs_dfo=[]
