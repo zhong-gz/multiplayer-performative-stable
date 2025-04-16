@@ -242,11 +242,11 @@ for sigma_A in [0.25, 0.5, 0.75,1.0]:
         
 
     # plt.plot(errs_sgd_mean, linewidth=3,color='xkcd:cerulean', label='SGM')
-    plt.plot(errs_rr_mean, linewidth=3.7, color='#FF7F50', label='Ours_RR')
     plt.plot(errs_rgd_mean, linewidth=3, color='#444444', label='RGD')
     plt.plot(errs_agd_mean, linewidth=3, color='#9467bd', label='AGM')
     plt.plot(errs_sfb_mean, linewidth=3, color='#2ca02c', label='SFB')
     plt.plot(errs_opgd_mean, linewidth=3, color='#1f77b4', label='OPGD')
+    plt.plot(errs_rr_mean, linewidth=3.7, color='#FF7F50', label='Ours_RR')
     # plt.fill_between(iterations,errs_sgd_mean+errs_sgd_var,errs_sgd_mean-errs_sgd_var, alpha=0.5, linewidth=0,color='xkcd:cerulean')
     # plt.fill_between(iterations,errs_agd_mean+errs_agd_var,errs_agd_mean-errs_agd_var, alpha=0.4, linewidth=0, color='xkcd:light orange')
     # plt.fill_between(iterations,errs_rgd_mean+errs_rgd_var,errs_rgd_mean-errs_rgd_var, alpha=0.4, linewidth=0, color='xkcd:light green')
@@ -261,6 +261,7 @@ for sigma_A in [0.25, 0.5, 0.75,1.0]:
     plt.ylim([2*1e-3,3])
     plt.xlabel(r'iterations', fontsize=fs)
     plt.legend(fontsize=fs-2, loc='upper right',ncol=1)
+    plt.tight_layout()
     if SAVE:
         for tag in ['pdf']:
             plt.savefig(filename+tag,  bbox_inches='tight', dpi=300)
