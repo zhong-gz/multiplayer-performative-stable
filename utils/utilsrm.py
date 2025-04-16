@@ -247,7 +247,7 @@ class ddrideshare:
         return 0.5*np.multiply(z1,x[0]+self.tot_rev*self.prices_[price_index])+0.5*np.multiply(z2,x[1]+self.tot_rev*self.prices_[price_index])
 
     def demand(self,x,player,q_,locs=None,batch=1):
-        return self.query_env_player(x,player, q_,locs=locs,batch=batch)    
+        return self.query_env_player(x,player, q_,locs=locs,batch=batch)
     
     def runRR(self,gamma = 2.1,price_index=0,BATCH=10,MAXITER=1000, verbose=False, perform_rr=[True,True], RETURN=True, MYOPIC=False, tot_rev=1):
         '''
@@ -579,22 +579,22 @@ class ddrideshare:
             return dic
         
     def gradRGD(self,x,z1_,z2_):
-        p1=(self.lam1*self.I).T@x[0]-1/2*(z1_)
-        p2=(self.lam2*self.I).T@x[1]-1/2*(z2_)
+        p1=-1/2*(z1_) + (self.lam1*self.I).T@x[0]
+        p2=-1/2*(z2_) + (self.lam2*self.I).T@x[1]
         return np.vstack((p1,p2))
 
     def runRGD(self,x0,price_index=0,eta=0.001,BATCH=10,MAXITER=1000, verbose=False, RETURN=True,tot_rev=1):
         '''
         Runs for one price bin and all locations
         '''
-        self.stepsize_rgd=eta
+        self.stepsize_rgd=0.1*eta
         self.batch_rgd=BATCH
         self.maxiter_rgd=MAXITER
         self.tot_rev=tot_rev
         self.price_index_rgd=price_index
-        print("Price we are running at : ", self.prices_[self.price_index_rgd])
-        print('maxiter : ', MAXITER)
-        print('maxiter rgd: ', self.maxiter_rgd)
+        # print("Price we are running at : ", self.prices_[self.price_index_rgd])
+        # print('maxiter : ', MAXITER)
+        # print('maxiter rgd: ', self.maxiter_rgd)
         q_lyft_=self.ql_[:,:,self.price_index_rgd].T
         q_uber_=self.qu_[:,:,self.price_index_rgd].T
         #print(np.shape(q_lyft_))
@@ -614,7 +614,7 @@ class ddrideshare:
         for i in range(self.maxiter_rgd):
             z1_=self.query_env_player(self.x_rgd[-1], 0,q_lyft_)
             z2_=self.query_env_player(self.x_rgd[-1], 1,q_uber_)
-            self.x_rgd.append(self.proj(self.x_rgd[-1]-eta*self.gradRGD(self.x_rgd[-1],z1_,z2_)))
+            self.x_rgd.append(self.proj(self.x_rgd[-1]-self.stepsize_rgd*self.gradRGD(self.x_rgd[-1],z1_,z2_)))
             
             self.rev_rgd_p1.append(self.revenue(self.x_rgd[-1],0,q_lyft_,batch=BATCH,price_index=self.price_index_rgd))
             self.rev_rgd_p2.append(self.revenue(self.x_rgd[-1],1,q_uber_,batch=BATCH,price_index=self.price_index_rgd))
