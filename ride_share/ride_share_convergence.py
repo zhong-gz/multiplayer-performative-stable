@@ -70,67 +70,68 @@ for seed in seeds:
     dic_agd=ddgame.runAGD(x0,A_dic,eta=eta,nu=nu,BATCH=BATCH,MAXITER=MAXITER, perform_agd=[True,True], INNERITER=1, B=6,UNCORR=True) #inner was 100
     # dic_sgd=ddgame.runSGD(x0,eta=eta,BATCH=BATCH,MAXITER=MAXITER, perform_sgd=[True,True])
     dic_rgd = ddgame.runRGD(x0,eta=eta,BATCH=BATCH,MAXITER=MAXITER) 
+    dic_sfb = ddgame.runSFB(x0,eta=eta,BATCH=BATCH,MAXITER=MAXITER) 
     dic_rr = ddgame.runRR(gamma = gamma,BATCH=BATCH,MAXITER=MAXITER, perform_rr=[True,True])
     
         
     x_agd=np.asarray(dic_agd['x'])
-    # x_sgd=np.asarray(dic_sgd['x'])
     x_rgd=np.asarray(dic_rgd['x'])
+    x_sfb=np.asarray(dic_sfb['x'])
     x_rr =np.asarray(dic_rr['x'])
     
     error_agd = dic_agd['revenue_total_p1']+dic_agd['revenue_total_p2']
-    # error_sgd = dic_sgd['revenue_total_p1']+dic_sgd['revenue_total_p2']
     error_rgd = dic_rgd['revenue_total_p1']+dic_rgd['revenue_total_p2']
+    error_sfb = dic_sfb['revenue_total_p1']+dic_sfb['revenue_total_p2']
     error_rr = dic_rr['revenue_total_p1']+dic_rr['revenue_total_p2']
 
-    # err_sgd=np.asarray(error_sgd)
     err_agd=np.asarray(error_agd)
     err_rgd=np.asarray(error_rgd)
+    err_sfb=np.asarray(error_sfb)
     err_rr=np.asarray(error_rr)
     all_data[seed]['error_agd']=err_agd
-    # all_data[seed]['error_sgd']=err_sgd
     all_data[seed]['error_rgd']=err_rgd
+    all_data[seed]['error_sfb']=err_sfb
     all_data[seed]['error_rr']=err_rr
 
 filename='./figs_ride_share/convergence_rideshare_DFO_loc11.'
 errs_agd=[]
-# errs_sgd=[]
 errs_rgd=[]
+errs_sfb=[]
 errs_rr=[]
 fs=24
 for seed in seeds:
     errs_agd.append(all_data[seed]['error_agd'])
-    # errs_sgd.append(all_data[seed]['error_sgd'])
     errs_rgd.append(all_data[seed]['error_rgd'])
+    errs_sfb.append(all_data[seed]['error_sfb'])
     errs_rr.append(all_data[seed]['error_rr'])
 errs_agd=np.asarray(errs_agd)
-# errs_sgd=np.asarray(errs_sgd)
 errs_rgd=np.asarray(errs_rgd)
+errs_sfb=np.asarray(errs_sfb)
 errs_rr=np.asarray(errs_rr)
 
 errs_agd_mean=np.mean(errs_agd,axis=0)
-# errs_sgd_mean=np.mean(errs_sgd,axis=0)
 errs_rgd_mean=np.mean(errs_rgd,axis=0)
+errs_sfb_mean=np.mean(errs_sfb,axis=0)
 errs_rr_mean=np.mean(errs_rr,axis=0)
 
 errs_agd_var=np.std(errs_agd,axis=0)
-# errs_sgd_var=np.std(errs_sgd,axis=0)
 errs_rgd_var=np.std(errs_rgd,axis=0)
+errs_sfb_var=np.std(errs_sfb,axis=0)
 errs_rr_var=np.std(errs_rr,axis=0)
-# print(np.shape(errs_agd_var))
+
 iterations=np.arange(0,MAXITER+1)
 fig=plt.figure(figsize=(10,7))
 for i in range(len(errs_agd)):
     plt.plot(errs_rgd[i,:], linewidth=3,color='xkcd:light blue', alpha=0.1)
     plt.plot(errs_agd[i,:], linewidth=3, alpha=0.1, color='xkcd:light orange')
-    # plt.plot(errs_sgd[i,:], linewidth=3,color='xkcd:cerulean', alpha=0.1)
+    plt.plot(errs_sfb[i,:], linewidth=3, alpha=0.1, color='xkcd:cerulean')
     plt.plot(errs_rr[i,:], linewidth=3,color='xkcd:light green', alpha=0.1)
 plt.plot(errs_rgd_mean, linewidth=3,color='xkcd:light blue', label='RGD')
 plt.fill_between(iterations,errs_rgd_mean+errs_rgd_var,errs_rgd_mean-errs_rgd_var, alpha=0.5, linewidth=0,color='xkcd:light blue')
 plt.plot(errs_agd_mean, linewidth=3, color='xkcd:light orange', label='AGM')
 plt.fill_between(iterations,errs_agd_mean+errs_agd_var,errs_agd_mean-errs_agd_var, alpha=0.5, linewidth=0, color='xkcd:light orange')
-# plt.plot(errs_sgd_mean, linewidth=3,color='xkcd:cerulean', label='SGM')
-# plt.fill_between(iterations,errs_sgd_mean+errs_sgd_var,errs_sgd_mean-errs_sgd_var, alpha=0.5, linewidth=0,color='xkcd:cerulean')
+plt.plot(errs_sfb_mean, linewidth=3, color='xkcd:cerulean', label='SFB')
+plt.fill_between(iterations,errs_sfb_mean+errs_sfb_var,errs_sfb_mean-errs_sfb_var, alpha=0.5, linewidth=0, color='xkcd:cerulean')
 plt.plot(errs_rr_mean, linewidth=3,color='xkcd:light green', label='RR')
 plt.fill_between(iterations,errs_rr_mean+errs_rr_var,errs_rr_mean-errs_rr_var, alpha=0.5, linewidth=0,color='xkcd:light green')
 plt.tick_params(labelsize=fs-2)

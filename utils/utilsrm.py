@@ -592,7 +592,7 @@ class ddrideshare:
         self.maxiter_rgd=MAXITER
         self.tot_rev=tot_rev
         self.price_index_rgd=price_index
-        # print("Price we are running at : ", self.prices_[self.price_index_rgd])
+        print("RGD Price we are running at : ", self.prices_[self.price_index_rgd])
         # print('maxiter : ', MAXITER)
         # print('maxiter rgd: ', self.maxiter_rgd)
         q_lyft_=self.ql_[:,:,self.price_index_rgd].T
@@ -615,6 +615,61 @@ class ddrideshare:
             z1_=self.query_env_player(self.x_rgd[-1], 0,q_lyft_)
             z2_=self.query_env_player(self.x_rgd[-1], 1,q_uber_)
             self.x_rgd.append(self.proj(self.x_rgd[-1]-self.stepsize_rgd*self.gradRGD(self.x_rgd[-1],z1_,z2_)))
+            
+            self.rev_rgd_p1.append(self.revenue(self.x_rgd[-1],0,q_lyft_,batch=BATCH,price_index=self.price_index_rgd))
+            self.rev_rgd_p2.append(self.revenue(self.x_rgd[-1],1,q_uber_,batch=BATCH,price_index=self.price_index_rgd))
+            self.rev_rgd_p1_loc.append(self.revenue_loc(self.x_rgd[-1],0,q_lyft_,batch=BATCH,price_index=self.price_index_rgd))
+            self.rev_rgd_p2_loc.append(self.revenue_loc(self.x_rgd[-1],1,q_uber_,batch=BATCH,price_index=self.price_index_rgd))
+            self.demand_rgd_p1.append(self.demand(self.x_rgd[-1],0,q_lyft_))
+            self.demand_rgd_p2.append(self.demand(self.x_rgd[-1],1,q_uber_))
+            self.loss_rgd_p1.append(self.loss(self.x_rgd[-1],0,q_lyft_))
+            self.loss_rgd_p2.append(self.loss(self.x_rgd[-1],1,q_uber_))
+            
+        if RETURN:
+            dic={}
+            dic['x']=self.x_rgd
+            dic['loss_p1']=np.asarray(self.loss_rgd_p1)
+            dic['loss_p2']=np.asarray(self.loss_rgd_p2)
+            dic['revenue_total_p1']=np.asarray(self.rev_rgd_p1)
+            dic['revenue_total_p2']=np.asarray(self.rev_rgd_p2)
+            dic['revenue_by_loc_p1']=np.asarray(self.rev_rgd_p1_loc)
+            dic['revenue_by_loc_p2']=np.asarray(self.rev_rgd_p2_loc)
+            dic['demand_p1']=np.asarray(self.demand_rgd_p1)
+            dic['demand_p2']=np.asarray(self.demand_rgd_p2)
+            return dic
+        
+    def runSFB(self,x0,price_index=0,eta=0.001,BATCH=10,MAXITER=1000, verbose=False, RETURN=True,tot_rev=1):
+        '''
+        Runs for one price bin and all locations
+        '''
+        self.stepsize_rgd=5*eta
+        self.batch_rgd=BATCH
+        self.maxiter_rgd=MAXITER
+        self.tot_rev=tot_rev
+        self.price_index_rgd=price_index
+        print("SFB Price we are running at : ", self.prices_[self.price_index_rgd])
+        # print('maxiter : ', MAXITER)
+        # print('maxiter rgd: ', self.maxiter_rgd)
+        q_lyft_=self.ql_[:,:,self.price_index_rgd].T
+        q_uber_=self.qu_[:,:,self.price_index_rgd].T
+        #print(np.shape(q_lyft_))
+        
+        self.xo_rgd=x0
+        self.x_rgd=[x0]; 
+
+        self.rev_rgd_p1=[self.revenue(self.x_rgd[-1],0,q_lyft_,price_index=self.price_index_rgd)]
+        self.rev_rgd_p2=[self.revenue(self.x_rgd[-1],1,q_uber_,price_index=self.price_index_rgd)]
+        self.rev_rgd_p1_loc=[self.revenue_loc(self.x_rgd[-1],0,q_lyft_,price_index=self.price_index_rgd)]
+        self.rev_rgd_p2_loc=[self.revenue_loc(self.x_rgd[-1],1,q_uber_,price_index=self.price_index_rgd)]
+        self.demand_rgd_p1=[self.demand(self.x_rgd[-1],0,q_lyft_)]
+        self.demand_rgd_p2=[self.demand(self.x_rgd[-1],1,q_uber_)]
+        self.loss_rgd_p1=[self.loss(self.x_rgd[-1],0,q_lyft_)]
+        self.loss_rgd_p2=[self.loss(self.x_rgd[-1],1,q_uber_)]
+        
+        for i in range(self.maxiter_rgd):
+            z1_=self.query_env_player(self.x_rgd[-1], 0,q_lyft_)
+            z2_=self.query_env_player(self.x_rgd[-1], 1,q_uber_)
+            self.x_rgd.append(self.proj(self.x_rgd[-1]-(self.stepsize_rgd*(i+1)**(-3/4))*self.gradRGD(self.x_rgd[-1],z1_,z2_)))
             
             self.rev_rgd_p1.append(self.revenue(self.x_rgd[-1],0,q_lyft_,batch=BATCH,price_index=self.price_index_rgd))
             self.rev_rgd_p2.append(self.revenue(self.x_rgd[-1],1,q_uber_,batch=BATCH,price_index=self.price_index_rgd))
