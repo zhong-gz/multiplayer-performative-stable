@@ -93,7 +93,7 @@ for seed in seeds:
     all_data[seed]['error_sfb']=err_sfb
     all_data[seed]['error_rr']=err_rr
 
-filename='./figs_ride_share/convergence_rideshare_DFO_loc11.'
+filename='./figs_ride_share/convergence_rideshare_total_revenue.'
 errs_agd=[]
 errs_rgd=[]
 errs_sfb=[]

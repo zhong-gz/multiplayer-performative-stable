@@ -642,7 +642,7 @@ class ddrideshare:
         '''
         Runs for one price bin and all locations
         '''
-        self.stepsize_rgd=5*eta
+        self.stepsize_rgd=10*eta
         self.batch_rgd=BATCH
         self.maxiter_rgd=MAXITER
         self.tot_rev=tot_rev
