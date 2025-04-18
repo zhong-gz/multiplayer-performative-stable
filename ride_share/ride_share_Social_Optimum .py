@@ -7,7 +7,7 @@ import pickle
 import sys, os
 # insert at 1, 0 is the script path (or '' in REPL)
 sys.path.insert(1,'./utils/' )
-from utilsrm import *
+from utilsrm_modified import *
 import scipy.linalg  as sla
 import random
 

@@ -7,7 +7,7 @@ import pickle
 import sys, os
 # insert at 1, 0 is the script path (or '' in REPL)
 sys.path.insert(1,'./utils/' )
-from utilsrm import *
+from utilsrm_modified import *
 import scipy.linalg  as sla
 import random
 
@@ -24,13 +24,14 @@ px.set_mapbox_access_token("pk.eyJ1IjoicmF0bGlmZmxqIiwiYSI6ImNqOGJ4cm8wcjAzN3Qye
 seed = 42
 num_experiments = 5
 np.random.seed(seed)
+filepath = './figs_ride_share/'
 
 ## Experiment 1: Convergence
 
 BATCH=20
 loc_cap=11
 nu=0.0001 #0.001 and B=4 #0.0005 B=5 #0.00025 B=5/6
-eta= 5e-5 #1e-4 0.001 
+eta= 0.0001 #5e-5 #1e-4 0.001 
 lam1=1
 lam2=1
 
@@ -84,6 +85,15 @@ for seed in seeds:
     error_sfb = dic_sfb['revenue_total_p1']+dic_sfb['revenue_total_p2']
     error_rr = dic_rr['revenue_total_p1']+dic_rr['revenue_total_p2']
 
+    rev_lyst_agd = np.asarray(dic_agd['revenue_total_p1'])
+    rev_uber_avd = np.asarray(dic_agd['revenue_total_p2'])
+    rev_lyst_rgd = np.asarray(dic_rgd['revenue_total_p1'])
+    rev_uber_rgd = np.asarray(dic_rgd['revenue_total_p2'])
+    rev_lyst_sfb = np.asarray(dic_sfb['revenue_total_p1'])
+    rev_uber_sfb = np.asarray(dic_sfb['revenue_total_p2'])
+    rev_lyst_rr =  np.asarray(dic_rr['revenue_total_p1'])
+    rev_uber_rr =  np.asarray(dic_rr['revenue_total_p2'])
+
     err_agd=np.asarray(error_agd)
     err_rgd=np.asarray(error_rgd)
     err_sfb=np.asarray(error_sfb)
@@ -92,32 +102,80 @@ for seed in seeds:
     all_data[seed]['error_rgd']=err_rgd
     all_data[seed]['error_sfb']=err_sfb
     all_data[seed]['error_rr']=err_rr
+    all_data[seed]['rev_lyst_agd']=rev_lyst_agd
+    all_data[seed]['rev_uber_agd']=rev_uber_avd
+    all_data[seed]['rev_lyst_rgd']=rev_lyst_rgd
+    all_data[seed]['rev_uber_rgd']=rev_uber_rgd
+    all_data[seed]['rev_lyst_sfb']=rev_lyst_sfb
+    all_data[seed]['rev_uber_sfb']=rev_uber_sfb
+    all_data[seed]['rev_lyst_rr']=rev_lyst_rr
+    all_data[seed]['rev_uber_rr']=rev_uber_rr
 
-filename='./figs_ride_share/convergence_rideshare_total_revenue.'
+filename= filepath+'convergence_rideshare_total_revenue.'
 errs_agd=[]
 errs_rgd=[]
 errs_sfb=[]
 errs_rr=[]
+revs_lyst_agd = []
+revs_uber_agd = []
+revs_lyst_rgd = []
+revs_uber_rgd = []
+revs_lyst_sfb = []
+revs_uber_sfb = []
+revs_lyst_rr = []
+revs_uber_rr = []
 fs=24
 for seed in seeds:
     errs_agd.append(all_data[seed]['error_agd'])
     errs_rgd.append(all_data[seed]['error_rgd'])
     errs_sfb.append(all_data[seed]['error_sfb'])
     errs_rr.append(all_data[seed]['error_rr'])
+    revs_lyst_agd.append(all_data[seed]['rev_lyst_agd'])
+    revs_uber_agd.append(all_data[seed]['rev_uber_agd'])
+    revs_lyst_rgd.append(all_data[seed]['rev_lyst_rgd'])
+    revs_uber_rgd.append(all_data[seed]['rev_uber_rgd'])
+    revs_lyst_sfb.append(all_data[seed]['rev_lyst_sfb'])
+    revs_uber_sfb.append(all_data[seed]['rev_uber_sfb'])
+    revs_lyst_rr.append(all_data[seed]['rev_lyst_rr'])
+    revs_uber_rr.append(all_data[seed]['rev_uber_rr'])
 errs_agd=np.asarray(errs_agd)
 errs_rgd=np.asarray(errs_rgd)
 errs_sfb=np.asarray(errs_sfb)
 errs_rr=np.asarray(errs_rr)
+revs_lyst_agd = np.asarray(revs_lyst_agd)
+revs_uber_agd = np.asarray(revs_uber_agd)
+revs_lyst_rgd = np.asarray(revs_lyst_rgd)
+revs_uber_rgd = np.asarray(revs_uber_rgd)
+revs_lyst_sfb = np.asarray(revs_lyst_sfb)
+revs_uber_sfb = np.asarray(revs_uber_sfb)
+revs_lyst_rr = np.asarray(revs_lyst_rr)
+revs_uber_rr = np.asarray(revs_uber_rr)
 
 errs_agd_mean=np.mean(errs_agd,axis=0)
 errs_rgd_mean=np.mean(errs_rgd,axis=0)
 errs_sfb_mean=np.mean(errs_sfb,axis=0)
 errs_rr_mean=np.mean(errs_rr,axis=0)
+revs_lyst_agd_mean = np.mean(revs_lyst_agd,axis=0)
+revs_uber_agd_mean = np.mean(revs_uber_agd,axis=0)
+revs_lyst_rgd_mean = np.mean(revs_lyst_rgd,axis=0)
+revs_uber_rgd_mean = np.mean(revs_uber_rgd,axis=0)
+revs_lyst_sfb_mean = np.mean(revs_lyst_sfb,axis=0)
+revs_uber_sfb_mean = np.mean(revs_uber_sfb,axis=0)
+revs_lyst_rr_mean = np.mean(revs_lyst_rr,axis=0)
+revs_uber_rr_mean = np.mean(revs_uber_rr,axis=0)
 
 errs_agd_var=np.std(errs_agd,axis=0)
 errs_rgd_var=np.std(errs_rgd,axis=0)
 errs_sfb_var=np.std(errs_sfb,axis=0)
 errs_rr_var=np.std(errs_rr,axis=0)
+revs_lyst_agd_var = np.std(revs_lyst_agd,axis=0)
+revs_uber_agd_var = np.std(revs_uber_agd,axis=0)
+revs_lyst_rgd_var = np.std(revs_lyst_rgd,axis=0)
+revs_uber_rgd_var = np.std(revs_uber_rgd,axis=0)
+revs_lyst_sfb_var = np.std(revs_lyst_sfb,axis=0)
+revs_uber_sfb_var = np.std(revs_uber_sfb,axis=0)
+revs_lyst_rr_var = np.std(revs_lyst_rr,axis=0)
+revs_uber_rr_var = np.std(revs_uber_rr,axis=0)
 
 iterations=np.arange(0,MAXITER+1)
 fig=plt.figure(figsize=(10,7))
@@ -140,7 +198,32 @@ plt.grid(True)
 plt.ylabel(r'Total Revenue', fontsize=fs)
 plt.xlabel(r'iterations', fontsize=fs)
 plt.legend(fontsize=fs-2, loc='lower left',ncol=1)
+plt.savefig(filename+'pdf',  bbox_inches='tight', dpi=300)
 
-for tag in ['pdf']:
-    plt.savefig(filename+tag,  bbox_inches='tight', dpi=300)
+filename= filepath+'convergence_rideshare_lyst_revenue.'
+fig=plt.figure(figsize=(10,7))
+plt.plot(revs_lyst_rgd_mean, linewidth=3,color='xkcd:light blue', label='RGD')
+plt.plot(revs_lyst_agd_mean, linewidth=3,color='xkcd:light orange', label='AGM')
+plt.plot(revs_lyst_sfb_mean, linewidth=3,color='xkcd:cerulean', label='SFB')
+plt.plot(revs_lyst_rr_mean, linewidth=3,color='xkcd:light green', label='RR')
+plt.tick_params(labelsize=fs-2)
+# plt.yscale('log')
+plt.grid(True)
+plt.ylabel(r'Lyst Revenue', fontsize=fs)
+plt.xlabel(r'iterations', fontsize=fs)
+plt.legend(fontsize=fs-2, loc='lower left',ncol=1)
+plt.savefig(filename+'pdf',  bbox_inches='tight', dpi=300)
 
+filename= filepath+'convergence_rideshare_uber_revenue.'
+fig=plt.figure(figsize=(10,7))
+plt.plot(revs_uber_rgd_mean, linewidth=3,color='xkcd:light blue', label='RGD')
+plt.plot(revs_uber_agd_mean, linewidth=3,color='xkcd:light orange', label='AGM')
+plt.plot(revs_uber_sfb_mean, linewidth=3,color='xkcd:cerulean', label='SFB')
+plt.plot(revs_uber_rr_mean, linewidth=3,color='xkcd:light green', label='RR')
+plt.tick_params(labelsize=fs-2)
+# plt.yscale('log')
+plt.grid(True)
+plt.ylabel(r'Uber Revenue', fontsize=fs)
+plt.xlabel(r'iterations', fontsize=fs)
+plt.legend(fontsize=fs-2, loc='lower left',ncol=1)
+plt.savefig(filename+'pdf',  bbox_inches='tight', dpi=300)
