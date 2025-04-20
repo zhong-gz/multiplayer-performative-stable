@@ -110,7 +110,7 @@ for sigma_A in [0.25, 0.5, 0.75,1.0]:
             z1,z2,theta_sfb = ddg.distribution_map(x_sfb[-1],th)
             x_sfb.append(ddg.proj(x_sfb[-1]-(eta*(i+1)**(-3/4))*ddg.getgrad_rgd(x_sfb[-1],z1,z2, theta_sfb)))
             ## for OPGD
-            x_opgd.append(ddg.proj(x_opgd[-1]-1*eta*(6/(10+i))*ddg.getgrad_opgd(x_opgd[-1],th,A1hat=A1_opgd, A2hat=A2_opgd)))
+            x_opgd.append(ddg.proj(x_opgd[-1]-eta*(6/(10+i))*ddg.getgrad_opgd(x_opgd[-1],th,A1hat=A1_opgd, A2hat=A2_opgd)))
             A1_opgd, A2_opgd = ddg.update_estimate_opgd(x_opgd[-1], z1, z2,th,v_t = 0.1*eta*7/((10+i)**(3/4)), A1hat=A1_opgd, A2hat=A2_opgd)
 
             # for repeated retraining

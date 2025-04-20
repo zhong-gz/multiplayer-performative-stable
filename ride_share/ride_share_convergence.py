@@ -7,7 +7,7 @@ import pickle
 import sys, os
 # insert at 1, 0 is the script path (or '' in REPL)
 sys.path.insert(1,'./utils/' )
-from utilsrm_modified import *
+from utilsrm import *
 import scipy.linalg  as sla
 import random
 
@@ -31,9 +31,10 @@ filepath = './figs_ride_share/'
 BATCH=20
 loc_cap=11
 nu=0.0001 #0.001 and B=4 #0.0005 B=5 #0.00025 B=5/6
-eta= 0.0001 #5e-5 #1e-4 0.001 
-lam1=1
-lam2=1
+eta= 0.0005 #5e-5 #1e-4 0.001 
+lam1= 2
+lam2= 2
+price_index = 0
 
 loc_lst_index=list(range(0,loc_cap))
 price_lst_index=list(range(0,3))
@@ -42,7 +43,7 @@ x0=np.random.rand(2,loc_cap)
 ## rr
 gamma = 2.1
 
-MAXITER=5000
+MAXITER=1500
 ddgame=ddrideshare(loc_lst_index,price_lst_index,seed=seed,lam=[lam1,lam2], base=True, params={'A1':[],'A2':[],'Ac1':[],'Ac2':[]},maxx=10)
 ddgame.setup_distribution()
 seeds=random.sample(range(100), num_experiments)
@@ -68,11 +69,12 @@ for seed in seeds:
     A_dic['A2_hat']=A2_hat
     A_dic['Ac2_hat']=Ac2_hat
 
-    dic_agd=ddgame.runAGD(x0,A_dic,eta=eta,nu=nu,BATCH=BATCH,MAXITER=MAXITER, perform_agd=[True,True], INNERITER=1, B=6,UNCORR=True) #inner was 100
+    dic_agd=ddgame.runAGD(x0,A_dic,price_index=price_index,eta=eta,nu=nu,BATCH=BATCH,MAXITER=MAXITER, perform_agd=[True,True], INNERITER=1, B=6,UNCORR=True) #inner was 100
     # dic_sgd=ddgame.runSGD(x0,eta=eta,BATCH=BATCH,MAXITER=MAXITER, perform_sgd=[True,True])
-    dic_rgd = ddgame.runRGD(x0,eta=eta,BATCH=BATCH,MAXITER=MAXITER) 
-    dic_sfb = ddgame.runSFB(x0,eta=eta,BATCH=BATCH,MAXITER=MAXITER) 
-    dic_rr = ddgame.runRR(gamma = gamma,BATCH=BATCH,MAXITER=MAXITER, perform_rr=[True,True])
+    dic_rgd = ddgame.runRGD(x0,price_index=price_index,eta=eta,BATCH=BATCH,MAXITER=MAXITER) 
+    dic_sfb = ddgame.runSFB(x0,price_index=price_index,eta=eta,BATCH=BATCH,MAXITER=MAXITER) 
+    dic_opgd =ddgame.runOPGD(x0,price_index=price_index,eta=eta,BATCH=BATCH,MAXITER=MAXITER, perform_opgd=[True,True])
+    dic_rr = ddgame.runRR(gamma = gamma,price_index=price_index,BATCH=BATCH,MAXITER=MAXITER, perform_rr=[True,True])
     
         
     x_agd=np.asarray(dic_agd['x'])
@@ -179,51 +181,55 @@ revs_uber_rr_var = np.std(revs_uber_rr,axis=0)
 
 iterations=np.arange(0,MAXITER+1)
 fig=plt.figure(figsize=(10,7))
-for i in range(len(errs_agd)):
-    plt.plot(errs_rgd[i,:], linewidth=3,color='xkcd:light blue', alpha=0.1)
-    plt.plot(errs_agd[i,:], linewidth=3, alpha=0.1, color='xkcd:light orange')
-    plt.plot(errs_sfb[i,:], linewidth=3, alpha=0.1, color='xkcd:cerulean')
-    plt.plot(errs_rr[i,:], linewidth=3,color='xkcd:light green', alpha=0.1)
-plt.plot(errs_rgd_mean, linewidth=3,color='xkcd:light blue', label='RGD')
-plt.fill_between(iterations,errs_rgd_mean+errs_rgd_var,errs_rgd_mean-errs_rgd_var, alpha=0.5, linewidth=0,color='xkcd:light blue')
-plt.plot(errs_agd_mean, linewidth=3, color='xkcd:light orange', label='AGM')
-plt.fill_between(iterations,errs_agd_mean+errs_agd_var,errs_agd_mean-errs_agd_var, alpha=0.5, linewidth=0, color='xkcd:light orange')
-plt.plot(errs_sfb_mean, linewidth=3, color='xkcd:cerulean', label='SFB')
-plt.fill_between(iterations,errs_sfb_mean+errs_sfb_var,errs_sfb_mean-errs_sfb_var, alpha=0.5, linewidth=0, color='xkcd:cerulean')
-plt.plot(errs_rr_mean, linewidth=3,color='xkcd:light green', label='RR')
-plt.fill_between(iterations,errs_rr_mean+errs_rr_var,errs_rr_mean-errs_rr_var, alpha=0.5, linewidth=0,color='xkcd:light green')
+# for i in range(len(errs_agd)):
+#     plt.plot(errs_rgd[i,:], linewidth=3,color='#444444', alpha=0.1)
+#     plt.plot(errs_agd[i,:], linewidth=3, alpha=0.1, color='#9467bd')
+#     plt.plot(errs_sfb[i,:], linewidth=3, alpha=0.1, color='#2ca02c')
+#     plt.plot(errs_rr[i,:], linewidth=3,color='#FF7F50', alpha=0.1)
+plt.plot(errs_rr_mean, linewidth=3.7,color='#FF7F50', label='RR')
+plt.fill_between(iterations,errs_rr_mean+errs_rr_var,errs_rr_mean-errs_rr_var, alpha=0.5, linewidth=0,color='#FF7F50')
+plt.plot(errs_rgd_mean, linewidth=3,color='#444444', label='RGD')
+plt.fill_between(iterations,errs_rgd_mean+errs_rgd_var,errs_rgd_mean-errs_rgd_var, alpha=0.5, linewidth=0,color='#444444')
+plt.plot(errs_agd_mean, linewidth=3, color='#9467bd', label='AGM')
+plt.fill_between(iterations,errs_agd_mean+errs_agd_var,errs_agd_mean-errs_agd_var, alpha=0.5, linewidth=0, color='#9467bd')
+plt.plot(errs_sfb_mean, linewidth=3, color='#2ca02c', label='SFB')
+plt.fill_between(iterations,errs_sfb_mean+errs_sfb_var,errs_sfb_mean-errs_sfb_var, alpha=0.5, linewidth=0, color='#2ca02c')
+plt.plot(errs_rr_mean, linewidth=3.7,color='#FF7F50')
+
 plt.tick_params(labelsize=fs-2)
 # plt.yscale('log')
 plt.grid(True)
 plt.ylabel(r'Total Revenue', fontsize=fs)
 plt.xlabel(r'iterations', fontsize=fs)
-plt.legend(fontsize=fs-2, loc='lower left',ncol=1)
+plt.legend(fontsize=fs-2, loc='lower right',ncol=1)
 plt.savefig(filename+'pdf',  bbox_inches='tight', dpi=300)
 
 filename= filepath+'convergence_rideshare_lyst_revenue.'
 fig=plt.figure(figsize=(10,7))
-plt.plot(revs_lyst_rgd_mean, linewidth=3,color='xkcd:light blue', label='RGD')
-plt.plot(revs_lyst_agd_mean, linewidth=3,color='xkcd:light orange', label='AGM')
-plt.plot(revs_lyst_sfb_mean, linewidth=3,color='xkcd:cerulean', label='SFB')
-plt.plot(revs_lyst_rr_mean, linewidth=3,color='xkcd:light green', label='RR')
+plt.plot(revs_lyst_rr_mean, linewidth=3.7,color='#FF7F50', label='RR')
+plt.plot(revs_lyst_rgd_mean, linewidth=3,color='#444444', label='RGD')
+plt.plot(revs_lyst_agd_mean, linewidth=3,color='#9467bd', label='AGM')
+plt.plot(revs_lyst_sfb_mean, linewidth=3,color='#2ca02c', label='SFB')
+plt.plot(revs_lyst_rr_mean, linewidth=3.7,color='#FF7F50')
 plt.tick_params(labelsize=fs-2)
 # plt.yscale('log')
 plt.grid(True)
 plt.ylabel(r'Lyst Revenue', fontsize=fs)
 plt.xlabel(r'iterations', fontsize=fs)
-plt.legend(fontsize=fs-2, loc='lower left',ncol=1)
+plt.legend(fontsize=fs-2, loc='lower right',ncol=1)
 plt.savefig(filename+'pdf',  bbox_inches='tight', dpi=300)
 
 filename= filepath+'convergence_rideshare_uber_revenue.'
 fig=plt.figure(figsize=(10,7))
-plt.plot(revs_uber_rgd_mean, linewidth=3,color='xkcd:light blue', label='RGD')
-plt.plot(revs_uber_agd_mean, linewidth=3,color='xkcd:light orange', label='AGM')
-plt.plot(revs_uber_sfb_mean, linewidth=3,color='xkcd:cerulean', label='SFB')
-plt.plot(revs_uber_rr_mean, linewidth=3,color='xkcd:light green', label='RR')
+plt.plot(revs_uber_rr_mean, linewidth=3.7,color='#FF7F50', label='RR')
+plt.plot(revs_uber_rgd_mean, linewidth=3,color='#444444', label='RGD')
+plt.plot(revs_uber_agd_mean, linewidth=3,color='#9467bd', label='AGM')
+plt.plot(revs_uber_sfb_mean, linewidth=3,color='#2ca02c', label='SFB')
+plt.plot(revs_uber_rr_mean, linewidth=3.7,color='#FF7F50')
 plt.tick_params(labelsize=fs-2)
 # plt.yscale('log')
 plt.grid(True)
 plt.ylabel(r'Uber Revenue', fontsize=fs)
 plt.xlabel(r'iterations', fontsize=fs)
-plt.legend(fontsize=fs-2, loc='lower left',ncol=1)
+plt.legend(fontsize=fs-2, loc='lower right',ncol=1)
 plt.savefig(filename+'pdf',  bbox_inches='tight', dpi=300)

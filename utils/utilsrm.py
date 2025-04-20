@@ -185,7 +185,7 @@ class ddrideshare:
         return H1,H2
     
     def sample_base_demand(self,q_,n=1, batch=1):
-        vals=np.random.choice(q_,size=batch)
+        vals=q_ #np.random.choice(q_,size=batch)
         return np.mean(vals)
 
     def D_z(self, q_, locs=None,batch=1):
@@ -282,9 +282,8 @@ class ddrideshare:
             if (la.norm(self.x_rr[-1][0]-self.x_rr[-2][0]) > 1e-3 or la.norm(self.x_rr[-1][1]-self.x_rr[-2][1]) > 1e-3):
                 epsilon_1 = max(epsilon_1,la.norm(g1_t-g1_t_1)/la.norm(self.x_rr[-1][0]-self.x_rr[-2][0]))
                 epsilon_2 = max(epsilon_2,la.norm(g2_t-g2_t_1)/la.norm(self.x_rr[-1][1]-self.x_rr[-2][1]))
-            
                 count += 1
-                if count < 10:
+                if count < 5:
                     alpha = gamma*((epsilon_1**2+epsilon_2**2)**0.5) #*0.01 + 0.99*alpha
             
             if i == 0 :
@@ -317,8 +316,7 @@ class ddrideshare:
             dic['demand_p1']=np.asarray(self.demand_rr_p1)
             dic['demand_p2']=np.asarray(self.demand_rr_p2)
             return dic
- 
-    
+        
     def runSGD(self,x0,price_index=0,eta=0.001,BATCH=10,MAXITER=1000, verbose=False, perform_sgd=[True,True], RETURN=True, MYOPIC=False, tot_rev=1):
         '''
         Runs for one price bin and all locations
@@ -527,10 +525,6 @@ class ddrideshare:
         self.x_agd=[x0]; 
         eta=eta/(np.log(len(self.x_agd))+1)
         nu=nu/len(self.x_agd) #(np.log(len(self.x_agd))+1)
-        #if len(self.x_agd)>100:
-        #    nu=0.005
-        #elif len(self.x_agd)>300:
-        #    nu=0.005
         self.rev_agd_p1=[self.revenue(self.x_agd[-1],0,self.z1_base,price_index=self.price_index_agd)]
         self.rev_agd_p2=[self.revenue(self.x_agd[-1],1,self.z2_base,price_index=self.price_index_agd)]
         self.rev_agd_p1_loc=[self.revenue_loc(self.x_agd[-1],0,self.z1_base,price_index=self.price_index_agd)]
@@ -577,6 +571,91 @@ class ddrideshare:
             dic['demand_p2']=np.asarray(self.demand_agd_p2)
             return dic
         
+    def runOPGD(self,x0,price_index=0,eta=0.001,BATCH=10,MAXITER=1000, verbose=False, perform_opgd=[True,True], RETURN=True, INNERITER=1, B=1, UNCORR=False,tot_rev=1):
+        '''
+        Runs for one price bin and all locations
+        '''
+        self.stepsize_opgd = eta
+        self.batch_opgd = BATCH
+        self.maxiter_opgd = MAXITER
+        self.perform_copm_opge = perform_opgd
+        self.tot_rev=tot_rev
+        self.price_index_opgd=price_index
+        print("OPGD Price we are running at : ", self.prices_[self.price_index_opgd])
+        self.A1_hat_opgd = np.diag(-10*np.random.rand(np.shape(self.A1)[1]))
+        self.A2_hat_opgd = np.diag(-10*np.random.rand(np.shape(self.A2)[1]))
+        self.z1_base=self.ql_[:,:,self.price_index_opgd].T
+        self.z2_base=self.qu_[:,:,self.price_index_opgd].T
+
+        self.xo_opgd=x0
+        self.x_opgd=[x0]
+        self.rev_opgd_p1=[self.revenue(self.x_opgd[-1],0,self.z1_base,price_index=self.price_index_opgd)]
+        self.rev_opgd_p2=[self.revenue(self.x_opgd[-1],1,self.z2_base,price_index=self.price_index_opgd)]
+        self.rev_opgd_p1_loc=[self.revenue_loc(self.x_opgd[-1],0,self.z1_base,price_index=self.price_index_opgd)]
+        self.rev_opgd_p2_loc=[self.revenue_loc(self.x_opgd[-1],1,self.z2_base,price_index=self.price_index_opgd)]
+        self.demand_opgd_p1=[self.demand(self.x_opgd[-1],0,self.z1_base)]
+        self.demand_opgd_p2=[self.demand(self.x_opgd[-1],1,self.z2_base)]
+        self.loss_opgd_p1=[self.loss(self.x_opgd[-1],0,self.z1_base)]
+        self.loss_opgd_p2=[self.loss(self.x_opgd[-1],1,self.z2_base)]
+
+        for i in range(self.maxiter_opgd):
+            z1=self.D_z(self.z1_base, batch=self.batch_opgd)
+            z2=self.D_z(self.z2_base,batch=self.batch_opgd)
+            self.x_opgd.append(self.proj(self.x_opgd[-1]-self.stepsize_opgd*(6/(10+i))*self.getgrad_opgd(self.x_opgd[-1], z1, z2)))
+            A1_hat,A2_hat = self.update_estimate(self.x_opgd[-1], z1, z2, v_t = self.stepsize_opgd*7/((10+i)**(3/4)))
+            self.A1_hat.append(A1_hat)
+            self.A2_hat.append(A2_hat)
+            self.rev_opgd_p1.append(self.revenue(self.x_opgd[-1],0, self.z1_base))
+            self.rev_opgd_p2.append(self.revenue(self.x_opgd[-1],1, self.z2_base))
+
+            self.rev_opgd_p1_loc.append(self.revenue_loc(self.x_opgd[-1],0,self.z1_base,batch=self.batch_opgd,price_index=self.price_index_opgd))
+            self.rev_opgd_p2_loc.append(self.revenue_loc(self.x_opgd[-1],1,self.z2_base,batch=self.batch_opgd,price_index=self.price_index_opgd))
+            self.demand_opgd_p1.append(self.demand(self.x_opgd[-1],0,self.z1_base))
+            self.demand_opgd_p2.append(self.demand(self.x_opgd[-1],1,self.z2_base))
+            self.loss_opgd_p1.append(self.loss(self.x_opgd[-1],0,self.z1_base))
+            self.loss_opgd_p2.append(self.loss(self.x_opgd[-1],1,self.z2_base))
+        if RETURN:
+            dic={}
+            dic['x']=self.x_opgd
+            dic['A1_hat']=self.A1_hat
+            dic['Ac1_hat']=self.Ac1_hat
+            dic['A2_hat']=self.A2_hat
+            dic['Ac2_hat']=self.Ac2_hat
+            dic['loss_p1']=np.asarray(self.loss_opgd_p1)
+            dic['loss_p2']=np.asarray(self.loss_opgd_p2)
+            dic['revenue_total_p1']=np.asarray(self.rev_opgd_p1)
+            dic['revenue_total_p2']=np.asarray(self.rev_opgd_p2)
+            dic['revenue_by_loc_p1']=np.asarray(self.rev_opgd_p1_loc)
+            dic['revenue_by_loc_p2']=np.asarray(self.rev_opgd_p2_loc)
+            dic['demand_p1']=np.asarray(self.demand_opgd_p1)
+            dic['demand_p2']=np.asarray(self.demand_opgd_p2)
+            return dic
+        
+    def update_estimate_opgd(self,x, z1_, z2_, v_t = 1):
+        u1 = np.random.normal(0,1,size=x[0].shape)
+        u2 = np.random.normal(0,1,size=x[1].shape)
+        x_u = [u1,u2]
+        q1=self.query_env_player(x_u,0,self.z1_base, batch=self.batch_opgd)
+        q2=self.query_env_player(x_u,1,self.z2_base, batch=self.batch_opgd)
+        A1hat = self.A1_hat_opgd - v_t*((self.A1_hat_opgd@u1)[:, np.newaxis]-q1).mean(axis=1)[:, np.newaxis]@u1[:, np.newaxis].T
+        A2hat = self.A2_hat_opgd - v_t*((self.A2_hat_opgd@u2)[:, np.newaxis]-q2).mean(axis=1)[:, np.newaxis]@u2[:, np.newaxis].T
+        return A1hat, A2hat
+
+    def getgrad_opgd(self,x,z1_,z2_):
+        if np.all(self.perform_agd):
+            p1=-(self.A1_hat[-1]-self.lam1*self.I).T@x[0]-1/2*(z1_)
+            p2=-(self.A2_hat[-1]-self.lam2*self.I).T@x[1]-1/2*(z2_)
+        else:
+            if self.perform_agd[0]:
+                p1=-(self.A1_hat[-1]-self.lam1*self.I).T@x[0]-1/2*(z1_)
+            else: 
+                p1=-(self.A1_hat[-1]-self.lam1*self.I).T@x[0]-1/2*(z1_)
+            if self.perform_agd[1]:
+                p2=-(self.A2_hat[-1]-self.lam2*self.I).T@x[1]-1/2*(z2_)
+            else:
+                p2=-(self.A2_hat[-1]-self.lam2*self.I).T@x[1]-1/2*(z2_)
+        return np.vstack((p1,p2))
+        
     def gradRGD(self,x,z1_,z2_):
         p1=(self.lam1*self.I).T@x[0]-1/2*(z1_)
         p2=(self.lam2*self.I).T@x[1]-1/2*(z2_)
@@ -586,7 +665,7 @@ class ddrideshare:
         '''
         Runs for one price bin and all locations
         '''
-        self.stepsize_rgd=eta
+        self.stepsize_rgd= 0.00003 # eta #
         self.batch_rgd=BATCH
         self.maxiter_rgd=MAXITER
         self.tot_rev=tot_rev
@@ -613,7 +692,7 @@ class ddrideshare:
         for i in range(self.maxiter_rgd):
             z1_=self.query_env_player(self.x_rgd[-1], 0,q_lyft_)
             z2_=self.query_env_player(self.x_rgd[-1], 1,q_uber_)
-            self.x_rgd.append(self.proj(self.x_rgd[-1]-eta*self.gradRGD(self.x_rgd[-1],z1_,z2_)))
+            self.x_rgd.append(self.proj(self.x_rgd[-1]-self.stepsize_rgd*self.gradRGD(self.x_rgd[-1],z1_,z2_)))
             
             self.rev_rgd_p1.append(self.revenue(self.x_rgd[-1],0,q_lyft_,batch=BATCH,price_index=self.price_index_rgd))
             self.rev_rgd_p2.append(self.revenue(self.x_rgd[-1],1,q_uber_,batch=BATCH,price_index=self.price_index_rgd))
@@ -641,7 +720,7 @@ class ddrideshare:
         '''
         Runs for one price bin and all locations
         '''
-        self.stepsize_rgd=eta
+        self.stepsize_rgd= 0.001 #eta
         self.batch_rgd=BATCH
         self.maxiter_rgd=MAXITER
         self.tot_rev=tot_rev
