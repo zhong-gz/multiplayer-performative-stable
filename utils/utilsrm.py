@@ -185,7 +185,7 @@ class ddrideshare:
         return H1,H2
     
     def sample_base_demand(self,q_,n=1, batch=1):
-        vals=q_ #np.random.choice(q_,size=batch)
+        vals= q_ # np.random.choice(q_,size=batch) #
         return np.mean(vals)
 
     def D_z(self, q_, locs=None,batch=1):
@@ -208,9 +208,9 @@ class ddrideshare:
         #print(z_)
         #print(np.shape(z_))
         if player==0:
-            z=z_+self.A1@x[0]+self.Ac1@x[1]
+            z= np.maximum(z_+self.A1@x[0]+self.Ac1@x[1]+np.random.normal(0,0.1,size=(z_.shape)),0.001)
         if player==1:
-            z=z_+self.A2@x[1]+self.Ac2@x[0]
+            z= np.maximum(z_+self.A2@x[1]+self.Ac2@x[0]+np.random.normal(0,0.1,size=(z_.shape)),0.001)
         return z
 
     def loss(self,x,player,q_,locs=None,batch=1):
@@ -575,15 +575,15 @@ class ddrideshare:
         '''
         Runs for one price bin and all locations
         '''
-        self.stepsize_opgd = eta
+        self.stepsize_opgd = 0.0008
         self.batch_opgd = BATCH
         self.maxiter_opgd = MAXITER
-        self.perform_copm_opge = perform_opgd
+        self.perform_copm_opgd = perform_opgd
         self.tot_rev=tot_rev
         self.price_index_opgd=price_index
         print("OPGD Price we are running at : ", self.prices_[self.price_index_opgd])
-        self.A1_hat_opgd = np.diag(-10*np.random.rand(np.shape(self.A1)[1]))
-        self.A2_hat_opgd = np.diag(-10*np.random.rand(np.shape(self.A2)[1]))
+        self.A1_hat_opgd = [np.diag(-10*np.random.rand(np.shape(self.A1)[1]))]
+        self.A2_hat_opgd = [np.diag(-10*np.random.rand(np.shape(self.A2)[1]))]
         self.z1_base=self.ql_[:,:,self.price_index_opgd].T
         self.z2_base=self.qu_[:,:,self.price_index_opgd].T
 
@@ -602,9 +602,9 @@ class ddrideshare:
             z1=self.D_z(self.z1_base, batch=self.batch_opgd)
             z2=self.D_z(self.z2_base,batch=self.batch_opgd)
             self.x_opgd.append(self.proj(self.x_opgd[-1]-self.stepsize_opgd*(6/(10+i))*self.getgrad_opgd(self.x_opgd[-1], z1, z2)))
-            A1_hat,A2_hat = self.update_estimate(self.x_opgd[-1], z1, z2, v_t = self.stepsize_opgd*7/((10+i)**(3/4)))
-            self.A1_hat.append(A1_hat)
-            self.A2_hat.append(A2_hat)
+            A1_hat,A2_hat = self.update_estimate_opgd(self.x_opgd[-1], z1, z2, v_t = self.stepsize_opgd*7/((10+i)**(3/4)))
+            self.A1_hat_opgd.append(A1_hat)
+            self.A2_hat_opgd.append(A2_hat)
             self.rev_opgd_p1.append(self.revenue(self.x_opgd[-1],0, self.z1_base))
             self.rev_opgd_p2.append(self.revenue(self.x_opgd[-1],1, self.z2_base))
 
@@ -617,10 +617,8 @@ class ddrideshare:
         if RETURN:
             dic={}
             dic['x']=self.x_opgd
-            dic['A1_hat']=self.A1_hat
-            dic['Ac1_hat']=self.Ac1_hat
-            dic['A2_hat']=self.A2_hat
-            dic['Ac2_hat']=self.Ac2_hat
+            dic['A1_hat']=self.A1_hat_opgd
+            dic['A2_hat']=self.A2_hat_opgd
             dic['loss_p1']=np.asarray(self.loss_opgd_p1)
             dic['loss_p2']=np.asarray(self.loss_opgd_p2)
             dic['revenue_total_p1']=np.asarray(self.rev_opgd_p1)
@@ -637,23 +635,23 @@ class ddrideshare:
         x_u = [u1,u2]
         q1=self.query_env_player(x_u,0,self.z1_base, batch=self.batch_opgd)
         q2=self.query_env_player(x_u,1,self.z2_base, batch=self.batch_opgd)
-        A1hat = self.A1_hat_opgd - v_t*((self.A1_hat_opgd@u1)[:, np.newaxis]-q1).mean(axis=1)[:, np.newaxis]@u1[:, np.newaxis].T
-        A2hat = self.A2_hat_opgd - v_t*((self.A2_hat_opgd@u2)[:, np.newaxis]-q2).mean(axis=1)[:, np.newaxis]@u2[:, np.newaxis].T
+        A1hat = self.A1_hat_opgd[-1] - v_t*((self.A1_hat_opgd[-1]@u1)[:, np.newaxis]-q1).mean(axis=1)[:, np.newaxis]@u1[:, np.newaxis].T
+        A2hat = self.A2_hat_opgd[-1] - v_t*((self.A2_hat_opgd[-1]@u2)[:, np.newaxis]-q2).mean(axis=1)[:, np.newaxis]@u2[:, np.newaxis].T
         return A1hat, A2hat
 
     def getgrad_opgd(self,x,z1_,z2_):
-        if np.all(self.perform_agd):
-            p1=-(self.A1_hat[-1]-self.lam1*self.I).T@x[0]-1/2*(z1_)
-            p2=-(self.A2_hat[-1]-self.lam2*self.I).T@x[1]-1/2*(z2_)
+        if np.all(self.perform_copm_opgd):
+            p1=-(self.A1_hat_opgd[-1]-self.lam1*self.I).T@x[0]-1/2*(z1_)
+            p2=-(self.A2_hat_opgd[-1]-self.lam2*self.I).T@x[1]-1/2*(z2_)
         else:
             if self.perform_agd[0]:
-                p1=-(self.A1_hat[-1]-self.lam1*self.I).T@x[0]-1/2*(z1_)
+                p1=-(self.A1_hat_opgd[-1]-self.lam1*self.I).T@x[0]-1/2*(z1_)
             else: 
-                p1=-(self.A1_hat[-1]-self.lam1*self.I).T@x[0]-1/2*(z1_)
+                p1=-(self.A1_hat_opgd[-1]-self.lam1*self.I).T@x[0]-1/2*(z1_)
             if self.perform_agd[1]:
-                p2=-(self.A2_hat[-1]-self.lam2*self.I).T@x[1]-1/2*(z2_)
+                p2=-(self.A2_hat_opgd[-1]-self.lam2*self.I).T@x[1]-1/2*(z2_)
             else:
-                p2=-(self.A2_hat[-1]-self.lam2*self.I).T@x[1]-1/2*(z2_)
+                p2=-(self.A2_hat_opgd[-1]-self.lam2*self.I).T@x[1]-1/2*(z2_)
         return np.vstack((p1,p2))
         
     def gradRGD(self,x,z1_,z2_):
@@ -665,7 +663,7 @@ class ddrideshare:
         '''
         Runs for one price bin and all locations
         '''
-        self.stepsize_rgd= 0.00003 # eta #
+        self.stepsize_rgd= 0.00002 # eta #
         self.batch_rgd=BATCH
         self.maxiter_rgd=MAXITER
         self.tot_rev=tot_rev
