@@ -258,6 +258,7 @@ class ddrideshare:
         print("RR  Price we are running at : ", self.prices_[self.price_index_rr])
         q_lyft_=self.ql_[:,:,self.price_index_rr].T
         q_uber_=self.qu_[:,:,self.price_index_rr].T
+        self.tot_rev=tot_rev
 
         self.x_rr= [np.zeros((2,self.d))]
         alpha = 1.0
@@ -269,8 +270,8 @@ class ddrideshare:
             z_lyft_t_1=self.query_env_player(self.x_rr[-1],0,q_lyft_,locs=None,batch=self.batch_rr)
             z_uber_t_1=self.query_env_player(self.x_rr[-1],1,q_uber_,locs=None,batch=self.batch_rr)
 
-            x_lyft = np.minimum(0.5*z_lyft_t_1/alpha,5)
-            x_uber = np.minimum(0.5*z_uber_t_1/alpha,5)
+            x_lyft = np.minimum(0.5*z_lyft_t_1/alpha,10)
+            x_uber = np.minimum(0.5*z_uber_t_1/alpha,10)
             self.x_rr.append(np.vstack((x_lyft,x_uber)))
 
             z_lyft_t=self.query_env_player(self.x_rr[-1],0,q_lyft_,locs=None,batch=self.batch_rr)
@@ -488,8 +489,8 @@ class ddrideshare:
         '''
         '''
         if np.all(self.perform_agd):
-            p1=-(self.A1_hat[-1]-self.lam1*self.I).T@x[0]-1/2*(z1_+self.Ac1_hat[-1]@x[1])
-            p2=-(self.A2_hat[-1]-self.lam2*self.I).T@x[1]-1/2*(z2_+self.Ac2_hat[-1]@x[0])
+            p1=-(self.A1_hat[-1]-self.lam1*self.I).T@x[0]-1/2*(z1_+self.Ac1_hat[-1]@x[1])-self.A1_hat[-1].T@(10*np.ones(self.d))
+            p2=-(self.A2_hat[-1]-self.lam2*self.I).T@x[1]-1/2*(z2_+self.Ac2_hat[-1]@x[0])-self.A2_hat[-1].T@(10*np.ones(self.d))
         else:
             if self.perform_agd[0]:
                 p1=-(self.A1_hat[-1]-self.lam1*self.I).T@x[0]-1/2*(z1_+self.Ac1_hat[-1]@x[1])

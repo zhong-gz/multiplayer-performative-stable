@@ -34,7 +34,7 @@ nu=0.0001 #0.001 and B=4 #0.0005 B=5 #0.00025 B=5/6
 eta= 0.001 #5e-5 #1e-4 0.001 
 lam1= 10
 lam2= 10
-for p in [0,1,2,3,4]:  #
+for p in [0]:  #,1,2,3,4
     price_index = p
 
     loc_lst_index=list(range(0,loc_cap))
@@ -56,14 +56,10 @@ for p in [0,1,2,3,4]:  #
         all_data[seed]['x0']=x0
         x_agd=[x0]
         x_sgd=[x0]
-        A1_hat = -10*np.random.rand(np.shape(ddgame.A1)[1])
-        Ac1_hat = 2*np.random.rand(np.shape(ddgame.Ac1)[1])
-        A2_hat = -10*np.random.rand(np.shape(ddgame.A2)[1])
-        Ac2_hat = 2*np.random.rand(np.shape(ddgame.Ac2)[1])
-        A1_hat=np.diag(A1_hat)
-        Ac1_hat=np.diag(Ac1_hat)
-        A2_hat=np.diag(A2_hat)
-        Ac2_hat=np.diag(Ac2_hat)
+        A1_hat = np.diag(-10*np.random.rand(np.shape(ddgame.A1)[1]))
+        Ac1_hat = np.diag(2*np.random.rand(np.shape(ddgame.Ac1)[1]))
+        A2_hat = np.diag(-10*np.random.rand(np.shape(ddgame.A2)[1]))
+        Ac2_hat = np.diag(2*np.random.rand(np.shape(ddgame.Ac2)[1]))
         A_dic={}
         A_dic['A1_hat']=A1_hat
         A_dic['Ac1_hat']=Ac1_hat
