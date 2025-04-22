@@ -1,39 +1,65 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-# ------------ 参数配置 ------------
-a_values = {
-    0.5: {'color': '#FF7F50', 'label': r'$a=0.5$'},   # 正数非整数
-    1:   {'color': '#1f77b4', 'label': r'$a=1$'},    # 基础情况
-    2:   {'color': '#2ca02c', 'label': r'$a=2$'},    # 正整数
-    3:   {'color': '#d62728', 'label': r'$a=3$'},    # 高次正整数
-    -1:  {'color': '#9467bd', 'label': r'$a=-1$'}    # 负指数
-}
+# 定义逻辑斯蒂函数
+def logistic_function(x, K, k, x0):
+    return K / (1 + np.exp(-k * (x - x0)))
 
-# ------------ 定义域划分 ------------
-x_positive = np.linspace(0.0001, 10, 100)  # x>0 全定义域
-x_negative = np.linspace(-3, -0.1, 100)  # x<0 仅处理a为整数的情况
 
-# ------------ 绘图初始化 ------------
-# plt.figure(figsize=(10, 6), dpi=120)
-plt.figure()
-plt.xlabel('x', labelpad=15)
-plt.ylabel(r'$f(x)$', labelpad=15)
-plt.grid(alpha=0.3, linestyle='--')
+# 定义指数需求函数
+def exponential_function(x, y0, k):
+    return y0 * np.exp(-k * x)
 
-# ------------ 绘制x>0部分（全a有效）------------
-for a, props in a_values.items():
-    y = x_positive ** (-a)
-    plt.plot(x_positive, y, 
-             color=props['color'],
-             linewidth=2,
-             label=props['label'] + ' (x>0)')
+# 设定参数
+K = 1000  # 逻辑斯蒂函数的市场最大需求容量
+k_logistic = 0.5  # 逻辑斯蒂函数的价格敏感度参数
+x0 = 0  # 逻辑斯蒂函数的价格阈值
+y0 = 1000  # 指数需求函数价格为 0 时的基准需求
+k_exponential = 0.1  # 指数需求函数的价格弹性系数
 
-# ------------ 图例与细节优化 ------------
-plt.legend(loc='upper left')
-plt.xlim(0, 5)
-plt.ylim(0, 5)  # 显示负x轴的特殊情况
-plt.gca().spines[['top', 'right']].set_visible(False)
+# 生成 x 值
+x = np.linspace(-10, 10, 400)
 
+# 计算逻辑斯蒂函数和指数需求函数的 y 值
+y_logistic = logistic_function(x, K, k_logistic, x0)
+y_exponential = exponential_function(x, y0, k_exponential)
+
+# 绘制图像
+plt.figure(figsize=(18, 6))
+
+# 绘制逻辑斯蒂函数图像
+plt.subplot(1, 3, 1)
+plt.plot(x, y_logistic, label='Logistic Function')
+plt.title('Logistic Demand Function')
+plt.xlabel('Price')
+plt.ylabel('Demand')
+plt.legend()
+plt.grid(True)
+
+# 绘制指数需求函数图像
+plt.subplot(1, 3, 2)
+plt.plot(x, y_exponential, label='Exponential Function')
+plt.title('Exponential Demand Function')
+plt.xlabel('Price')
+plt.ylabel('Demand')
+plt.legend()
+plt.grid(True)
+
+# 生成输入数据
+x = np.linspace(-10, 10, 100)
+# 计算 tanh + 线性项函数的值
+a = 0
+b = 10
+y = a * x + b*np.tanh(0.2*x)
+
+# 绘制图像
+plt.subplot(1, 3, 3)
+plt.plot(x, y, label='tanh + Linear')
+plt.title('tanh + Linear Function')
+plt.xlabel('x')
+plt.ylabel('y')
+plt.legend()
+plt.grid(True)
+
+plt.tight_layout()
 plt.show()
-    

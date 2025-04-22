@@ -7,7 +7,8 @@ import pickle
 import sys, os
 # insert at 1, 0 is the script path (or '' in REPL)
 sys.path.insert(1,'./utils/' )
-from utilsrm_modified import *
+from utilsrm import *
+# from utilsrm_modified import *
 import scipy.linalg  as sla
 import random
 
@@ -21,36 +22,25 @@ import plotly.express as px
 px.set_mapbox_access_token("pk.eyJ1IjoicmF0bGlmZmxqIiwiYSI6ImNqOGJ4cm8wcjAzN3QyeG1zcnZvMjB5bGUifQ.iRkpBPE-WANBkVc9ffI8ng")
 
 ## Initialize the game class and set the random seed and initial point
-loc_cap=11
-loc_lst_index=list(range(0,loc_cap))
-price_lst_index=list(range(0,3))
-ddgame=ddrideshare(loc_lst_index,price_lst_index,seed=2,lam=[0.0,0.0], base=True, params={'A1':[],'A2':[],'Ac1':[],'Ac2':[]},maxx=10)
-ddgame.setup_distribution()
-
-BATCH=10
-MAXITER=5000
+# seed 
 np.random.seed(10)
+loc_cap=11
 eta=0.001 
 x0=np.random.rand(2,loc_cap)
-
+gamma = 2.1
+price_index = 0
 BATCH=10
 MAXITER=1000
 MAXITER_NE=6000
 tot_rev=0
 # set up the game
-loc_cap=11
 loc_lst_index=list(range(0,loc_cap))
 price_lst_index=list(range(0,3))
 ddgame=ddrideshare(loc_lst_index,price_lst_index,seed=2,lam=[0.0,0.0], base=True, params={'A1':[],'A2':[],'Ac1':[],'Ac2':[]},maxx=10)
 ddgame.setup_distribution()
 
-# seed 
-np.random.seed(10)
-eta=0.001 
-x0=np.random.rand(2,loc_cap)
-
 ## Compute Nash 
-dic_sgd=ddgame.runSGD(x0,eta=0.001,BATCH=10,MAXITER=MAXITER_NE, perform_sgd=[True,True],tot_rev=0)
+dic_sgd=ddgame.runSGD(x0,eta=eta,BATCH=BATCH,MAXITER=MAXITER_NE, perform_sgd=[True,True],tot_rev=0)
 x_sgd=np.asarray(dic_sgd['x'])
 nash=[]
 for i in range(loc_cap):
@@ -58,9 +48,10 @@ for i in range(loc_cap):
 nash=np.asarray(nash)
     
 # run all three cases
-dic_sgd=ddgame.runSGD(x0,eta=0.001,BATCH=10,MAXITER=MAXITER, perform_sgd=[True,True],tot_rev=0)
-dic_rgd=ddgame.runRGD(x0,eta=0.001,BATCH=10,MAXITER=MAXITER,tot_rev=0)
-dic_so=ddgame.runSO(x0,eta=0.001,MAXITER=MAXITER,tot_rev=0)
+dic_sgd=ddgame.runSGD(x0,eta=eta,price_index=price_index,BATCH=BATCH,MAXITER=MAXITER, perform_sgd=[True,True],tot_rev=0)
+dic_rgd=ddgame.runRGD(x0,eta=eta,price_index=price_index,BATCH=BATCH,MAXITER=MAXITER,tot_rev=0)
+dic_so=ddgame.runSO(x0,eta=eta,price_index=price_index,MAXITER=MAXITER,tot_rev=0)
+dic_rr = ddgame.runRR(gamma = gamma,price_index=price_index,BATCH=BATCH,MAXITER=MAXITER, perform_rr=[True,True],tot_rev=0)
 
 x_so=np.asarray(dic_so['x'])
 x_sgd=np.asarray(dic_sgd['x'])
@@ -89,7 +80,6 @@ x_sgd_avg_p2=np.mean(x_sgd[:,1,:],axis=1)
 x_rgd_avg_p1=np.mean(x_rgd[:,0,:],axis=1)
 x_rgd_avg_p2=np.mean(x_rgd[:,1,:],axis=1)
 
-SAVE=0
 fs=24
 fname='./figs_ride_share/test_end_files/prices_RGD_SGD_SO_loc.'
 fig, ax = plt.subplots(1, 1, figsize=(10, 7))
@@ -111,9 +101,7 @@ plt.tick_params(labelsize=fs-2)
 
 
 plt.ylabel(r'prices', fontsize=fs)
-if SAVE:
-    for tag in ['png','pdf']:
-        plt.savefig(fname+tag, dpi=300, transparent=True, bbox_inches='tight')
+plt.savefig(fname+'pdf', dpi=300, transparent=True, bbox_inches='tight')
 
 rev_so_p1=np.asarray(dic_so['revenue_total_p1'])
 rev_so_p2=np.asarray(dic_so['revenue_total_p2'])
@@ -125,6 +113,7 @@ rev_sgd_p2=np.asarray(dic_sgd['revenue_total_p2'])
 rev_rgd_p1=np.asarray(dic_rgd['revenue_total_p1'])
 rev_rgd_p2=np.asarray(dic_rgd['revenue_total_p2'])
 
+fname='./figs_ride_share/test_end_files/revenue_RGD_SGD_SO_loc.'
 fig, ax = plt.subplots(1, 1, figsize=(10, 7))
 ls_=['-','--']
 lw=4
@@ -150,8 +139,7 @@ plt.tick_params(labelsize=fs-2)
 
 
 plt.ylabel(r'revenue', fontsize=fs)
-#for tag in ['png','pdf']:
-#   plt.savefig(fname+tag, dpi=300, transparent=True, bbox_inches='tight')
+plt.savefig(fname+'pdf', dpi=300, transparent=True, bbox_inches='tight')
 
 loss_so_p1=np.asarray(dic_so['loss_p1'])
 loss_so_p2=np.asarray(dic_so['loss_p2'])
@@ -164,7 +152,6 @@ loss_rgd_p1=np.asarray(dic_rgd['loss_p1'])
 loss_rgd_p2=np.asarray(dic_rgd['loss_p2'])
 
 fname='./figs_ride_share/test_end_files/social_cost_rideshare.'
-SAVE=0
 fig, ax = plt.subplots(1, 2, figsize=(24, 7))
 ls_=['-','--']
 lw=4
@@ -222,12 +209,11 @@ ax[1].legend(fontsize=fs-2,ncol=1, loc='right',bbox_to_anchor=(1.35,0.5)) #loc='
 ax[1].set_ylabel(r'revenue', fontsize=fs+2)
 plt.tight_layout()
 
-for tag in ['png']:
-    plt.savefig(fname+tag, dpi=300, transparent=True, bbox_inches='tight')
+
+plt.savefig(fname+'pdf', dpi=300, transparent=True, bbox_inches='tight')
 
 # where to store
-SAVE=0
-filename='./figs/test_end_files/exp_f_change_rev_demand_price10.'
+filename='./figs_ride_share/test_end_files/exp_f_change_rev_demand_price10.'
 fs=24
 bdd=1000 # how many points to average
 
@@ -291,11 +277,10 @@ ax.tick_params(labelsize=fs-2)
 plt.tight_layout()
 
 fname='./figs_ride_share/test_end_files/revenue_so_comp.'
-for tag in ['pdf']:
-    plt.savefig(filename+tag, dpi=300, bbox_inches='tight', transparent=True)
+plt.savefig(filename+'pdf', dpi=300, bbox_inches='tight', transparent=True)
 
 # where to store
-filename='./figs/test_end_files/exp_f_change_rev_demand_price10.'
+filename='./figs_ride_share/test_end_files/exp_f_change_rev_demand_price10.'
 fs=24
 bdd=1000 # how many points to average
 
@@ -379,14 +364,11 @@ ax[0].tick_params(labelsize=fs-2)
 ax[2].tick_params(labelsize=fs-2)
 ax[1].tick_params(labelsize=fs-2)
 plt.tight_layout()
-SAVE=0
-filename='./figs/test_end_files/revenue_so_comp_alt.'
-if SAVE:
-    for tag in ['pdf', 'png']:
-        plt.savefig(filename+tag, dpi=300, bbox_inches='tight', transparent=True)
+filename='./figs_ride_share/test_end_files/revenue_so_comp_alt.'
+plt.savefig(filename+'pdf', dpi=300, bbox_inches='tight', transparent=True)
 
 # where to store
-filename='./figs/test_end_files/exp_f_change_rev_demand_price10.'
+filename='./figs_ride_share/test_end_files/exp_f_change_rev_demand_price10.'
 fs=24
 bdd=1000 # how many points to average
 
@@ -492,14 +474,11 @@ ax[0].tick_params(labelsize=fs-2)
 ax[2].tick_params(labelsize=fs-2)
 ax[1].tick_params(labelsize=fs-2)
 plt.tight_layout()
-SAVE=0
-filename='./figs/test_end_files/loss_so_comp_alt.'
-if SAVE:
-    for tag in ['pdf', 'png']:
-        plt.savefig(filename+tag, dpi=300, bbox_inches='tight', transparent=True)
+filename='./figs_ride_share/test_end_files/loss_so_comp_alt.'
+plt.savefig(filename+'pdf', dpi=300, bbox_inches='tight', transparent=True)
 
 # where to store
-filename='./figs/test_end_files/exp_f_change_rev_demand_price10.'
+filename='./figs_ride_share/test_end_files/exp_f_change_rev_demand_price10.'
 fs=24
 bdd=1000 # how many points to average
 
@@ -576,8 +555,5 @@ ax.bar([0,1], poa , yerr=poa_var, color=['xkcd:cerulean', 'xkcd:dark blue'],
 plt.tick_params(labelsize=fs-2)
 
 plt.tight_layout()
-SAVE=0
-filename='./figs/test_end_files/poa_rideshare.'
-if SAVE:
-    for tag in ['pdf', 'png']:
-        plt.savefig(filename+tag, dpi=300, bbox_inches='tight', transparent=True)
+filename='./figs_ride_share/test_end_files/poa_rideshare.'
+plt.savefig(filename+'pdf', dpi=300, bbox_inches='tight', transparent=True)

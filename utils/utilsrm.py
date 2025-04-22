@@ -575,7 +575,7 @@ class ddrideshare:
         '''
         Runs for one price bin and all locations
         '''
-        self.stepsize_opgd = 0.0008
+        self.stepsize_opgd = eta #0.0008
         self.batch_opgd = BATCH
         self.maxiter_opgd = MAXITER
         self.perform_copm_opgd = perform_opgd
@@ -663,7 +663,7 @@ class ddrideshare:
         '''
         Runs for one price bin and all locations
         '''
-        self.stepsize_rgd= 0.00002 # eta #
+        self.stepsize_rgd= eta #0.00002 # 
         self.batch_rgd=BATCH
         self.maxiter_rgd=MAXITER
         self.tot_rev=tot_rev
@@ -718,7 +718,7 @@ class ddrideshare:
         '''
         Runs for one price bin and all locations
         '''
-        self.stepsize_rgd= 0.001 #eta
+        self.stepsize_rgd= eta #0.001 #eta
         self.batch_rgd=BATCH
         self.maxiter_rgd=MAXITER
         self.tot_rev=tot_rev

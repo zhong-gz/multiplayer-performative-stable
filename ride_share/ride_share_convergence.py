@@ -31,7 +31,7 @@ filepath = './figs_ride_share/'
 BATCH=20
 loc_cap=11
 nu=0.0001 #0.001 and B=4 #0.0005 B=5 #0.00025 B=5/6
-eta= 0.0001 #5e-5 #1e-4 0.001 
+eta= 0.001 #5e-5 #1e-4 0.001 
 lam1= 10
 lam2= 10
 for p in [0,1,2,3,4]:  #
@@ -44,7 +44,7 @@ for p in [0,1,2,3,4]:  #
     ## rr
     gamma = 2.1
 
-    MAXITER=2000
+    MAXITER=1000
     ddgame=ddrideshare(loc_lst_index,price_lst_index,seed=seed,lam=[lam1,lam2], base=True, params={'A1':[],'A2':[],'Ac1':[],'Ac2':[]},maxx=10)
     ddgame.setup_distribution()
     seeds=random.sample(range(100), num_experiments)
