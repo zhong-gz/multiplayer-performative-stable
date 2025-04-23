@@ -72,13 +72,13 @@ for p in [0]:  #,1,2,3,4
         dic_sfb = ddgame.runSFB(x0,price_index=price_index,eta=eta,BATCH=BATCH,MAXITER=MAXITER) 
         dic_opg =ddgame.runOPGD(x0,price_index=price_index,eta=eta,BATCH=BATCH,MAXITER=MAXITER, perform_opgd=[True,True])
         dic_rr = ddgame.runRR(gamma = gamma,price_index=price_index,BATCH=BATCH,MAXITER=MAXITER, perform_rr=[True,True])
-        
+
         x_agd=np.asarray(dic_agd['x'])
         x_rgd=np.asarray(dic_rgd['x'])
         x_sfb=np.asarray(dic_sfb['x'])
         x_opg = np.asarray(dic_opg['x'])
         x_rr =np.asarray(dic_rr['x'])
-        
+
         error_agd = dic_agd['revenue_total_p1']+dic_agd['revenue_total_p2']
         error_rgd = dic_rgd['revenue_total_p1']+dic_rgd['revenue_total_p2']
         error_sfb = dic_sfb['revenue_total_p1']+dic_sfb['revenue_total_p2']

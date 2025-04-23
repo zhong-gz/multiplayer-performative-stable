@@ -270,8 +270,8 @@ class ddrideshare:
             z_lyft_t_1=self.query_env_player(self.x_rr[-1],0,q_lyft_,locs=None,batch=self.batch_rr)
             z_uber_t_1=self.query_env_player(self.x_rr[-1],1,q_uber_,locs=None,batch=self.batch_rr)
 
-            x_lyft = np.minimum(0.5*z_lyft_t_1/alpha,10)
-            x_uber = np.minimum(0.5*z_uber_t_1/alpha,10)
+            x_lyft = np.minimum(0.5*z_lyft_t_1/alpha,8)
+            x_uber = np.minimum(0.5*z_uber_t_1/alpha,8)
             self.x_rr.append(np.vstack((x_lyft,x_uber)))
 
             z_lyft_t=self.query_env_player(self.x_rr[-1],0,q_lyft_,locs=None,batch=self.batch_rr)
@@ -502,7 +502,7 @@ class ddrideshare:
                 p2=-(self.A2_hat[-1]-self.lam2*self.I).T@x[1]-1/2*(z2_)
         return np.vstack((p1,p2))
 
-    def runAGD(self,x0,A_dic, price_index=0,eta=0.001,nu=0.01, BATCH=10,MAXITER=1000, verbose=False, perform_agd=[True,True], RETURN=True, INNERITER=100, B=1, UNCORR=False,tot_rev=1):
+    def runAGD(self,x0,A_dic=[], price_index=0,eta=0.001,nu=0.01, BATCH=10,MAXITER=1000, verbose=False, perform_agd=[True,True], RETURN=True, INNERITER=10, B=1, UNCORR=False,tot_rev=1):
         '''
         Runs for one price bin and all locations
         '''
@@ -511,6 +511,16 @@ class ddrideshare:
         self.batch_agd=BATCH
         self.maxiter_agd=MAXITER
         self.perform_agd=perform_agd
+        if A_dic==[]:
+            A1_hat =  np.diag(-10*np.random.rand(np.shape(self.A1)[1])) +self.A1 *0.2
+            Ac1_hat = np.diag(2*np.random.rand(np.shape(self.Ac1)[1]))  +self.Ac1*0.2
+            A2_hat =  np.diag(-10*np.random.rand(np.shape(self.A2)[1])) +self.A2 *0.2
+            Ac2_hat = np.diag(2*np.random.rand(np.shape(self.Ac2)[1]))  +self.Ac2*0.2
+            A_dic={}
+            A_dic['A1_hat']=A1_hat
+            A_dic['Ac1_hat']=Ac1_hat
+            A_dic['A2_hat']=A2_hat
+            A_dic['Ac2_hat']=Ac2_hat
         self.A1_hat=[A_dic['A1_hat']]
         self.Ac1_hat=[A_dic['Ac1_hat']]
         self.A2_hat=[A_dic['A2_hat']]
@@ -664,7 +674,7 @@ class ddrideshare:
         '''
         Runs for one price bin and all locations
         '''
-        self.stepsize_rgd= eta #0.00002 # 
+        self.stepsize_rgd= eta*0.1 #0.00002 # 
         self.batch_rgd=BATCH
         self.maxiter_rgd=MAXITER
         self.tot_rev=tot_rev
@@ -956,12 +966,11 @@ class ddrideshare:
         return self.x_comp, self.rev_comp_p1, self.rev_comp_p2,  np.asarray(self.demand_comp_p1), np.asarray(self.demand_comp_p2)
     
 def get_data_dic(filename='./data/datadic.p'):
-    return pickle.load(open(filename,'rb'))
+    try:
+        return pickle.load(open(filename,'rb'))
+    except FileNotFoundError:
+        return pickle.load(open('../data/datadic.p','rb'))
         
-        
-
-    
-    
 def getcor(q_lyft_,q_uber_):
     q_lyft_loc_means=[]
     q_uber_loc_means=[]
@@ -980,8 +989,12 @@ def getcor(q_lyft_,q_uber_):
     print(np.multiply(ql_[:,0],qu_[:,1]))
     
 def getparams(loc_lst):
-    mu=np.load('./data/mu_est.npy')
-    gamma=np.load('./data/gamma_est.npy')
+    try:
+        mu=np.load('./data/mu_est.npy')
+        gamma=np.load('./data/gamma_est.npy')
+    except FileNotFoundError:
+        mu=np.load('../data/mu_est.npy')
+        gamma=np.load('../data/gamma_est.npy')
     who=['Lyft values','Uber values']
     A={}
     B={}
