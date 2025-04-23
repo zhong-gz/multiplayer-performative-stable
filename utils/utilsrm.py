@@ -216,10 +216,10 @@ class ddrideshare:
     def loss(self,x,player,q_,locs=None,batch=1):
         z=self.query_env_player(x,player,q_,locs=locs,batch=batch)
         if player==0:
-            return -0.5*z@x[player]+self.lam1*la.norm(x[player])
+            return -0.5*z@x[player] +self.lam1*la.norm(x[player])
         else:
-            return -0.5*z@x[player]+self.lam2*la.norm(x[player])
-       
+            return -0.5*z@x[player] +self.lam2*la.norm(x[player])
+
     def social_opt_cost(self,x,q1,q2,locs=None,batch=1):
         z1=self.query_env_player(x,0, q1,locs=locs,batch=batch)
         z2=self.query_env_player(x,1, q2,locs=locs,batch=batch)
@@ -489,8 +489,8 @@ class ddrideshare:
         '''
         '''
         if np.all(self.perform_agd):
-            p1=-(self.A1_hat[-1]-self.lam1*self.I).T@x[0]-1/2*(z1_+self.Ac1_hat[-1]@x[1])-self.A1_hat[-1].T@(10*np.ones(self.d))
-            p2=-(self.A2_hat[-1]-self.lam2*self.I).T@x[1]-1/2*(z2_+self.Ac2_hat[-1]@x[0])-self.A2_hat[-1].T@(10*np.ones(self.d))
+            p1=-(self.A1_hat[-1]-self.lam1*self.I).T@x[0]-1/2*(z1_+self.Ac1_hat[-1]@x[1]) #-self.A1_hat[-1].T@(self.tot_rev*self.prices_[self.price_index_agd]*np.ones(self.d))
+            p2=-(self.A2_hat[-1]-self.lam2*self.I).T@x[1]-1/2*(z2_+self.Ac2_hat[-1]@x[0]) #-self.A2_hat[-1].T@(self.tot_rev*self.prices_[self.price_index_agd]*np.ones(self.d))
         else:
             if self.perform_agd[0]:
                 p1=-(self.A1_hat[-1]-self.lam1*self.I).T@x[0]-1/2*(z1_+self.Ac1_hat[-1]@x[1])
@@ -502,7 +502,7 @@ class ddrideshare:
                 p2=-(self.A2_hat[-1]-self.lam2*self.I).T@x[1]-1/2*(z2_)
         return np.vstack((p1,p2))
 
-    def runAGD(self,x0,A_dic, price_index=0,eta=0.001,nu=0.01, BATCH=10,MAXITER=1000, verbose=False, perform_agd=[True,True], RETURN=True, INNERITER=1, B=1, UNCORR=False,tot_rev=1):
+    def runAGD(self,x0,A_dic, price_index=0,eta=0.001,nu=0.01, BATCH=10,MAXITER=1000, verbose=False, perform_agd=[True,True], RETURN=True, INNERITER=100, B=1, UNCORR=False,tot_rev=1):
         '''
         Runs for one price bin and all locations
         '''
@@ -540,7 +540,7 @@ class ddrideshare:
             z2=self.D_z(self.z2_base,batch=self.batch_agd)
 
             self.x_agd.append(self.proj(self.x_agd[-1]-eta*self.getgrad_adaptive(self.x_agd[-1], z1, z2)))
-            for i in range(INNERITER):
+            for j in range(INNERITER):
                 A1_hat,Ac1_hat,A2_hat,Ac2_hat = self.update_estimate(self.x_agd[-1], z1, z2, B=B, UNCORR=UNCORR)
             self.A1_hat.append(A1_hat)
             self.Ac1_hat.append(Ac1_hat)

@@ -24,6 +24,7 @@ px.set_mapbox_access_token("pk.eyJ1IjoicmF0bGlmZmxqIiwiYSI6ImNqOGJ4cm8wcjAzN3Qye
 ## Initialize the game class and set the random seed and initial point
 # seed 
 np.random.seed(10)
+figuresize=(13, 7)
 loc_cap=11
 eta=0.001 
 x0=np.random.rand(2,loc_cap)
@@ -40,13 +41,6 @@ ddgame=ddrideshare(loc_lst_index,price_lst_index,seed=2,lam=[0.0,0.0], base=True
 ddgame.setup_distribution()
 
 # ## Compute Nash 
-# dic_sgd=ddgame.runSGD(x0,eta=eta,BATCH=BATCH,MAXITER=MAXITER_NE, perform_sgd=[True,True],tot_rev=0)
-# x_sgd=np.asarray(dic_sgd['x'])
-# nash=[]
-# for i in range(loc_cap):
-#     nash.append(np.mean(x_sgd[-100:,:,i],axis=0))
-# nash=np.asarray(nash)
-
 A1_hat = np.diag(-10*np.random.rand(np.shape(ddgame.A1)[1]))
 Ac1_hat = np.diag(2*np.random.rand(np.shape(ddgame.Ac1)[1]))
 A2_hat = np.diag(-10*np.random.rand(np.shape(ddgame.A2)[1]))
@@ -80,25 +74,24 @@ x_rr_avg_p2=np.mean(x_rr[:,1,:],axis=1)+price_mean
 
 fs=24
 fname='./figs_ride_share/test_end_files/prices_RGD_SGD_SO_loc.'
-fig, ax = plt.subplots(1, 1, figsize=(10, 7))
+# fig, ax = plt.subplots(1, 1, figsize=figuresize)
+plt.figure(figsize=figuresize)
 ls_=['-','--']
 lw=4
-oss=[0.9,0.85,0.8,0.75,0.7,0.65,0.6,0.55,0.5,0.4,0.3,0.2,0.1,0.0]
-# print(len(oss))
 
-plt.plot(x_agd_avg_p1[:], label='AGM, p1',ls=ls_[0],alpha=1.0, lw=lw, color='xkcd:kelly green')
-plt.plot(x_agd_avg_p2[:], label='AGM, p2',ls=ls_[1],alpha=1.0, lw=lw, color='xkcd:kelly green')
-plt.plot(x_rgd_avg_p1[:], label='RGD, p1',ls=ls_[0],alpha=1.0, lw=lw, color='xkcd:dark blue')
-plt.plot(x_rgd_avg_p2[:], label='RGD, p2',ls=ls_[1],alpha=1.0, lw=lw, color='xkcd:dark blue')
-plt.plot(x_rr_avg_p1[:], label='RR, p1',ls=ls_[0],alpha=1.0, lw=lw, color='xkcd:light orange')
-plt.plot(x_rr_avg_p2[:], label='RR, p2',ls=ls_[1],alpha=1.0, lw=lw, color='xkcd:light orange')
-ax.grid(True)
-ax.set_xlabel(r'iterations', fontsize=fs)
-ax.legend(fontsize=fs-2,ncol=2) #loc='center',bbox_to_anchor=(0.5,-0.2),ncol=6)
+plt.plot(x_agd_avg_p1[:], label='AGM, Lyft',ls=ls_[0],alpha=1.0, lw=lw, color='xkcd:kelly green')
+plt.plot(x_agd_avg_p2[:], label='AGM, Uber',ls=ls_[1],alpha=1.0, lw=lw, color='xkcd:kelly green')
+plt.plot(x_rgd_avg_p1[:], label='RGD, Lyft',ls=ls_[0],alpha=1.0, lw=lw, color='xkcd:dark blue')
+plt.plot(x_rgd_avg_p2[:], label='RGD, Uber',ls=ls_[1],alpha=1.0, lw=lw, color='xkcd:dark blue')
+plt.plot(x_rr_avg_p1[:], label='RR, Lyft',ls=ls_[0],alpha=1.0, lw=lw, color='xkcd:light orange')
+plt.plot(x_rr_avg_p2[:], label='RR, Uber',ls=ls_[1],alpha=1.0, lw=lw, color='xkcd:light orange')
+plt.grid(True)
+plt.xlabel(r'iterations', fontsize=fs)
+# plt.legend(fontsize=fs-2,ncol=2) #loc='center',bbox_to_anchor=(0.5,-0.2),ncol=6)
+plt.legend(fontsize=fs-2,ncol=1, loc='right',bbox_to_anchor=(1.35,0.5))
 plt.tick_params(labelsize=fs-2)
-
-
 plt.ylabel(r'prices', fontsize=fs)
+plt.tight_layout()
 plt.savefig(fname+'pdf', dpi=300, transparent=True, bbox_inches='tight')
 
 rev_agd_p1=np.asarray(dic_agd['revenue_total_p1'])
@@ -111,11 +104,10 @@ rev_rr_p1=np.asarray(dic_rr['revenue_total_p1'])
 rev_rr_p2=np.asarray(dic_rr['revenue_total_p2'])
 
 fname='./figs_ride_share/test_end_files/revenue_RGD_SGD_SO_loc.'
-fig, ax = plt.subplots(1, 1, figsize=(10, 7))
+# fig, ax = plt.subplots(1, 1, figsize=figuresize)
+plt.figure(figsize=figuresize)
 ls_=['-','--']
 lw=4
-oss=[0.9,0.85,0.8,0.75,0.7,0.65,0.6,0.55,0.5,0.4,0.3,0.2,0.1,0.0]
-print(len(oss))
 mean_val=20
 rev_agd_p1_=running_mean(rev_agd_p1,N=mean_val)
 rev_agd_p2_=running_mean(rev_agd_p2,N=mean_val)
@@ -123,17 +115,19 @@ rev_rgd_p1_=running_mean(rev_rgd_p1,N=mean_val)
 rev_rgd_p2_=running_mean(rev_rgd_p2,N=mean_val)
 rev_rr_p1_=running_mean(rev_rr_p1,N=mean_val)
 rev_rr_p2_=running_mean(rev_rr_p2,N=mean_val)
-plt.plot(rev_agd_p1_, label='AGM, p1',ls=ls_[0],alpha=1.0, lw=lw, color='xkcd:kelly green')
-plt.plot(rev_agd_p2_, label='AGM, p2',ls=ls_[1],alpha=1.0, lw=lw, color='xkcd:kelly green')
-plt.plot(rev_rgd_p1_, label='RGD, p1',ls=ls_[0],alpha=1.0, lw=lw, color='xkcd:cerulean')
-plt.plot(rev_rgd_p2_, label='RGD, p2',ls=ls_[1],alpha=1.0, lw=lw, color='xkcd:cerulean')
-plt.plot(rev_rr_p1_, label='RR, p1',ls=ls_[0],alpha=1.0, lw=lw, color='xkcd:light orange')
-plt.plot(rev_rr_p2_, label='RR, p2',ls=ls_[1],alpha=1.0, lw=lw, color='xkcd:light orange')
-ax.grid(True)
-ax.set_xlabel(r'iterations', fontsize=fs)
-ax.legend(fontsize=fs-2,ncol=3) #loc='center',bbox_to_anchor=(0.5,-0.2),ncol=6)
+plt.plot(rev_agd_p1_, label='AGM, Lyft',ls=ls_[0],alpha=1.0, lw=lw, color='xkcd:kelly green')
+plt.plot(rev_agd_p2_, label='AGM, Uber',ls=ls_[1],alpha=1.0, lw=lw, color='xkcd:kelly green')
+plt.plot(rev_rgd_p1_, label='RGD, Lyft',ls=ls_[0],alpha=1.0, lw=lw, color='xkcd:cerulean')
+plt.plot(rev_rgd_p2_, label='RGD, Uber',ls=ls_[1],alpha=1.0, lw=lw, color='xkcd:cerulean')
+plt.plot(rev_rr_p1_, label= 'RR,  Lyft',ls=ls_[0],alpha=1.0, lw=lw, color='xkcd:light orange')
+plt.plot(rev_rr_p2_, label= 'RR,  Uber',ls=ls_[1],alpha=1.0, lw=lw, color='xkcd:light orange')
+plt.grid(True)
+plt.xlabel(r'iterations', fontsize=fs)
+# plt.legend(fontsize=fs-2,ncol=3) #loc='center',bbox_to_anchor=(0.5,-0.2),ncol=6)
+plt.legend(fontsize=fs-2,ncol=1, loc='right',bbox_to_anchor=(1.35,0.5))
 plt.tick_params(labelsize=fs-2)
 plt.ylabel(r'revenue', fontsize=fs)
+plt.tight_layout()
 plt.savefig(fname+'pdf', dpi=300, transparent=True, bbox_inches='tight')
 
 loss_agd_p1=np.asarray(dic_agd['loss_p1'])
@@ -146,11 +140,12 @@ loss_rr_p1=np.asarray(dic_rr['loss_p1'])
 loss_rr_p2=np.asarray(dic_rr['loss_p2'])
 
 fname='./figs_ride_share/test_end_files/social_cost_rideshare.'
-fig, ax = plt.subplots(1, 2, figsize=(24, 7))
+# fig, ax = plt.subplots(1, 2, figsize=(24, 7))
+# fig, ax = plt.subplots(1, 1, figsize=(24, 7))
+# new_figuresize = (figuresize[0] + 5,) + figuresize[1:]
+plt.figure(figsize=figuresize)
 ls_=['-','--']
 lw=4
-oss=[0.9,0.85,0.8,0.75,0.7,0.65,0.6,0.55,0.5,0.4,0.3,0.2,0.1,0.0]
-print(len(oss))
 mean_val=30
 loss_agd_p1_=running_mean(loss_agd_p1,N=mean_val)
 loss_agd_p2_=running_mean(loss_agd_p2,N=mean_val)
@@ -158,42 +153,25 @@ loss_rgd_p1_=running_mean(loss_rgd_p1,N=mean_val)
 loss_rgd_p2_=running_mean(loss_rgd_p2,N=mean_val)
 loss_rr_p1_=running_mean(loss_rr_p1,N=mean_val)
 loss_rr_p2_=running_mean(loss_rr_p2,N=mean_val)
-ax[0].plot(loss_agd_p1_, label='AGM, p1',ls=ls_[0],alpha=0.5, lw=lw, color='xkcd:kelly green')
-ax[0].plot(loss_agd_p2_, label='AGM, p2',ls=ls_[1],alpha=0.5, lw=lw, color='xkcd:kelly green')
-ax[0].plot(loss_agd_p1_+loss_agd_p2_, label='AGM',ls=ls_[0],alpha=1.0, lw=lw, color='xkcd:kelly green')
 
-ax[0].plot(loss_rgd_p1_, label='RGD, p1',ls=ls_[0],alpha=0.5, lw=lw, color='xkcd:cerulean')
-ax[0].plot(loss_rgd_p2_, label='RGD, p2',ls=ls_[1],alpha=0.5, lw=lw, color='xkcd:cerulean')
-ax[0].plot(loss_rgd_p1_+loss_rgd_p2_, label='RGD',ls=ls_[0],alpha=1.0, lw=lw, color='xkcd:cerulean')
+plt.plot(rev_agd_p1_, label='AGM, Lyft',ls=ls_[0],alpha=0.5, lw=lw, color='xkcd:kelly green')
+plt.plot(rev_agd_p2_, label='AGM, Uber',ls=ls_[1],alpha=0.5, lw=lw, color='xkcd:kelly green')
+plt.plot(rev_agd_p1_+rev_agd_p2_, label='AGM',ls=ls_[0],alpha=1.0, lw=lw, color='xkcd:kelly green')
 
-ax[0].plot(loss_rr_p1_, label='RR, p1',ls=ls_[0],alpha=0.5, lw=lw, color='xkcd:light orange')
-ax[0].plot(loss_rr_p2_, label='RR, p2',ls=ls_[1],alpha=0.5, lw=lw, color='xkcd:light orange')
-ax[0].plot(loss_rr_p1_+loss_rr_p2_, label='RR',ls=ls_[0],alpha=1.0, lw=lw, color='xkcd:light orange')
+plt.plot(rev_rgd_p1_, label='RGD, Lyft',ls=ls_[0],alpha=0.5, lw=lw, color='xkcd:cerulean')
+plt.plot(rev_rgd_p2_, label='RGD, Uber',ls=ls_[1],alpha=0.5, lw=lw, color='xkcd:cerulean')
+plt.plot(rev_rgd_p1_+rev_rgd_p2_, label='RGD, Lyft+Uber',ls=ls_[0],alpha=1.0, lw=lw, color='xkcd:cerulean')
 
-ax[0].grid(True)
-ax[0].set_xlabel(r'iterations', fontsize=fs+2)
+plt.plot(rev_rr_p1_, label='RR, Lyft',ls=ls_[0],alpha=0.5, lw=lw, color='xkcd:light orange')
+plt.plot(rev_rr_p2_, label='RR, Uber',ls=ls_[1],alpha=0.5, lw=lw, color='xkcd:light orange')
+plt.plot(rev_rr_p1_+rev_rr_p2_, label='RR, Lyft+Uber',ls=ls_[0],alpha=1.0, lw=lw, color='xkcd:light orange')
+plt.grid(True)
+plt.xlabel(r'iterations', fontsize=fs+2)
+#plt.legend(fontsize=fs-2,ncol=3) #loc='center',bbox_to_anchor=(0.5,-0.2),ncol=6)
+plt.tick_params(labelsize=fs-2)
+plt.legend(fontsize=fs-2,ncol=1, loc='right',bbox_to_anchor=(1.55,0.5)) #loc='center',bbox_to_anchor=(0.5,-0.2),ncol=6)
 
-ax[0].tick_params(labelsize=fs-2)
-ax[0].set_ylabel(r'loss', fontsize=fs+2)
-
-ax[1].plot(rev_agd_p1_, label='AGM, p1',ls=ls_[0],alpha=0.5, lw=lw, color='xkcd:kelly green')
-ax[1].plot(rev_agd_p2_, label='AGM, p2',ls=ls_[1],alpha=0.5, lw=lw, color='xkcd:kelly green')
-ax[1].plot(rev_agd_p1_+rev_agd_p2_, label='AGM',ls=ls_[0],alpha=1.0, lw=lw, color='xkcd:kelly green')
-
-ax[1].plot(rev_rgd_p1_, label='RGD, p1',ls=ls_[0],alpha=0.5, lw=lw, color='xkcd:cerulean')
-ax[1].plot(rev_rgd_p2_, label='RGD, p2',ls=ls_[1],alpha=0.5, lw=lw, color='xkcd:cerulean')
-ax[1].plot(rev_rgd_p1_+rev_rgd_p2_, label='RGD, p1+p2',ls=ls_[0],alpha=1.0, lw=lw, color='xkcd:cerulean')
-
-ax[1].plot(rev_rr_p1_, label='RR, p1',ls=ls_[0],alpha=0.5, lw=lw, color='xkcd:light orange')
-ax[1].plot(rev_rr_p2_, label='RR, p2',ls=ls_[1],alpha=0.5, lw=lw, color='xkcd:light orange')
-ax[1].plot(rev_rr_p1_+rev_rr_p2_, label='RR, p1+p2',ls=ls_[0],alpha=1.0, lw=lw, color='xkcd:light orange')
-ax[1].grid(True)
-ax[1].set_xlabel(r'iterations', fontsize=fs+2)
-#ax[1].legend(fontsize=fs-2,ncol=3) #loc='center',bbox_to_anchor=(0.5,-0.2),ncol=6)
-ax[1].tick_params(labelsize=fs-2)
-ax[1].legend(fontsize=fs-2,ncol=1, loc='right',bbox_to_anchor=(1.35,0.5)) #loc='center',bbox_to_anchor=(0.5,-0.2),ncol=6)
-
-ax[1].set_ylabel(r'revenue', fontsize=fs+2)
+plt.ylabel(r'revenue', fontsize=fs+2)
 plt.tight_layout()
 plt.savefig(fname+'pdf', dpi=300, transparent=True, bbox_inches='tight')
 
@@ -302,7 +280,7 @@ plt.savefig(fname+'pdf', dpi=300, transparent=True, bbox_inches='tight')
 # uber_rev_var_rgd = np.std(uber_rev_rgd[-bdd:])
 # var=[lyft_rev_var_rgd, uber_rev_var_rgd]
 
-# fig, ax = plt.subplots(1, 3, figsize=(10, 7), sharey=True)
+# fig, ax = plt.subplots(1, 3, figsize=figuresize, sharey=True)
 
 # data=['Lyft Revenue', 'Uber Revenue']
 # data_=['Lyft Demand', 'Uber Demand']
@@ -393,7 +371,7 @@ plt.savefig(fname+'pdf', dpi=300, transparent=True, bbox_inches='tight')
 
 
 
-# fig, ax = plt.subplots(1, 3, figsize=(10, 7), sharey=True)
+# fig, ax = plt.subplots(1, 3, figsize=figuresize, sharey=True)
 
 # data=['Lyft Revenue', 'Uber Revenue']
 # data_=['Lyft Demand', 'Uber Demand']
