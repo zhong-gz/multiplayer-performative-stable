@@ -270,8 +270,8 @@ class ddrideshare:
             z_lyft_t_1=self.query_env_player(self.x_rr[-1],0,q_lyft_,locs=None,batch=self.batch_rr)
             z_uber_t_1=self.query_env_player(self.x_rr[-1],1,q_uber_,locs=None,batch=self.batch_rr)
 
-            x_lyft = np.minimum(0.5*z_lyft_t_1/alpha,8)
-            x_uber = np.minimum(0.5*z_uber_t_1/alpha,8)
+            x_lyft = np.minimum(0.5*z_lyft_t_1/alpha,5)
+            x_uber = np.minimum(0.5*z_uber_t_1/alpha,5)
             self.x_rr.append(np.vstack((x_lyft,x_uber)))
 
             z_lyft_t=self.query_env_player(self.x_rr[-1],0,q_lyft_,locs=None,batch=self.batch_rr)
@@ -512,10 +512,10 @@ class ddrideshare:
         self.maxiter_agd=MAXITER
         self.perform_agd=perform_agd
         if A_dic==[]:
-            A1_hat =  np.diag(-10*np.random.rand(np.shape(self.A1)[1])) +self.A1 *0.2
-            Ac1_hat = np.diag(2*np.random.rand(np.shape(self.Ac1)[1]))  +self.Ac1*0.2
-            A2_hat =  np.diag(-10*np.random.rand(np.shape(self.A2)[1])) +self.A2 *0.2
-            Ac2_hat = np.diag(2*np.random.rand(np.shape(self.Ac2)[1]))  +self.Ac2*0.2
+            A1_hat =  np.diag(-10*np.random.rand(np.shape(self.A1)[1])) +self.A1 *0.8
+            Ac1_hat = np.diag(2*np.random.rand(np.shape(self.Ac1)[1]))  +self.Ac1*0.8
+            A2_hat =  np.diag(-10*np.random.rand(np.shape(self.A2)[1])) +self.A2 *0.8
+            Ac2_hat = np.diag(2*np.random.rand(np.shape(self.Ac2)[1]))  +self.Ac2*0.8
             A_dic={}
             A_dic['A1_hat']=A1_hat
             A_dic['Ac1_hat']=Ac1_hat
@@ -965,7 +965,7 @@ class ddrideshare:
             self.Ac2=np.copy(self.Ac2_)
         return self.x_comp, self.rev_comp_p1, self.rev_comp_p2,  np.asarray(self.demand_comp_p1), np.asarray(self.demand_comp_p2)
     
-def get_data_dic(filename='data/datadic.p'):
+def get_data_dic(filename='ride_share/data/datadic.p'):
     try:
         return pickle.load(open(filename,'rb'))
     except FileNotFoundError:
@@ -990,8 +990,8 @@ def getcor(q_lyft_,q_uber_):
     
 def getparams(loc_lst):
     try:
-        mu=np.load('data/mu_est.npy')
-        gamma=np.load('data/gamma_est.npy')
+        mu=np.load('ride_share/data/mu_est.npy')
+        gamma=np.load('ride_share/data/gamma_est.npy')
     except FileNotFoundError:
         mu=np.load('../ride_share/data/mu_est.npy')
         gamma=np.load('../ride_share/data/gamma_est.npy')

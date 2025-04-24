@@ -1,33 +1,18 @@
 import numpy as np
-import pandas as pd
 import matplotlib.pyplot as plt
-from numpy import linalg as la
-import argparse
-import pickle 
-import sys, os
+import sys
 # insert at 1, 0 is the script path (or '' in REPL)
 sys.path.insert(1,'./utils/' )
 from utilsrm import *
-# from utilsrm_modified import *
-import scipy.linalg  as sla
-import random
-
-import pandas as pd
-import seaborn as sns
-from tqdm import tqdm, trange
-# %load_ext autoreload
-# %autoreload 2
-# https://plotly.com/python/static-image-export/ need to install this if you want to save images
-import plotly.express as px
-px.set_mapbox_access_token("pk.eyJ1IjoicmF0bGlmZmxqIiwiYSI6ImNqOGJ4cm8wcjAzN3QyeG1zcnZvMjB5bGUifQ.iRkpBPE-WANBkVc9ffI8ng")
 
 ## Initialize the game class and set the random seed and initial point
 # seed 
 np.random.seed(42)
-num_experiments = 2
-figuresize=(13, 7)
+num_experiments = 5
+figuresize=(14, 7)
 loc_cap=11
 eta=0.001 
+run_experiment = 1 # 1: run the experiment, 0: load the data
 
 gamma = 2.1
 BATCH=10
@@ -54,14 +39,14 @@ company_styles = {
 fs=24
 lw=4
 
-for p in [0]:  #,1,2,3,4
+for p in [0,1,2,3,4]:  #,1,2,3,4
     price_index = p
-    data_file_path = f'data/{price_index*5+10}_data.npy'
+    data_file_path = f'ride_share/data/{price_index*5+10}_data.npy'
     # set up the game
     loc_lst_index=list(range(0,loc_cap))
     price_lst_index=list(range(0,5))
     price_start = price_index*5+10
-    if 1:
+    if run_experiment:
         all_data={}
         for num_exper in range(num_experiments):
             print('Runing at number',num_exper+1,'trail')
@@ -89,7 +74,7 @@ for p in [0]:  #,1,2,3,4
                     rev_key = f'revenue_total_p{i + 1}'
                     rev = np.asarray(dic[rev_key])
                     # 计算需求
-                    demand_key = f'demand_total_p{i + 1}'
+                    demand_key = f'demand_p{i + 1}'
                     demand = np.asarray(dic[demand_key])
 
                     all_data[num_exper][f'{info_types[0]}_{model}_{company}'] = price
@@ -108,7 +93,7 @@ for p in [0]:  #,1,2,3,4
         avg_data = np.load(data_file_path, allow_pickle=True).item()
 
 
-    fname='./figs_ride_share/'+str((price_index*5+10))+'_prices.'
+    fname='ride_share/figs/'+str((price_index*5+10))+'_prices.'
     plt.figure(figsize=figuresize)
 
     for model in models:
@@ -121,13 +106,13 @@ for p in [0]:  #,1,2,3,4
                             color=color, linestyle=linestyle, alpha=alpha)
     plt.grid(True)
     plt.xlabel(r'iterations', fontsize=fs)
-    plt.legend(fontsize=fs-2,ncol=1, loc='right',bbox_to_anchor=(1.35,0.5))
+    plt.legend(fontsize=fs-2,ncol=1, loc='right',bbox_to_anchor=(1.45,0.5))
     plt.tick_params(labelsize=fs-2)
     plt.ylabel(r'prices', fontsize=fs)
     plt.tight_layout()
     plt.savefig(fname+'pdf', dpi=300, transparent=True, bbox_inches='tight')
 
-    fname='./figs_ride_share/'+str((price_index*5+10))+'_demand.'
+    fname='ride_share/figs/'+str((price_index*5+10))+'_demand.'
     plt.figure(figsize=figuresize)
 
     for model in models:
@@ -136,17 +121,17 @@ for p in [0]:  #,1,2,3,4
             color = model_colors[model]
             linestyle = company_styles[company]['linestyle']
             alpha = company_styles[company]['alpha']
-            plt.plot(avg_data[key], label=f'{model}, {company}',lw=lw,
+            plt.plot(np.sum(avg_data[key], axis=1), label=f'{model}, {company}',lw=lw,
                             color=color, linestyle=linestyle, alpha=alpha)
     plt.grid(True)
     plt.xlabel(r'iterations', fontsize=fs)
-    plt.legend(fontsize=fs-2,ncol=1, loc='right',bbox_to_anchor=(1.35,0.5))
+    plt.legend(fontsize=fs-2,ncol=1, loc='right',bbox_to_anchor=(1.45,0.5))
     plt.tick_params(labelsize=fs-2)
     plt.ylabel(r'demand', fontsize=fs)
     plt.tight_layout()
     plt.savefig(fname+'pdf', dpi=300, transparent=True, bbox_inches='tight')
 
-    fname='./figs_ride_share/'+str((price_index*5+10))+'_each_revenue.'
+    fname='ride_share/figs/'+str((price_index*5+10))+'_each_revenue.'
     plt.figure(figsize=figuresize)
     mean_val=20
     for model in models:
@@ -159,13 +144,13 @@ for p in [0]:  #,1,2,3,4
                             color=color, linestyle=linestyle, alpha=alpha)
     plt.grid(True)
     plt.xlabel(r'iterations', fontsize=fs)
-    plt.legend(fontsize=fs-2,ncol=1, loc='right',bbox_to_anchor=(1.35,0.5))
+    plt.legend(fontsize=fs-2,ncol=1, loc='right',bbox_to_anchor=(1.45,0.5))
     plt.tick_params(labelsize=fs-2)
     plt.ylabel(r'revenue', fontsize=fs)
     plt.tight_layout()
     plt.savefig(fname+'pdf', dpi=300, transparent=True, bbox_inches='tight')
 
-    fname='./figs_ride_share/'+str((price_index*5+10))+'_total_revenue.'
+    fname='ride_share/figs/'+str((price_index*5+10))+'_total_revenue.'
     # new_figuresize = (figuresize[0] + 5,) + figuresize[1:]
     plt.figure(figsize=figuresize)
     for model in models:
@@ -178,7 +163,7 @@ for p in [0]:  #,1,2,3,4
     plt.grid(True)
     plt.xlabel(r'iterations', fontsize=fs+2)
     plt.tick_params(labelsize=fs-2)
-    plt.legend(fontsize=fs-2,ncol=1, loc='right',bbox_to_anchor=(1.25,0.5)) #loc='center',bbox_to_anchor=(0.5,-0.2),ncol=6)
+    plt.legend(fontsize=fs-2,ncol=1, loc='right',bbox_to_anchor=(1.45,0.5)) #loc='center',bbox_to_anchor=(0.5,-0.2),ncol=6)
     plt.ylabel(r'total revenue', fontsize=fs+2)
     plt.tight_layout()
     plt.savefig(fname+'pdf', dpi=300, transparent=True, bbox_inches='tight')
