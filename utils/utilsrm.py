@@ -965,11 +965,11 @@ class ddrideshare:
             self.Ac2=np.copy(self.Ac2_)
         return self.x_comp, self.rev_comp_p1, self.rev_comp_p2,  np.asarray(self.demand_comp_p1), np.asarray(self.demand_comp_p2)
     
-def get_data_dic(filename='./data/datadic.p'):
+def get_data_dic(filename='data/datadic.p'):
     try:
         return pickle.load(open(filename,'rb'))
     except FileNotFoundError:
-        return pickle.load(open('../data/datadic.p','rb'))
+        return pickle.load(open('../ride_share/data/datadic.p','rb'))
         
 def getcor(q_lyft_,q_uber_):
     q_lyft_loc_means=[]
@@ -990,11 +990,11 @@ def getcor(q_lyft_,q_uber_):
     
 def getparams(loc_lst):
     try:
-        mu=np.load('./data/mu_est.npy')
-        gamma=np.load('./data/gamma_est.npy')
+        mu=np.load('data/mu_est.npy')
+        gamma=np.load('data/gamma_est.npy')
     except FileNotFoundError:
-        mu=np.load('../data/mu_est.npy')
-        gamma=np.load('../data/gamma_est.npy')
+        mu=np.load('../ride_share/data/mu_est.npy')
+        gamma=np.load('../ride_share/data/gamma_est.npy')
     who=['Lyft values','Uber values']
     A={}
     B={}
