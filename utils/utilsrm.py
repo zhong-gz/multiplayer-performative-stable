@@ -8,6 +8,7 @@ import scipy.linalg  as sla
 import pickle 
 from numpy import linalg as la
 from tqdm import tqdm, trange
+from scipy.special import expit
 
 
 ### Utility Functions
@@ -208,9 +209,13 @@ class ddrideshare:
         #print(z_)
         #print(np.shape(z_))
         if player==0:
-            z= np.maximum(z_+self.A1@x[0]+self.Ac1@x[1]+np.random.normal(0,0.1,size=(z_.shape)),0.001)
+            y1 = self.A1 @ x[0] + self.Ac1 @ x[1]
+            z = (2 * z_) / (1 + 1 / np.exp(y1)) + np.random.normal(0, 0.1, size=z_.shape)
+            # z= np.maximum(z_+self.A1@x[0]+self.Ac1@x[1]+np.random.normal(0,0.1,size=(z_.shape)),0.001)
         if player==1:
-            z= np.maximum(z_+self.A2@x[1]+self.Ac2@x[0]+np.random.normal(0,0.1,size=(z_.shape)),0.001)
+            y2 = self.A2@x[1]+self.Ac2@x[0]
+            z = (2 * z_) / (1 + 1 / np.exp(y2)) + np.random.normal(0, 0.1, size=z_.shape)
+            # z= np.maximum(z_+self.A2@x[1]+self.Ac2@x[0]+np.random.normal(0,0.1,size=(z_.shape)),0.001)
         return z
 
     def loss(self,x,player,q_,locs=None,batch=1):
@@ -1018,5 +1023,29 @@ def getparams(loc_lst):
     dic['Ac2']=Ac2
     return dic
 
+def generate_negative_definite_matrix(n, diag_scale=0.5, off_diag_scale=0.01):
 
+    eigenvalues = np.random.normal(loc=-diag_scale, scale=diag_scale / 5, size=n)
+    # 生成正交矩阵 Q
+    Q, _ = np.linalg.qr(np.random.randn(n, n))
+    # 构造对角矩阵 Λ
+    Lambda = np.diag(eigenvalues)
+    # 计算负定矩阵 A = QΛQ^T
+    A = Q @ Lambda @ Q.T
+    # 调整非对角线元素的大小
+    off_diag_mask = ~np.eye(n, dtype=bool)
+    A[off_diag_mask] *= off_diag_scale #/ diag_scale
+    return A
 
+def generate_positive_definite_matrix(n, diag_scale=0.25, off_diag_scale=0.01):
+    eigenvalues = np.random.normal(loc= diag_scale, scale=diag_scale / 5, size=n)
+    # 生成正交矩阵 Q
+    Q, _ = np.linalg.qr(np.random.randn(n, n))
+    # 构造对角矩阵 Λ
+    Lambda = np.diag(eigenvalues)
+    A = Q @ Lambda @ Q.T
+    # 调整非对角线元素的大小
+    off_diag_mask = ~np.eye(n, dtype=bool)
+    A[off_diag_mask] *= off_diag_scale 
+
+    return A
