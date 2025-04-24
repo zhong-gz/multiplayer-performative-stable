@@ -13,7 +13,7 @@ figuresize=(14, 7)
 loc_cap=11
 eta=0.001 
 run_experiment = 1 # 1: run the experiment, 0: load the data
-mu_A_list = [0.5] #25,0.50,0.75,1
+mu_A_list = [0.25] #25,0.50,0.75,1
 
 gamma = 2.1
 BATCH=10
