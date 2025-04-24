@@ -34,9 +34,9 @@ for sigma_A in [0.25, 0.5, 0.75,1.0]:
     print('running sigma_A:',sigma_A)
     sigma_AC = 1.25-sigma_A
     sigma_C = sigma_A/n
-    filepath = './ppw_figs_log/'
-    file_name_npy = filepath+'ppw_sig_A_'+str(sigma_A)+'_sigma_AC_'+str(sigma_AC)+'_m_'+str(m)+'_sigma_C_'+str(sigma_C)+'.npz'
-    filename=filepath+'ppw_sig_A_'+str(sigma_A)+'_sigma_AC_'+str(sigma_AC)+'_m_'+str(m)+'_sigma_C_'+str(sigma_C)+'.'
+    filepath = 'multi_regression/figs_log/'
+    file_name_npy = filepath+'sig_A_'+str(sigma_A)+'_sigma_AC_'+str(sigma_AC)+'_m_'+str(m)+'_sigma_C_'+str(sigma_C)+'.npz'
+    filename=filepath+'sig_A_'+str(sigma_A)+'_sigma_AC_'+str(sigma_AC)+'_m_'+str(m)+'_sigma_C_'+str(sigma_C)+'.'
     A1= np.random.normal(0,np.sqrt(sigma_A),size=(1,d))
     Ac1= np.random.normal(0,np.sqrt(sigma_AC),size=(1,d))
     A2= np.random.normal(0,np.sqrt(sigma_A),size=(1,d))
@@ -242,11 +242,13 @@ for sigma_A in [0.25, 0.5, 0.75,1.0]:
         
 
     # plt.plot(errs_sgd_mean, linewidth=3,color='xkcd:cerulean', label='SGM')
-    plt.plot(errs_rgd_mean, linewidth=3, color='#444444', label='RGD')
-    plt.plot(errs_agd_mean, linewidth=3, color='#9467bd', label='AGM')
-    plt.plot(errs_sfb_mean, linewidth=3, color='#2ca02c', label='SFB')
-    plt.plot(errs_opgd_mean, linewidth=3, color='#1f77b4', label='OPGD')
-    plt.plot(errs_rr_mean, linewidth=3.7, color='#FF7F50', label='Ours_RR')
+    x = np.arange(len(errs_rr_mean))
+    x_shifted = x + 1
+    plt.plot(x_shifted,errs_rgd_mean, linewidth=3, color='#444444', label='RGD')
+    plt.plot(x_shifted,errs_agd_mean, linewidth=3, color='#9467bd', label='AGM')
+    plt.plot(x_shifted,errs_sfb_mean, linewidth=3, color='#2ca02c', label='SFB')
+    plt.plot(x_shifted,errs_opgd_mean, linewidth=3, color='#1f77b4', label='OPGD')
+    plt.plot(x_shifted,errs_rr_mean, linewidth=3.7, color='#FF7F50', label='Ours_RR')
     # plt.fill_between(iterations,errs_sgd_mean+errs_sgd_var,errs_sgd_mean-errs_sgd_var, alpha=0.5, linewidth=0,color='xkcd:cerulean')
     # plt.fill_between(iterations,errs_agd_mean+errs_agd_var,errs_agd_mean-errs_agd_var, alpha=0.4, linewidth=0, color='xkcd:light orange')
     # plt.fill_between(iterations,errs_rgd_mean+errs_rgd_var,errs_rgd_mean-errs_rgd_var, alpha=0.4, linewidth=0, color='xkcd:light green')
