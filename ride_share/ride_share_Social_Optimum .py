@@ -13,11 +13,11 @@ figuresize=(14, 7)
 loc_cap=11
 eta=0.001 
 run_experiment = 1 # 1: run the experiment, 0: load the data
-mu_A_list = [0.25] #25,0.50,0.75,1
+mu_A_list = [0.25,0.50,0.75,1.0] #25,0.50,0.75,1
 
 gamma = 2.1
 BATCH=10
-MAXITER=1000
+MAXITER=100
 tot_rev=1
 
 # 不同的模型
@@ -38,7 +38,7 @@ company_styles = {
     'Uber': {'linestyle': '--', 'alpha': 1}
 }
 fs=24
-lw=4
+lw=2
 for mu_A in mu_A_list:
     mu_AC = mu_A/2
     params = {}
@@ -46,6 +46,8 @@ for mu_A in mu_A_list:
     params['A2']  = generate_negative_definite_matrix(loc_cap, diag_scale=mu_A)
     params['Ac1'] = generate_positive_definite_matrix(loc_cap, diag_scale=mu_AC)
     params['Ac2'] = generate_positive_definite_matrix(loc_cap, diag_scale=mu_AC)
+
+    total_data = {}
     for p in [0,1,2,3,4]:  #,1,2,3,4
         price_index = p
         data_file_path = f'ride_share/data/{price_index*5+10}_data.npy'
@@ -57,7 +59,7 @@ for mu_A in mu_A_list:
             all_data={}
             for num_exper in range(num_experiments):
                 print('Runing at number',num_exper+1,'trail')
-                x0=np.random.rand(2,loc_cap)
+                x0=np.random.rand(2,loc_cap)*5
                 all_data[num_exper]={}
                 all_data[num_exper]['x0']=x0
                 ddgame=ddrideshare(loc_lst_index,price_lst_index,seed=2,lam=[0.0,0.0], base=False, params=params,maxx=10)
@@ -99,82 +101,166 @@ for mu_A in mu_A_list:
         else:
             avg_data = np.load(data_file_path, allow_pickle=True).item()
 
+        for key, value in avg_data.items():
+                if key in total_data:
+                    total_data[key] += value
+                else:
+                    total_data[key] = value
+            
+        # fname='ride_share/figs_'+str(mu_A)+'/'+str((price_index*5+10))+'_prices.'
+        # plt.figure(figsize=figuresize)
 
-        fname='ride_share/figs/'+str((price_index*5+10))+'_prices.'
-        plt.figure(figsize=figuresize)
+        # for model in models:
+        #     for company in companies:
+        #         key = f'{info_types[0]}_{model}_{company}'
+        #         color = model_colors[model]
+        #         linestyle = company_styles[company]['linestyle']
+        #         alpha = company_styles[company]['alpha']
+        #         plt.plot(avg_data[key], label=f'{model}, {company}',lw=lw,color=color, linestyle=linestyle, alpha=alpha)
+        # plt.plot(avg_data['price_RR_Lyft'], lw=lw,color=model_colors['RR'], linestyle=company_styles['Lyft']['linestyle'], alpha=alpha)
+        # plt.plot(avg_data['price_RR_Uber'], lw=lw,color=model_colors['RR'], linestyle=company_styles['Uber']['linestyle'], alpha=alpha)
+        # plt.grid(True)
+        # plt.xlabel(r'iterations', fontsize=fs)
+        # plt.legend(fontsize=fs-2,ncol=1, loc='right',bbox_to_anchor=(1.45,0.5))
+        # plt.tick_params(labelsize=fs-2)
+        # plt.ylabel(r'prices', fontsize=fs)
+        # plt.tight_layout()
+        # plt.savefig(fname+'pdf', transparent=True, bbox_inches='tight')
 
-        for model in models:
-            for company in companies:
-                key = f'{info_types[0]}_{model}_{company}'
-                color = model_colors[model]
-                linestyle = company_styles[company]['linestyle']
-                alpha = company_styles[company]['alpha']
-                plt.plot(avg_data[key], label=f'{model}, {company}',lw=lw,color=color, linestyle=linestyle, alpha=alpha)
-        plt.plot(avg_data['price_RR_Lyft'], lw=lw,color=model_colors['RR'], linestyle=company_styles['Lyft']['linestyle'], alpha=alpha)
-        plt.plot(avg_data['price_RR_Uber'], lw=lw,color=model_colors['RR'], linestyle=company_styles['Uber']['linestyle'], alpha=alpha)
-        plt.grid(True)
-        plt.xlabel(r'iterations', fontsize=fs)
-        plt.legend(fontsize=fs-2,ncol=1, loc='right',bbox_to_anchor=(1.45,0.5))
-        plt.tick_params(labelsize=fs-2)
-        plt.ylabel(r'prices', fontsize=fs)
-        plt.tight_layout()
-        plt.savefig(fname+'pdf', transparent=True, bbox_inches='tight')
+        # fname='ride_share/figs_'+str(mu_A)+'/'+str((price_index*5+10))+'_demand.'
+        # plt.figure(figsize=figuresize)
 
-        fname='ride_share/figs/'+str((price_index*5+10))+'_demand.'
-        plt.figure(figsize=figuresize)
+        # for model in models:
+        #     for company in companies:
+        #         key = f'{info_types[2]}_{model}_{company}'
+        #         color = model_colors[model]
+        #         linestyle = company_styles[company]['linestyle']
+        #         alpha = company_styles[company]['alpha']
+        #         plt.plot(np.sum(avg_data[key], axis=1), label=f'{model}, {company}',lw=lw,color=color, linestyle=linestyle, alpha=alpha)
+        # plt.plot(np.sum(avg_data['demand_RR_Lyft'], axis=1),lw=lw, color=model_colors['RR'], linestyle=company_styles['Lyft']['linestyle'], alpha=alpha)
+        # plt.plot(np.sum(avg_data['demand_RR_Uber'], axis=1),lw=lw, color=model_colors['RR'], linestyle=company_styles['Uber']['linestyle'], alpha=alpha)
+        # plt.grid(True)
+        # plt.xlabel(r'iterations', fontsize=fs)
+        # plt.legend(fontsize=fs-2,ncol=1, loc='right',bbox_to_anchor=(1.45,0.5))
+        # plt.tick_params(labelsize=fs-2)
+        # plt.ylabel(r'demand', fontsize=fs)
+        # plt.tight_layout()
+        # plt.savefig(fname+'pdf', transparent=True, bbox_inches='tight')
 
-        for model in models:
-            for company in companies:
-                key = f'{info_types[2]}_{model}_{company}'
-                color = model_colors[model]
-                linestyle = company_styles[company]['linestyle']
-                alpha = company_styles[company]['alpha']
-                plt.plot(np.sum(avg_data[key], axis=1), label=f'{model}, {company}',lw=lw,color=color, linestyle=linestyle, alpha=alpha)
-        plt.plot(np.sum(avg_data['demand_RR_Lyft'], axis=1),lw=lw, color=model_colors['RR'], linestyle=company_styles['Lyft']['linestyle'], alpha=alpha)
-        plt.plot(np.sum(avg_data['demand_RR_Uber'], axis=1),lw=lw, color=model_colors['RR'], linestyle=company_styles['Uber']['linestyle'], alpha=alpha)
-        plt.grid(True)
-        plt.xlabel(r'iterations', fontsize=fs)
-        plt.legend(fontsize=fs-2,ncol=1, loc='right',bbox_to_anchor=(1.45,0.5))
-        plt.tick_params(labelsize=fs-2)
-        plt.ylabel(r'demand', fontsize=fs)
-        plt.tight_layout()
-        plt.savefig(fname+'pdf', transparent=True, bbox_inches='tight')
+        # fname='ride_share/figs_'+str(mu_A)+'/'+str((price_index*5+10))+'_each_revenue.'
+        # plt.figure(figsize=figuresize)
+        # mean_val=20
+        # for model in models:
+        #     for company in companies:
+        #         key = f'{info_types[1]}_{model}_{company}'
+        #         color = model_colors[model]
+        #         linestyle = company_styles[company]['linestyle']
+        #         alpha = company_styles[company]['alpha']
+        #         plt.plot(running_mean(avg_data[key],N=mean_val), label=f'{model}, {company}',lw=lw,
+        #                         color=color, linestyle=linestyle, alpha=alpha)
+        # plt.plot(running_mean(avg_data['rev_RR_Lyft'],N=mean_val),lw=lw,color=model_colors['RR'], linestyle=company_styles['Lyft']['linestyle'], alpha=alpha)
+        # plt.plot(running_mean(avg_data['rev_RR_Uber'],N=mean_val),lw=lw,color=model_colors['RR'], linestyle=company_styles['Uber']['linestyle'], alpha=alpha)
+        # plt.grid(True)
+        # plt.xlabel(r'iterations', fontsize=fs)
+        # plt.legend(fontsize=fs-2,ncol=1, loc='right',bbox_to_anchor=(1.45,0.5))
+        # plt.tick_params(labelsize=fs-2)
+        # plt.ylabel(r'revenue', fontsize=fs)
+        # plt.tight_layout()
+        # plt.savefig(fname+'pdf', transparent=True, bbox_inches='tight')
 
-        fname='ride_share/figs/'+str((price_index*5+10))+'_each_revenue.'
-        plt.figure(figsize=figuresize)
-        mean_val=20
-        for model in models:
-            for company in companies:
-                key = f'{info_types[1]}_{model}_{company}'
-                color = model_colors[model]
-                linestyle = company_styles[company]['linestyle']
-                alpha = company_styles[company]['alpha']
-                plt.plot(running_mean(avg_data[key],N=mean_val), label=f'{model}, {company}',lw=lw,
-                                color=color, linestyle=linestyle, alpha=alpha)
-        plt.plot(running_mean(avg_data['rev_RR_Lyft'],N=mean_val),lw=lw,color=model_colors['RR'], linestyle=company_styles['Lyft']['linestyle'], alpha=alpha)
-        plt.plot(running_mean(avg_data['rev_RR_Uber'],N=mean_val),lw=lw,color=model_colors['RR'], linestyle=company_styles['Uber']['linestyle'], alpha=alpha)
-        plt.grid(True)
-        plt.xlabel(r'iterations', fontsize=fs)
-        plt.legend(fontsize=fs-2,ncol=1, loc='right',bbox_to_anchor=(1.45,0.5))
-        plt.tick_params(labelsize=fs-2)
-        plt.ylabel(r'revenue', fontsize=fs)
-        plt.tight_layout()
-        plt.savefig(fname+'pdf', transparent=True, bbox_inches='tight')
+        # fname='ride_share/figs_'+str(mu_A)+'/'+str((price_index*5+10))+'_total_revenue.'
+        # # new_figuresize = (figuresize[0] + 5,) + figuresize[1:]
+        # plt.figure(figsize=figuresize)
+        # for model in models:
+        #     key1 = f'{info_types[1]}_{model}_{companies[0]}'
+        #     key2 = f'{info_types[1]}_{model}_{companies[1]}'
+        #     color = model_colors[model]
+        #     alpha = company_styles[company]['alpha']
+        #     plt.plot(avg_data[key1]+avg_data[key2], label=f'{model}',lw=lw,color=color,alpha=alpha)
+        # plt.plot(avg_data['rev_RR_Lyft']+avg_data['rev_RR_Uber'],lw=lw,color=model_colors['RR'],alpha=alpha)
+        # plt.grid(True)
+        # plt.xlabel(r'iterations', fontsize=fs+2)
+        # plt.tick_params(labelsize=fs-2)
+        # plt.legend(fontsize=fs-2,ncol=1, loc='right',bbox_to_anchor=(1.45,0.5)) #loc='center',bbox_to_anchor=(0.5,-0.2),ncol=6)
+        # plt.ylabel(r'total revenue', fontsize=fs+2)
+        # plt.tight_layout()
+        # plt.savefig(fname+'pdf', transparent=True, bbox_inches='tight')
+    
+    fname='ride_share/figs/result_'+str(mu_A)+'/00_total_prices.'
+    plt.figure(figsize=figuresize)
 
-        fname='ride_share/figs/'+str((price_index*5+10))+'_total_revenue.'
-        # new_figuresize = (figuresize[0] + 5,) + figuresize[1:]
-        plt.figure(figsize=figuresize)
-        for model in models:
-            key1 = f'{info_types[1]}_{model}_{companies[0]}'
-            key2 = f'{info_types[1]}_{model}_{companies[1]}'
+    for model in models:
+        for company in companies:
+            key = f'{info_types[0]}_{model}_{company}'
             color = model_colors[model]
+            linestyle = company_styles[company]['linestyle']
             alpha = company_styles[company]['alpha']
-            plt.plot(avg_data[key1]+avg_data[key2], label=f'{model}',lw=lw,color=color,alpha=alpha)
-        plt.plot(avg_data['rev_RR_Lyft']+avg_data['rev_RR_Uber'],lw=lw,color=model_colors['RR'],alpha=alpha)
-        plt.grid(True)
-        plt.xlabel(r'iterations', fontsize=fs+2)
-        plt.tick_params(labelsize=fs-2)
-        plt.legend(fontsize=fs-2,ncol=1, loc='right',bbox_to_anchor=(1.45,0.5)) #loc='center',bbox_to_anchor=(0.5,-0.2),ncol=6)
-        plt.ylabel(r'total revenue', fontsize=fs+2)
-        plt.tight_layout()
-        plt.savefig(fname+'pdf', transparent=True, bbox_inches='tight')
+            plt.plot(total_data[key]/5, label=f'{model}, {company}',lw=lw,color=color, linestyle=linestyle, alpha=alpha)
+    plt.plot(total_data['price_RR_Lyft']/5, lw=lw,color=model_colors['RR'], linestyle=company_styles['Lyft']['linestyle'], alpha=alpha)
+    plt.plot(total_data['price_RR_Uber']/5, lw=lw,color=model_colors['RR'], linestyle=company_styles['Uber']['linestyle'], alpha=alpha)
+    plt.grid(True)
+    plt.xlabel(r'iterations', fontsize=fs)
+    plt.legend(fontsize=fs-2,ncol=1, loc='right',bbox_to_anchor=(1.45,0.5))
+    plt.tick_params(labelsize=fs-2)
+    plt.ylabel(r'prices', fontsize=fs)
+    plt.tight_layout()
+    plt.savefig(fname+'pdf', transparent=True, bbox_inches='tight')
+
+    fname='ride_share/figs/result_'+str(mu_A)+'/00_total_demand.'
+    plt.figure(figsize=figuresize)
+
+    for model in models:
+        for company in companies:
+            key = f'{info_types[2]}_{model}_{company}'
+            color = model_colors[model]
+            linestyle = company_styles[company]['linestyle']
+            alpha = company_styles[company]['alpha']
+            plt.plot(np.sum(total_data[key], axis=1), label=f'{model}, {company}',lw=lw,color=color, linestyle=linestyle, alpha=alpha)
+    plt.plot(np.sum(total_data['demand_RR_Lyft'], axis=1),lw=lw, color=model_colors['RR'], linestyle=company_styles['Lyft']['linestyle'], alpha=alpha)
+    plt.plot(np.sum(total_data['demand_RR_Uber'], axis=1),lw=lw, color=model_colors['RR'], linestyle=company_styles['Uber']['linestyle'], alpha=alpha)
+    plt.grid(True)
+    plt.xlabel(r'iterations', fontsize=fs)
+    plt.legend(fontsize=fs-2,ncol=1, loc='right',bbox_to_anchor=(1.45,0.5))
+    plt.tick_params(labelsize=fs-2)
+    plt.ylabel(r'demand', fontsize=fs)
+    plt.tight_layout()
+    plt.savefig(fname+'pdf', transparent=True, bbox_inches='tight')
+
+    fname='ride_share/figs/result_'+str(mu_A)+'/00_total_each_revenue.'
+    plt.figure(figsize=figuresize)
+    mean_val=20
+    for model in models:
+        for company in companies:
+            key = f'{info_types[1]}_{model}_{company}'
+            color = model_colors[model]
+            linestyle = company_styles[company]['linestyle']
+            alpha = company_styles[company]['alpha']
+            plt.plot(running_mean(total_data[key],N=mean_val), label=f'{model}, {company}',lw=lw,
+                            color=color, linestyle=linestyle, alpha=alpha)
+    plt.plot(running_mean(total_data['rev_RR_Lyft'],N=mean_val),lw=lw,color=model_colors['RR'], linestyle=company_styles['Lyft']['linestyle'], alpha=alpha)
+    plt.plot(running_mean(total_data['rev_RR_Uber'],N=mean_val),lw=lw,color=model_colors['RR'], linestyle=company_styles['Uber']['linestyle'], alpha=alpha)
+    plt.grid(True)
+    plt.xlabel(r'iterations', fontsize=fs)
+    plt.legend(fontsize=fs-2,ncol=1, loc='right',bbox_to_anchor=(1.45,0.5))
+    plt.tick_params(labelsize=fs-2)
+    plt.ylabel(r'revenue', fontsize=fs)
+    plt.tight_layout()
+    plt.savefig(fname+'pdf', transparent=True, bbox_inches='tight')
+
+    fname='ride_share/figs/result_'+str(mu_A)+'/00_total_total_revenue.'
+    # new_figuresize = (figuresize[0] - 2,) + figuresize[1:]
+    plt.figure(figsize=figuresize)
+    for model in models:
+        key1 = f'{info_types[1]}_{model}_{companies[0]}'
+        key2 = f'{info_types[1]}_{model}_{companies[1]}'
+        color = model_colors[model]
+        alpha = company_styles[company]['alpha']
+        plt.plot(total_data[key1]+total_data[key2], label=f'{model}',lw=lw,color=color,alpha=alpha)
+    plt.plot(total_data['rev_RR_Lyft']+total_data['rev_RR_Uber'],lw=lw,color=model_colors['RR'],alpha=alpha)
+    plt.grid(True)
+    plt.xlabel(r'iterations', fontsize=fs+2)
+    plt.tick_params(labelsize=fs-2)
+    plt.legend(fontsize=fs-2,ncol=1, loc='right',bbox_to_anchor=(1.45,0.5)) #loc='center',bbox_to_anchor=(0.5,-0.2),ncol=6)
+    plt.ylabel(r'total revenue', fontsize=fs+2)
+    plt.tight_layout()
+    plt.savefig(fname+'pdf', transparent=True, bbox_inches='tight')

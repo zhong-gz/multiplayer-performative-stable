@@ -25,9 +25,15 @@ n=2
 m= 100 # both players dimension of z_i
 d=2 # size of each players action
 B = np.random.normal(0,sigma_theta,size=(d,1))
+lw = 2
+
+eta=0.1
+mu=2
+nu0=1
+all_data={}
 
 # lam=[1.0,1.0]
-lam=[0,0]
+lam=[0.5,0.5]
 MAXITER=1000
 
 for sigma_A in [0.25, 0.5, 0.75,1.0]:
@@ -48,12 +54,6 @@ for sigma_A in [0.25, 0.5, 0.75,1.0]:
     ddg=ddstrategic_prediction(MAXITER=MAXITER, sigma_theta=sigma_theta,sigma_w=sigma_w,
                         B=B,nu=nu, lam=lam,n=n, m=m, d=d, params=params,
                             mu_w1=0, mu_w2=0, mu_theta=0)
-
-    eta=0.1
-
-    mu=2
-    nu0=1
-    all_data={}
 
     for seed in seeds:
         np.random.seed(seed)
@@ -242,11 +242,11 @@ for sigma_A in [0.25, 0.5, 0.75,1.0]:
         
 
     # plt.plot(errs_sgd_mean, linewidth=3,color='xkcd:cerulean', label='SGM')
-    plt.plot(errs_rgd_mean, linewidth=3, color='#444444', label='RGD')
-    plt.plot(errs_agd_mean, linewidth=3, color='#9467bd', label='AGM')
-    plt.plot(errs_sfb_mean, linewidth=3, color='#2ca02c', label='SFB')
-    plt.plot(errs_opgd_mean, linewidth=3, color='#1f77b4', label='OPGD')
-    plt.plot(errs_rr_mean, linewidth=3.7, color='#FF7F50', label='Ours_RR')
+    plt.plot(errs_rgd_mean, linewidth=lw, color='#444444', label='RGD')
+    plt.plot(errs_agd_mean, linewidth=lw, color='#9467bd', label='AGM')
+    plt.plot(errs_sfb_mean, linewidth=lw, color='#2ca02c', label='SFB')
+    plt.plot(errs_opgd_mean, linewidth=lw, color='#1f77b4', label='OPGD')
+    plt.plot(errs_rr_mean, linewidth=lw+0.7, color='#FF7F50', label='RR')
     # plt.fill_between(iterations,errs_sgd_mean+errs_sgd_var,errs_sgd_mean-errs_sgd_var, alpha=0.5, linewidth=0,color='xkcd:cerulean')
     # plt.fill_between(iterations,errs_agd_mean+errs_agd_var,errs_agd_mean-errs_agd_var, alpha=0.4, linewidth=0, color='xkcd:light orange')
     # plt.fill_between(iterations,errs_rgd_mean+errs_rgd_var,errs_rgd_mean-errs_rgd_var, alpha=0.4, linewidth=0, color='xkcd:light green')
@@ -262,8 +262,6 @@ for sigma_A in [0.25, 0.5, 0.75,1.0]:
     plt.xlabel(r'iterations', fontsize=fs)
     plt.tight_layout()
     plt.legend(fontsize=fs-2, loc='upper right',ncol=1)
-    if SAVE:
-        for tag in ['pdf']:
-            plt.savefig(filename+tag,  bbox_inches='tight', dpi=300)
+    plt.savefig(filename+'pdf',  bbox_inches='tight', dpi=300)
 
 # winsound.Beep(1500, 500)
