@@ -243,15 +243,15 @@ for i, sigma_A in enumerate(sigma_A_values):
     iterations = np.arange(0, MAXITER + 1)
 
     l1, = axes[i].plot(errs_rgd_mean, linewidth=lw, color='#444444', label='RGD')
-    l2, = axes[i].plot(errs_agd_mean, linewidth=lw, color='#9467bd', label='AGM')
     l3, = axes[i].plot(errs_sfb_mean, linewidth=lw, color='#2ca02c', label='SFB')
+    l2, = axes[i].plot(errs_agd_mean, linewidth=lw, color='#9467bd', label='AGM')
     l4, = axes[i].plot(errs_opgd_mean, linewidth=lw, color='#1f77b4', label='OPGD')
     l5, = axes[i].plot(errs_rr_mean, linewidth=lw + 0.7, color='#FF7F50', label='RR')
 
     if i == 0:
         axes[i].set_ylabel('RMSE', fontsize=fs)
-        handles.extend([l5,l1, l2, l3, l4])
-        labels.extend(['RR','RGD', 'AGM', 'SFB', 'OPGD'])
+        handles.extend([l5, l1, l3, l2,l4])
+        labels.extend(['RR', 'RGD', 'SFB', 'AGM', 'OPGD'])
 
     axes[i].set_title(f'$\sigma_A = {sigma_A}$', fontsize=fs)
     axes[i].set_xlabel('Iterations', fontsize=fs)
@@ -274,7 +274,7 @@ plt.tight_layout(rect=[0, 0.1, 1, 1])  # 底部留出 10% 的空间
 # 保存图片
 if not os.path.exists(filepath):
     os.makedirs(filepath)
-save_path = os.path.join(filepath, 'combined_plot.pdf')
+save_path = os.path.join(filepath, 'combined_plot_multi_regression.pdf')
 plt.savefig(save_path)
 print(f"Combined plot saved to {save_path}")
 

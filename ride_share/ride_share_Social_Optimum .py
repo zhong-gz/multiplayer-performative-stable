@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import pandas as pd
 import sys
 # insert at 1, 0 is the script path (or '' in REPL)
 sys.path.insert(1,'./utils/' )
@@ -21,7 +22,7 @@ MAXITER=100
 tot_rev=1
 
 # 不同的模型
-models = ['RR','AGM', 'RGD','SFB','OPGD']
+models = ['RR', 'RGD','SFB','AGM','OPGD']
 companies = ['Lyft', 'Uber']
 info_types = ['price','rev', 'demand']
 # 定义不同模型对应的颜色
@@ -40,6 +41,7 @@ company_styles = {
 fs=24
 lw=2
 all_mu_A_data = {}
+total_revenue_stats = []
 for mu_A in mu_A_list:
     mu_AC = mu_A/2
     params = {}
@@ -69,9 +71,9 @@ for mu_A in mu_A_list:
                 # run all cases
                 dic_data = []
                 dic_data.append(ddgame.runRR(gamma = gamma,price_index=price_index,BATCH=BATCH,MAXITER=MAXITER,tot_rev=tot_rev))
-                dic_data.append(ddgame.runAGD(x0,eta=eta,price_index=price_index,BATCH=BATCH,MAXITER=MAXITER,tot_rev=tot_rev))
                 dic_data.append(ddgame.runRGD(x0,eta=eta,price_index=price_index,BATCH=BATCH,MAXITER=MAXITER,tot_rev=tot_rev))
                 dic_data.append(ddgame.runSFB(x0,price_index=price_index,eta=eta,BATCH=BATCH,MAXITER=MAXITER,tot_rev=tot_rev))
+                dic_data.append(ddgame.runAGD(x0,eta=eta,price_index=price_index,BATCH=BATCH,MAXITER=MAXITER,tot_rev=tot_rev))
                 dic_data.append(ddgame.runOPGD(x0,price_index=price_index,eta=eta,BATCH=BATCH,MAXITER=MAXITER,tot_rev=tot_rev))
 
                 for model, dic in zip(models, dic_data):
@@ -109,7 +111,7 @@ for mu_A in mu_A_list:
                     total_data[key] = value
         
         all_mu_A_data[mu_A] = total_data
-            
+  
         # fname='ride_share/figs_'+str(mu_A)+'/'+str((price_index*5+10))+'_prices.'
         # plt.figure(figsize=figuresize)
 
@@ -316,6 +318,10 @@ for info_type in info_types_extended:
                     alpha = company_styles[company]['alpha']
                     ax.plot(total_data[key] / 5, label=f'{model}, {company}', lw=lw, color=color, linestyle=linestyle,
                             alpha=alpha)
+            ax.plot(total_data['price_RR_Lyft'] / 5, lw=lw, color=model_colors['RR'],
+                    linestyle=company_styles['Lyft']['linestyle'], alpha=alpha)
+            ax.plot(total_data['price_RR_Uber'] / 5, lw=lw, color=model_colors['RR'],
+                    linestyle=company_styles['Uber']['linestyle'], alpha=alpha)
             if i == 0:
                 ax.set_ylabel(r'prices', fontsize=fs)
             ax.set_title(f'$\mu_A = {mu_A}$', fontsize=fs)
@@ -332,6 +338,10 @@ for info_type in info_types_extended:
                     alpha = company_styles[company]['alpha']
                     ax.plot(np.sum(total_data[key], axis=1), label=f'{model}, {company}', lw=lw, color=color,
                             linestyle=linestyle, alpha=alpha)
+            ax.plot(np.sum(total_data['demand_RR_Lyft'], axis=1), lw=lw, color=model_colors['RR'],
+                    linestyle=company_styles['Lyft']['linestyle'], alpha=alpha)
+            ax.plot(np.sum(total_data['demand_RR_Uber'], axis=1), lw=lw, color=model_colors['RR'],
+                    linestyle=company_styles['Uber']['linestyle'], alpha=alpha)
             if i == 0:
                 ax.set_ylabel(r'demand', fontsize=fs)
             ax.set_title(f'$\mu_A = {mu_A}$', fontsize=fs)
@@ -349,6 +359,10 @@ for info_type in info_types_extended:
                     alpha = company_styles[company]['alpha']
                     ax.plot(running_mean(total_data[key], N=mean_val), label=f'{model}, {company}', lw=lw,
                             color=color, linestyle=linestyle, alpha=alpha)
+            ax.plot(running_mean(total_data['rev_RR_Lyft'], N=mean_val), lw=lw, color=model_colors['RR'],
+                    linestyle=company_styles['Lyft']['linestyle'], alpha=alpha)
+            ax.plot(running_mean(total_data['rev_RR_Uber'], N=mean_val), lw=lw, color=model_colors['RR'],
+                    linestyle=company_styles['Uber']['linestyle'], alpha=alpha)
             if i == 0:
                 ax.set_ylabel(r'revenue', fontsize=fs)
             ax.set_title(f'$\mu_A = {mu_A}$', fontsize=fs)
@@ -363,6 +377,7 @@ for info_type in info_types_extended:
                 color = model_colors[model]
                 alpha = company_styles[company]['alpha']
                 ax.plot(total_data[key1] + total_data[key2], label=f'{model}', lw=lw, color=color, alpha=alpha)
+            ax.plot(total_data['rev_RR_Lyft'] + total_data['rev_RR_Uber'], lw=lw, color=model_colors['RR'], alpha=alpha)
             if i == 0:
                 ax.set_ylabel(r'total revenue', fontsize=fs)
             ax.set_title(f'$\mu_A = {mu_A}$', fontsize=fs) 
@@ -379,3 +394,34 @@ for info_type in info_types_extended:
         plt.tight_layout(rect=[0, 0.15, 1, 1])
     plt.savefig(f'ride_share/figs/{info_type}.pdf', transparent=True, bbox_inches='tight')
     plt.close()
+
+# 利用 all_mu_A_data 计算总收益和标准差
+for mu_A, data in all_mu_A_data.items():
+    for model in models:
+        all_last_digits = []
+        for exp in range(num_experiments):
+            revenue_p1 = data[f'rev_{model}_Lyft']
+            revenue_p2 = data[f'rev_{model}_Uber']
+            total_revenue = revenue_p1 + revenue_p2
+            # 取总收益序列的最后一位数字
+            last_digit = total_revenue[-1]
+            all_last_digits.append(last_digit)
+
+        all_last_digits = np.array(all_last_digits)
+        mean_last_digit = np.mean(all_last_digits)
+        std_last_digit = np.std(all_last_digits)
+        # 使用 {:0.0f} 保留整数部分
+        # stat_str = f'{mean_last_digit:0.0f} $\pm$ {std_last_digit:0.2f}'
+        stat_str = f'{mean_last_digit:0.0f}'
+        total_revenue_stats.append({
+            'model': model,
+            'mu_A': f'$\mu_A$={mu_A}',
+            'total_revenue': stat_str
+        })
+
+# 创建 DataFrame 并保存为 Excel
+df = pd.DataFrame(total_revenue_stats)
+pivot_df = df.pivot(index='model', columns='mu_A', values='total_revenue')
+# 确保 model 顺序和列表一致
+pivot_df = pivot_df.reindex(models)
+pivot_df.to_excel('ride_share/figs/total_revenue.xlsx')

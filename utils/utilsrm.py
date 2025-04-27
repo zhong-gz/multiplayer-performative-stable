@@ -1039,7 +1039,7 @@ def generate_negative_definite_matrix(n, diag_scale=0.5, off_diag_scale=0.01):
     return A
 
 def generate_positive_definite_matrix(n, diag_scale=0.25, off_diag_scale=0.01):
-    eigenvalues = np.random.normal(loc= diag_scale, scale=diag_scale / 5, size=n)
+    eigenvalues = np.random.normal(loc= diag_scale, scale=diag_scale / 10, size=n)
     # 生成正交矩阵 Q
     Q, _ = np.linalg.qr(np.random.randn(n, n))
     # 构造对角矩阵 Λ
