@@ -12,7 +12,7 @@ num_experiments = 2
 figuresize=(14, 7)
 loc_cap=11
 eta=0.001 
-run_experiment = 1 # 1: run the experiment, 0: load the data
+run_experiment = 0 # 1: run the experiment, 0: load the data
 mu_A_list = [0.25,0.50,0.75,1.0] #25,0.50,0.75,1
 
 gamma = 2.1
@@ -39,6 +39,7 @@ company_styles = {
 }
 fs=24
 lw=2
+all_mu_A_data = {}
 for mu_A in mu_A_list:
     mu_AC = mu_A/2
     params = {}
@@ -50,7 +51,7 @@ for mu_A in mu_A_list:
     total_data = {}
     for p in [0,1,2,3,4]:  #,1,2,3,4
         price_index = p
-        data_file_path = f'ride_share/data/{price_index*5+10}_data.npy'
+        data_file_path = f'ride_share/data/mu_A_{mu_A}_{price_index*5+10}_data.npy'
         # set up the game
         loc_lst_index=list(range(0,loc_cap))
         price_lst_index=list(range(0,5))
@@ -106,6 +107,8 @@ for mu_A in mu_A_list:
                     total_data[key] += value
                 else:
                     total_data[key] = value
+        
+        all_mu_A_data[mu_A] = total_data
             
         # fname='ride_share/figs_'+str(mu_A)+'/'+str((price_index*5+10))+'_prices.'
         # plt.figure(figsize=figuresize)
@@ -264,3 +267,115 @@ for mu_A in mu_A_list:
     plt.ylabel(r'total revenue', fontsize=fs+2)
     plt.tight_layout()
     plt.savefig(fname+'pdf', transparent=True, bbox_inches='tight')
+
+# 绘制 4 个大图
+info_types_extended = ['total_price', 'demand', 'each_revenue', 'total_revenue']
+for info_type in info_types_extended:
+    fig, axes = plt.subplots(1, 4, figsize=(28, 7))
+    axes = axes.flatten()
+
+    # 找出所有子图数据在该大图对应的指标下的最小值和最大值
+    all_y_data = []
+    for i, mu_A in enumerate(mu_A_list):
+        total_data = all_mu_A_data[mu_A]
+        if info_type == 'total_price':
+            for model in models:
+                for company in companies:
+                    key = f'{info_types[0]}_{model}_{company}'
+                    all_y_data.extend(total_data[key] / 5)
+        elif info_type == 'demand':
+            for model in models:
+                for company in companies:
+                    key = f'{info_types[2]}_{model}_{company}'
+                    all_y_data.extend(np.sum(total_data[key], axis=1))
+        elif info_type == 'each_revenue':
+            mean_val = 1
+            for model in models:
+                for company in companies:
+                    key = f'{info_types[1]}_{model}_{company}'
+                    all_y_data.extend(running_mean(total_data[key], N=mean_val))
+        elif info_type == 'total_revenue':
+            for model in models:
+                key1 = f'{info_types[1]}_{model}_{companies[0]}'
+                key2 = f'{info_types[1]}_{model}_{companies[1]}'
+                all_y_data.extend(total_data[key1] + total_data[key2])
+
+    y_min = min(all_y_data)
+    y_max = max(all_y_data)
+
+    for i, mu_A in enumerate(mu_A_list):
+        total_data = all_mu_A_data[mu_A]
+        ax = axes[i]
+
+        if info_type == 'total_price':
+            for model in models:
+                for company in companies:
+                    key = f'{info_types[0]}_{model}_{company}'
+                    color = model_colors[model]
+                    linestyle = company_styles[company]['linestyle']
+                    alpha = company_styles[company]['alpha']
+                    ax.plot(total_data[key] / 5, label=f'{model}, {company}', lw=lw, color=color, linestyle=linestyle,
+                            alpha=alpha)
+            if i == 0:
+                ax.set_ylabel(r'prices', fontsize=fs)
+            ax.set_title(f'$\mu_A = {mu_A}$', fontsize=fs)
+            ax.grid(True)
+            ax.tick_params(labelsize=fs-2)
+            ax.set_xlabel(r'iterations', fontsize=fs)
+            
+        elif info_type == 'demand':
+            for model in models:
+                for company in companies:
+                    key = f'{info_types[2]}_{model}_{company}'
+                    color = model_colors[model]
+                    linestyle = company_styles[company]['linestyle']
+                    alpha = company_styles[company]['alpha']
+                    ax.plot(np.sum(total_data[key], axis=1), label=f'{model}, {company}', lw=lw, color=color,
+                            linestyle=linestyle, alpha=alpha)
+            if i == 0:
+                ax.set_ylabel(r'demand', fontsize=fs)
+            ax.set_title(f'$\mu_A = {mu_A}$', fontsize=fs)
+            ax.grid(True)
+            ax.tick_params(labelsize=fs-2)
+            ax.set_xlabel(r'iterations', fontsize=fs)
+            
+        elif info_type == 'each_revenue':
+            mean_val = 1
+            for model in models:
+                for company in companies:
+                    key = f'{info_types[1]}_{model}_{company}'
+                    color = model_colors[model]
+                    linestyle = company_styles[company]['linestyle']
+                    alpha = company_styles[company]['alpha']
+                    ax.plot(running_mean(total_data[key], N=mean_val), label=f'{model}, {company}', lw=lw,
+                            color=color, linestyle=linestyle, alpha=alpha)
+            if i == 0:
+                ax.set_ylabel(r'revenue', fontsize=fs)
+            ax.set_title(f'$\mu_A = {mu_A}$', fontsize=fs)
+            ax.grid(True)
+            ax.set_xlabel(r'iterations', fontsize=fs)
+            ax.tick_params(labelsize=fs-2)
+
+        elif info_type == 'total_revenue':
+            for model in models:
+                key1 = f'{info_types[1]}_{model}_{companies[0]}'
+                key2 = f'{info_types[1]}_{model}_{companies[1]}'
+                color = model_colors[model]
+                alpha = company_styles[company]['alpha']
+                ax.plot(total_data[key1] + total_data[key2], label=f'{model}', lw=lw, color=color, alpha=alpha)
+            if i == 0:
+                ax.set_ylabel(r'total revenue', fontsize=fs)
+            ax.set_title(f'$\mu_A = {mu_A}$', fontsize=fs) 
+            ax.grid(True)
+            ax.set_xlabel(r'iterations', fontsize=fs)
+            ax.tick_params(labelsize=fs-2)
+        ax.set_ylim(y_min, y_max)
+    handles, labels = axes[0].get_legend_handles_labels()
+    if info_type == 'total_revenue':
+        fig.legend(handles, labels, loc='lower center', fontsize=fs - 2, ncol=len(models) * len(companies))
+        plt.tight_layout(rect=[0, 0.1, 1, 1])
+    else:
+        fig.legend(handles, labels, loc='lower center', fontsize=fs - 2, ncol=len(models) * len(companies)/2)
+        plt.tight_layout(rect=[0, 0.15, 1, 1])
+    plt.savefig(f'ride_share/figs/{info_type}.pdf', transparent=True, bbox_inches='tight')
+    plt.close()
