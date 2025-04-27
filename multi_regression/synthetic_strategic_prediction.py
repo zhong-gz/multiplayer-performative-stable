@@ -18,7 +18,7 @@ from utilssp_vector_map import *
 seed = 42
 np.random.seed(seed)
 seeds= range(42,52)
-run_experiment = 0 # 1: run the experiment, 0: load the data
+run_experiment = 1 # 1: run the experiment, 0: load the data
 sigma_theta= 0.1 ###
 sigma_w=0.0001
 nu=1e-3

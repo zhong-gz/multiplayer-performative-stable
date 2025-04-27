@@ -8,11 +8,11 @@ from utilsrm import *
 ## Initialize the game class and set the random seed and initial point
 # seed 
 np.random.seed(42)
-num_experiments = 2
+num_experiments = 10
 figuresize=(14, 7)
 loc_cap=11
 eta=0.001 
-run_experiment = 0 # 1: run the experiment, 0: load the data
+run_experiment = 1 # 1: run the experiment, 0: load the data
 mu_A_list = [0.25,0.50,0.75,1.0] #25,0.50,0.75,1
 
 gamma = 2.1
@@ -60,7 +60,7 @@ for mu_A in mu_A_list:
             all_data={}
             for num_exper in range(num_experiments):
                 print('Runing at number',num_exper+1,'trail')
-                x0=np.random.rand(2,loc_cap)*5
+                x0=np.random.rand(2,loc_cap)*5 # initial point in the range [0,5]
                 all_data[num_exper]={}
                 all_data[num_exper]['x0']=x0
                 ddgame=ddrideshare(loc_lst_index,price_lst_index,seed=2,lam=[0.0,0.0], base=False, params=params,maxx=10)
