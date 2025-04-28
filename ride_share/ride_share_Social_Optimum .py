@@ -46,12 +46,6 @@ all_mu_A_data_path = 'ride_share/data/all_mu_A_data.npy'
 if run_experiment:
     for mu_A in mu_A_list:
         mu_AC = mu_A/2
-        params = {}
-        params['A1']  = generate_negative_definite_matrix(loc_cap, diag_scale=mu_A)
-        params['A2']  = generate_negative_definite_matrix(loc_cap, diag_scale=mu_A)
-        params['Ac1'] = generate_positive_definite_matrix(loc_cap, diag_scale=mu_AC)
-        params['Ac2'] = generate_positive_definite_matrix(loc_cap, diag_scale=mu_AC)
-
         total_avg_data = {}
         total_var_data = {}
         for p in [0,1,2,3,4]:  #,1,2,3,4
@@ -64,6 +58,11 @@ if run_experiment:
             
             all_data={}
             for num_exper in range(num_experiments):
+                params = {}
+                params['A1']  = generate_negative_definite_matrix(loc_cap, diag_scale=mu_A)
+                params['A2']  = generate_negative_definite_matrix(loc_cap, diag_scale=mu_A)
+                params['Ac1'] = generate_positive_definite_matrix(loc_cap, diag_scale=mu_AC)
+                params['Ac2'] = generate_positive_definite_matrix(loc_cap, diag_scale=mu_AC)
                 print('Runing at number',num_exper+1,'trail')
                 x0=np.random.rand(2,loc_cap)*5 # initial point in the range [0,5]
                 all_data[num_exper]={}
@@ -106,10 +105,6 @@ if run_experiment:
                         all_values_arr = np.asarray(all_values)
                         avg_data[key] = np.mean(all_values_arr, axis=0)
                         var_data[key] = np.var(all_values_arr, axis=0)  # 计算方差
-
-            combined_data = {'avg': avg_data, 'var': var_data}  # 合并均值和方差数据
-            avg_data = combined_data['avg']
-            var_data = combined_data['var']
 
             for key, value in avg_data.items():
                 if key in total_avg_data:
@@ -165,6 +160,7 @@ for info_type in info_types_extended:
 
     for i, mu_A in enumerate(mu_A_list):
         total_avg_data = all_mu_A_data[mu_A]['avg']
+        total_var_data = all_mu_A_data[mu_A]['var']
         ax = axes[i]
 
         if info_type == 'total_price':
@@ -217,6 +213,8 @@ for info_type in info_types_extended:
                     alpha = company_styles[company]['alpha']
                     ax.plot(running_mean(total_avg_data[key], N=mean_val), label=f'{model}, {company}', lw=lw,
                             color=color, linestyle=linestyle, alpha=alpha)
+                    # ax.fill_between(range(len(total_avg_data[key])), running_mean(total_avg_data[key], N=mean_val) - np.sqrt(
+                    #     total_var_data[key]), running_mean(total_avg_data[key], N=mean_val) + np.sqrt(total_var_data[key]),color=color, alpha=0.5)
             ax.plot(running_mean(total_avg_data['rev_RR_Lyft'], N=mean_val), lw=lw, color=model_colors['RR'],
                     linestyle=company_styles['Lyft']['linestyle'], alpha=alpha)
             ax.plot(running_mean(total_avg_data['rev_RR_Uber'], N=mean_val), lw=lw, color=model_colors['RR'],
@@ -267,7 +265,7 @@ for mu_A, data in all_mu_A_data.items():
         var_p2 = var_data[f'rev_{model}_Uber']
         total_var = var_p1 + var_p2
         final_var = total_var[-1]
-        stat_str = f'{final_revenue:0.0f} $\pm$ {final_var:0.2f}'
+        stat_str = f'{final_revenue:0.0f} $\pm$ {np.sqrt(final_var):0.0f}'
         total_revenue_stats.append({
             'model': model,
             'mu_A': f'$\mu_A$={mu_A}',

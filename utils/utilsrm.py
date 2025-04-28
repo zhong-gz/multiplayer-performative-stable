@@ -210,11 +210,11 @@ class ddrideshare:
         #print(np.shape(z_))
         if player==0:
             y1 = self.A1 @ x[0] + self.Ac1 @ x[1]
-            z = (2 * z_) / (1 + 1 / np.exp(y1)) + np.random.normal(0, 1, size=z_.shape)
+            z = (2 * z_) / (1 + 1 / np.exp(y1)) + np.random.normal(0, 0.01, size=z_.shape)
             # z= np.maximum(z_+self.A1@x[0]+self.Ac1@x[1]+np.random.normal(0,0.1,size=(z_.shape)),0.001)
         if player==1:
             y2 = self.A2@x[1]+self.Ac2@x[0]
-            z = (2 * z_) / (1 + 1 / np.exp(y2)) + np.random.normal(0, 1, size=z_.shape)
+            z = (2 * z_) / (1 + 1 / np.exp(y2)) + np.random.normal(0, 0.01, size=z_.shape)
             # z= np.maximum(z_+self.A2@x[1]+self.Ac2@x[0]+np.random.normal(0,0.1,size=(z_.shape)),0.001)
         return z
 
@@ -598,7 +598,7 @@ class ddrideshare:
         self.perform_copm_opgd = perform_opgd
         self.tot_rev=tot_rev
         self.price_index_opgd=price_index
-        print("OPGD Price we are running at : ", self.prices_[self.price_index_opgd])
+        print("OPGD Price we are running at: ", self.prices_[self.price_index_opgd])
         self.A1_hat_opgd = [np.diag(-10*np.random.rand(np.shape(self.A1)[1]))]
         self.A2_hat_opgd = [np.diag(-10*np.random.rand(np.shape(self.A2)[1]))]
         self.z1_base=self.ql_[:,:,self.price_index_opgd].T
