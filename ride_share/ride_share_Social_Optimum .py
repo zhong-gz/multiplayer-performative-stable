@@ -42,23 +42,26 @@ fs=24
 lw=2
 all_mu_A_data = {}
 total_revenue_stats = []
-for mu_A in mu_A_list:
-    mu_AC = mu_A/2
-    params = {}
-    params['A1']  = generate_negative_definite_matrix(loc_cap, diag_scale=mu_A)
-    params['A2']  = generate_negative_definite_matrix(loc_cap, diag_scale=mu_A)
-    params['Ac1'] = generate_positive_definite_matrix(loc_cap, diag_scale=mu_AC)
-    params['Ac2'] = generate_positive_definite_matrix(loc_cap, diag_scale=mu_AC)
+all_mu_A_data_path = 'ride_share/data/all_mu_A_data.npy'
+if run_experiment:
+    for mu_A in mu_A_list:
+        mu_AC = mu_A/2
+        params = {}
+        params['A1']  = generate_negative_definite_matrix(loc_cap, diag_scale=mu_A)
+        params['A2']  = generate_negative_definite_matrix(loc_cap, diag_scale=mu_A)
+        params['Ac1'] = generate_positive_definite_matrix(loc_cap, diag_scale=mu_AC)
+        params['Ac2'] = generate_positive_definite_matrix(loc_cap, diag_scale=mu_AC)
 
-    total_data = {}
-    for p in [0,1,2,3,4]:  #,1,2,3,4
-        price_index = p
-        data_file_path = f'ride_share/data/mu_A_{mu_A}_{price_index*5+10}_data.npy'
-        # set up the game
-        loc_lst_index=list(range(0,loc_cap))
-        price_lst_index=list(range(0,5))
-        price_start = price_index*5+10
-        if run_experiment:
+        total_avg_data = {}
+        total_var_data = {}
+        for p in [0,1,2,3,4]:  #,1,2,3,4
+            price_index = p
+            data_file_path = f'ride_share/data/mu_A_{mu_A}_{price_index*5+10}_data.npy'
+            # set up the game
+            loc_lst_index=list(range(0,loc_cap))
+            price_lst_index=list(range(0,5))
+            price_start = price_index*5+10
+            
             all_data={}
             for num_exper in range(num_experiments):
                 print('Runing at number',num_exper+1,'trail')
@@ -94,181 +97,36 @@ for mu_A in mu_A_list:
                         all_data[num_exper][f'{info_types[2]}_{model}_{company}'] = demand
 
             avg_data = {}
+            var_data = {}  # 新增一个字典来存储方差
             for model in models:
                 for company in companies:
                     for info_type in info_types:
                         key = f'{info_type}_{model}_{company}'
                         all_values = [all_data[num_exper][key] for num_exper in range(num_experiments)]
-                        avg_data[key] = np.mean(np.asarray(all_values), axis=0)
-            np.save(data_file_path, avg_data)
-        else:
-            avg_data = np.load(data_file_path, allow_pickle=True).item()
+                        all_values_arr = np.asarray(all_values)
+                        avg_data[key] = np.mean(all_values_arr, axis=0)
+                        var_data[key] = np.var(all_values_arr, axis=0)  # 计算方差
 
-        for key, value in avg_data.items():
-                if key in total_data:
-                    total_data[key] += value
+            combined_data = {'avg': avg_data, 'var': var_data}  # 合并均值和方差数据
+            avg_data = combined_data['avg']
+            var_data = combined_data['var']
+
+            for key, value in avg_data.items():
+                if key in total_avg_data:
+                    total_avg_data[key] += value
                 else:
-                    total_data[key] = value
-        
-        all_mu_A_data[mu_A] = total_data
-  
-        # fname='ride_share/figs_'+str(mu_A)+'/'+str((price_index*5+10))+'_prices.'
-        # plt.figure(figsize=figuresize)
+                    total_avg_data[key] = value
 
-        # for model in models:
-        #     for company in companies:
-        #         key = f'{info_types[0]}_{model}_{company}'
-        #         color = model_colors[model]
-        #         linestyle = company_styles[company]['linestyle']
-        #         alpha = company_styles[company]['alpha']
-        #         plt.plot(avg_data[key], label=f'{model}, {company}',lw=lw,color=color, linestyle=linestyle, alpha=alpha)
-        # plt.plot(avg_data['price_RR_Lyft'], lw=lw,color=model_colors['RR'], linestyle=company_styles['Lyft']['linestyle'], alpha=alpha)
-        # plt.plot(avg_data['price_RR_Uber'], lw=lw,color=model_colors['RR'], linestyle=company_styles['Uber']['linestyle'], alpha=alpha)
-        # plt.grid(True)
-        # plt.xlabel(r'iterations', fontsize=fs)
-        # plt.legend(fontsize=fs-2,ncol=1, loc='right',bbox_to_anchor=(1.45,0.5))
-        # plt.tick_params(labelsize=fs-2)
-        # plt.ylabel(r'prices', fontsize=fs)
-        # plt.tight_layout()
-        # plt.savefig(fname+'pdf', transparent=True, bbox_inches='tight')
+            for key, value in var_data.items():
+                if key in total_var_data:
+                    total_var_data[key] += value
+                else:
+                    total_var_data[key] = value
 
-        # fname='ride_share/figs_'+str(mu_A)+'/'+str((price_index*5+10))+'_demand.'
-        # plt.figure(figsize=figuresize)
-
-        # for model in models:
-        #     for company in companies:
-        #         key = f'{info_types[2]}_{model}_{company}'
-        #         color = model_colors[model]
-        #         linestyle = company_styles[company]['linestyle']
-        #         alpha = company_styles[company]['alpha']
-        #         plt.plot(np.sum(avg_data[key], axis=1), label=f'{model}, {company}',lw=lw,color=color, linestyle=linestyle, alpha=alpha)
-        # plt.plot(np.sum(avg_data['demand_RR_Lyft'], axis=1),lw=lw, color=model_colors['RR'], linestyle=company_styles['Lyft']['linestyle'], alpha=alpha)
-        # plt.plot(np.sum(avg_data['demand_RR_Uber'], axis=1),lw=lw, color=model_colors['RR'], linestyle=company_styles['Uber']['linestyle'], alpha=alpha)
-        # plt.grid(True)
-        # plt.xlabel(r'iterations', fontsize=fs)
-        # plt.legend(fontsize=fs-2,ncol=1, loc='right',bbox_to_anchor=(1.45,0.5))
-        # plt.tick_params(labelsize=fs-2)
-        # plt.ylabel(r'demand', fontsize=fs)
-        # plt.tight_layout()
-        # plt.savefig(fname+'pdf', transparent=True, bbox_inches='tight')
-
-        # fname='ride_share/figs_'+str(mu_A)+'/'+str((price_index*5+10))+'_each_revenue.'
-        # plt.figure(figsize=figuresize)
-        # mean_val=20
-        # for model in models:
-        #     for company in companies:
-        #         key = f'{info_types[1]}_{model}_{company}'
-        #         color = model_colors[model]
-        #         linestyle = company_styles[company]['linestyle']
-        #         alpha = company_styles[company]['alpha']
-        #         plt.plot(running_mean(avg_data[key],N=mean_val), label=f'{model}, {company}',lw=lw,
-        #                         color=color, linestyle=linestyle, alpha=alpha)
-        # plt.plot(running_mean(avg_data['rev_RR_Lyft'],N=mean_val),lw=lw,color=model_colors['RR'], linestyle=company_styles['Lyft']['linestyle'], alpha=alpha)
-        # plt.plot(running_mean(avg_data['rev_RR_Uber'],N=mean_val),lw=lw,color=model_colors['RR'], linestyle=company_styles['Uber']['linestyle'], alpha=alpha)
-        # plt.grid(True)
-        # plt.xlabel(r'iterations', fontsize=fs)
-        # plt.legend(fontsize=fs-2,ncol=1, loc='right',bbox_to_anchor=(1.45,0.5))
-        # plt.tick_params(labelsize=fs-2)
-        # plt.ylabel(r'revenue', fontsize=fs)
-        # plt.tight_layout()
-        # plt.savefig(fname+'pdf', transparent=True, bbox_inches='tight')
-
-        # fname='ride_share/figs_'+str(mu_A)+'/'+str((price_index*5+10))+'_total_revenue.'
-        # # new_figuresize = (figuresize[0] + 5,) + figuresize[1:]
-        # plt.figure(figsize=figuresize)
-        # for model in models:
-        #     key1 = f'{info_types[1]}_{model}_{companies[0]}'
-        #     key2 = f'{info_types[1]}_{model}_{companies[1]}'
-        #     color = model_colors[model]
-        #     alpha = company_styles[company]['alpha']
-        #     plt.plot(avg_data[key1]+avg_data[key2], label=f'{model}',lw=lw,color=color,alpha=alpha)
-        # plt.plot(avg_data['rev_RR_Lyft']+avg_data['rev_RR_Uber'],lw=lw,color=model_colors['RR'],alpha=alpha)
-        # plt.grid(True)
-        # plt.xlabel(r'iterations', fontsize=fs+2)
-        # plt.tick_params(labelsize=fs-2)
-        # plt.legend(fontsize=fs-2,ncol=1, loc='right',bbox_to_anchor=(1.45,0.5)) #loc='center',bbox_to_anchor=(0.5,-0.2),ncol=6)
-        # plt.ylabel(r'total revenue', fontsize=fs+2)
-        # plt.tight_layout()
-        # plt.savefig(fname+'pdf', transparent=True, bbox_inches='tight')
-    
-    fname='ride_share/figs/result_'+str(mu_A)+'/00_total_prices.'
-    plt.figure(figsize=figuresize)
-
-    for model in models:
-        for company in companies:
-            key = f'{info_types[0]}_{model}_{company}'
-            color = model_colors[model]
-            linestyle = company_styles[company]['linestyle']
-            alpha = company_styles[company]['alpha']
-            plt.plot(total_data[key]/5, label=f'{model}, {company}',lw=lw,color=color, linestyle=linestyle, alpha=alpha)
-    plt.plot(total_data['price_RR_Lyft']/5, lw=lw,color=model_colors['RR'], linestyle=company_styles['Lyft']['linestyle'], alpha=alpha)
-    plt.plot(total_data['price_RR_Uber']/5, lw=lw,color=model_colors['RR'], linestyle=company_styles['Uber']['linestyle'], alpha=alpha)
-    plt.grid(True)
-    plt.xlabel(r'iterations', fontsize=fs)
-    plt.legend(fontsize=fs-2,ncol=1, loc='right',bbox_to_anchor=(1.45,0.5))
-    plt.tick_params(labelsize=fs-2)
-    plt.ylabel(r'prices', fontsize=fs)
-    plt.tight_layout()
-    plt.savefig(fname+'pdf', transparent=True, bbox_inches='tight')
-
-    fname='ride_share/figs/result_'+str(mu_A)+'/00_total_demand.'
-    plt.figure(figsize=figuresize)
-
-    for model in models:
-        for company in companies:
-            key = f'{info_types[2]}_{model}_{company}'
-            color = model_colors[model]
-            linestyle = company_styles[company]['linestyle']
-            alpha = company_styles[company]['alpha']
-            plt.plot(np.sum(total_data[key], axis=1), label=f'{model}, {company}',lw=lw,color=color, linestyle=linestyle, alpha=alpha)
-    plt.plot(np.sum(total_data['demand_RR_Lyft'], axis=1),lw=lw, color=model_colors['RR'], linestyle=company_styles['Lyft']['linestyle'], alpha=alpha)
-    plt.plot(np.sum(total_data['demand_RR_Uber'], axis=1),lw=lw, color=model_colors['RR'], linestyle=company_styles['Uber']['linestyle'], alpha=alpha)
-    plt.grid(True)
-    plt.xlabel(r'iterations', fontsize=fs)
-    plt.legend(fontsize=fs-2,ncol=1, loc='right',bbox_to_anchor=(1.45,0.5))
-    plt.tick_params(labelsize=fs-2)
-    plt.ylabel(r'demand', fontsize=fs)
-    plt.tight_layout()
-    plt.savefig(fname+'pdf', transparent=True, bbox_inches='tight')
-
-    fname='ride_share/figs/result_'+str(mu_A)+'/00_total_each_revenue.'
-    plt.figure(figsize=figuresize)
-    mean_val=20
-    for model in models:
-        for company in companies:
-            key = f'{info_types[1]}_{model}_{company}'
-            color = model_colors[model]
-            linestyle = company_styles[company]['linestyle']
-            alpha = company_styles[company]['alpha']
-            plt.plot(running_mean(total_data[key],N=mean_val), label=f'{model}, {company}',lw=lw,
-                            color=color, linestyle=linestyle, alpha=alpha)
-    plt.plot(running_mean(total_data['rev_RR_Lyft'],N=mean_val),lw=lw,color=model_colors['RR'], linestyle=company_styles['Lyft']['linestyle'], alpha=alpha)
-    plt.plot(running_mean(total_data['rev_RR_Uber'],N=mean_val),lw=lw,color=model_colors['RR'], linestyle=company_styles['Uber']['linestyle'], alpha=alpha)
-    plt.grid(True)
-    plt.xlabel(r'iterations', fontsize=fs)
-    plt.legend(fontsize=fs-2,ncol=1, loc='right',bbox_to_anchor=(1.45,0.5))
-    plt.tick_params(labelsize=fs-2)
-    plt.ylabel(r'revenue', fontsize=fs)
-    plt.tight_layout()
-    plt.savefig(fname+'pdf', transparent=True, bbox_inches='tight')
-
-    fname='ride_share/figs/result_'+str(mu_A)+'/00_total_total_revenue.'
-    # new_figuresize = (figuresize[0] - 2,) + figuresize[1:]
-    plt.figure(figsize=figuresize)
-    for model in models:
-        key1 = f'{info_types[1]}_{model}_{companies[0]}'
-        key2 = f'{info_types[1]}_{model}_{companies[1]}'
-        color = model_colors[model]
-        alpha = company_styles[company]['alpha']
-        plt.plot(total_data[key1]+total_data[key2], label=f'{model}',lw=lw,color=color,alpha=alpha)
-    plt.plot(total_data['rev_RR_Lyft']+total_data['rev_RR_Uber'],lw=lw,color=model_colors['RR'],alpha=alpha)
-    plt.grid(True)
-    plt.xlabel(r'iterations', fontsize=fs+2)
-    plt.tick_params(labelsize=fs-2)
-    plt.legend(fontsize=fs-2,ncol=1, loc='right',bbox_to_anchor=(1.45,0.5)) #loc='center',bbox_to_anchor=(0.5,-0.2),ncol=6)
-    plt.ylabel(r'total revenue', fontsize=fs+2)
-    plt.tight_layout()
-    plt.savefig(fname+'pdf', transparent=True, bbox_inches='tight')
+        all_mu_A_data[mu_A] = {'avg': total_avg_data, 'var': total_var_data}
+    np.save(all_mu_A_data_path, all_mu_A_data)
+else:
+    all_mu_A_data = np.load(all_mu_A_data_path, allow_pickle=True).item()
 
 # 绘制 4 个大图
 info_types_extended = ['total_price', 'demand', 'each_revenue', 'total_revenue']
@@ -279,34 +137,34 @@ for info_type in info_types_extended:
     # 找出所有子图数据在该大图对应的指标下的最小值和最大值
     all_y_data = []
     for i, mu_A in enumerate(mu_A_list):
-        total_data = all_mu_A_data[mu_A]
+        total_avg_data = all_mu_A_data[mu_A]['avg']
         if info_type == 'total_price':
             for model in models:
                 for company in companies:
                     key = f'{info_types[0]}_{model}_{company}'
-                    all_y_data.extend(total_data[key] / 5)
+                    all_y_data.extend(total_avg_data[key] / 5)
         elif info_type == 'demand':
             for model in models:
                 for company in companies:
                     key = f'{info_types[2]}_{model}_{company}'
-                    all_y_data.extend(np.sum(total_data[key], axis=1))
+                    all_y_data.extend(np.sum(total_avg_data[key], axis=1))
         elif info_type == 'each_revenue':
             mean_val = 1
             for model in models:
                 for company in companies:
                     key = f'{info_types[1]}_{model}_{company}'
-                    all_y_data.extend(running_mean(total_data[key], N=mean_val))
+                    all_y_data.extend(running_mean(total_avg_data[key], N=mean_val))
         elif info_type == 'total_revenue':
             for model in models:
                 key1 = f'{info_types[1]}_{model}_{companies[0]}'
                 key2 = f'{info_types[1]}_{model}_{companies[1]}'
-                all_y_data.extend(total_data[key1] + total_data[key2])
+                all_y_data.extend(total_avg_data[key1] + total_avg_data[key2])
 
     y_min = min(all_y_data)
     y_max = max(all_y_data)
 
     for i, mu_A in enumerate(mu_A_list):
-        total_data = all_mu_A_data[mu_A]
+        total_avg_data = all_mu_A_data[mu_A]['avg']
         ax = axes[i]
 
         if info_type == 'total_price':
@@ -316,11 +174,11 @@ for info_type in info_types_extended:
                     color = model_colors[model]
                     linestyle = company_styles[company]['linestyle']
                     alpha = company_styles[company]['alpha']
-                    ax.plot(total_data[key] / 5, label=f'{model}, {company}', lw=lw, color=color, linestyle=linestyle,
+                    ax.plot(total_avg_data[key] / 5, label=f'{model}, {company}', lw=lw, color=color, linestyle=linestyle,
                             alpha=alpha)
-            ax.plot(total_data['price_RR_Lyft'] / 5, lw=lw, color=model_colors['RR'],
+            ax.plot(total_avg_data['price_RR_Lyft'] / 5, lw=lw, color=model_colors['RR'],
                     linestyle=company_styles['Lyft']['linestyle'], alpha=alpha)
-            ax.plot(total_data['price_RR_Uber'] / 5, lw=lw, color=model_colors['RR'],
+            ax.plot(total_avg_data['price_RR_Uber'] / 5, lw=lw, color=model_colors['RR'],
                     linestyle=company_styles['Uber']['linestyle'], alpha=alpha)
             if i == 0:
                 ax.set_ylabel(r'prices', fontsize=fs)
@@ -336,11 +194,11 @@ for info_type in info_types_extended:
                     color = model_colors[model]
                     linestyle = company_styles[company]['linestyle']
                     alpha = company_styles[company]['alpha']
-                    ax.plot(np.sum(total_data[key], axis=1), label=f'{model}, {company}', lw=lw, color=color,
+                    ax.plot(np.sum(total_avg_data[key], axis=1), label=f'{model}, {company}', lw=lw, color=color,
                             linestyle=linestyle, alpha=alpha)
-            ax.plot(np.sum(total_data['demand_RR_Lyft'], axis=1), lw=lw, color=model_colors['RR'],
+            ax.plot(np.sum(total_avg_data['demand_RR_Lyft'], axis=1), lw=lw, color=model_colors['RR'],
                     linestyle=company_styles['Lyft']['linestyle'], alpha=alpha)
-            ax.plot(np.sum(total_data['demand_RR_Uber'], axis=1), lw=lw, color=model_colors['RR'],
+            ax.plot(np.sum(total_avg_data['demand_RR_Uber'], axis=1), lw=lw, color=model_colors['RR'],
                     linestyle=company_styles['Uber']['linestyle'], alpha=alpha)
             if i == 0:
                 ax.set_ylabel(r'demand', fontsize=fs)
@@ -357,11 +215,11 @@ for info_type in info_types_extended:
                     color = model_colors[model]
                     linestyle = company_styles[company]['linestyle']
                     alpha = company_styles[company]['alpha']
-                    ax.plot(running_mean(total_data[key], N=mean_val), label=f'{model}, {company}', lw=lw,
+                    ax.plot(running_mean(total_avg_data[key], N=mean_val), label=f'{model}, {company}', lw=lw,
                             color=color, linestyle=linestyle, alpha=alpha)
-            ax.plot(running_mean(total_data['rev_RR_Lyft'], N=mean_val), lw=lw, color=model_colors['RR'],
+            ax.plot(running_mean(total_avg_data['rev_RR_Lyft'], N=mean_val), lw=lw, color=model_colors['RR'],
                     linestyle=company_styles['Lyft']['linestyle'], alpha=alpha)
-            ax.plot(running_mean(total_data['rev_RR_Uber'], N=mean_val), lw=lw, color=model_colors['RR'],
+            ax.plot(running_mean(total_avg_data['rev_RR_Uber'], N=mean_val), lw=lw, color=model_colors['RR'],
                     linestyle=company_styles['Uber']['linestyle'], alpha=alpha)
             if i == 0:
                 ax.set_ylabel(r'revenue', fontsize=fs)
@@ -376,8 +234,8 @@ for info_type in info_types_extended:
                 key2 = f'{info_types[1]}_{model}_{companies[1]}'
                 color = model_colors[model]
                 alpha = company_styles[company]['alpha']
-                ax.plot(total_data[key1] + total_data[key2], label=f'{model}', lw=lw, color=color, alpha=alpha)
-            ax.plot(total_data['rev_RR_Lyft'] + total_data['rev_RR_Uber'], lw=lw, color=model_colors['RR'], alpha=alpha)
+                ax.plot(total_avg_data[key1] + total_avg_data[key2], label=f'{model}', lw=lw, color=color, alpha=alpha)
+            ax.plot(total_avg_data['rev_RR_Lyft'] + total_avg_data['rev_RR_Uber'], lw=lw, color=model_colors['RR'], alpha=alpha)
             if i == 0:
                 ax.set_ylabel(r'total revenue', fontsize=fs)
             ax.set_title(f'$\mu_A = {mu_A}$', fontsize=fs) 
@@ -397,22 +255,19 @@ for info_type in info_types_extended:
 
 # 利用 all_mu_A_data 计算总收益和标准差
 for mu_A, data in all_mu_A_data.items():
+    avg_data = data['avg']
+    var_data = data['var']
     for model in models:
-        all_last_digits = []
-        for exp in range(num_experiments):
-            revenue_p1 = data[f'rev_{model}_Lyft']
-            revenue_p2 = data[f'rev_{model}_Uber']
-            total_revenue = revenue_p1 + revenue_p2
-            # 取总收益序列的最后一位数字
-            last_digit = total_revenue[-1]
-            all_last_digits.append(last_digit)
-
-        all_last_digits = np.array(all_last_digits)
-        mean_last_digit = np.mean(all_last_digits)
-        std_last_digit = np.std(all_last_digits)
-        # 使用 {:0.0f} 保留整数部分
-        # stat_str = f'{mean_last_digit:0.0f} $\pm$ {std_last_digit:0.2f}'
-        stat_str = f'{mean_last_digit:0.0f}'
+        revenue_p1 = avg_data[f'rev_{model}_Lyft']
+        revenue_p2 = avg_data[f'rev_{model}_Uber']
+        total_revenue = revenue_p1 + revenue_p2
+        # 取总收益序列的最后一位数字
+        final_revenue = total_revenue[-1]
+        var_p1 = var_data[f'rev_{model}_Lyft']
+        var_p2 = var_data[f'rev_{model}_Uber']
+        total_var = var_p1 + var_p2
+        final_var = total_var[-1]
+        stat_str = f'{final_revenue:0.0f} $\pm$ {final_var:0.2f}'
         total_revenue_stats.append({
             'model': model,
             'mu_A': f'$\mu_A$={mu_A}',

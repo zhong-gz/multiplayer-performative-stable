@@ -210,11 +210,11 @@ class ddrideshare:
         #print(np.shape(z_))
         if player==0:
             y1 = self.A1 @ x[0] + self.Ac1 @ x[1]
-            z = (2 * z_) / (1 + 1 / np.exp(y1)) + np.random.normal(0, 0.01, size=z_.shape)
+            z = (2 * z_) / (1 + 1 / np.exp(y1)) + np.random.normal(0, 1, size=z_.shape)
             # z= np.maximum(z_+self.A1@x[0]+self.Ac1@x[1]+np.random.normal(0,0.1,size=(z_.shape)),0.001)
         if player==1:
             y2 = self.A2@x[1]+self.Ac2@x[0]
-            z = (2 * z_) / (1 + 1 / np.exp(y2)) + np.random.normal(0, 0.01, size=z_.shape)
+            z = (2 * z_) / (1 + 1 / np.exp(y2)) + np.random.normal(0, 1, size=z_.shape)
             # z= np.maximum(z_+self.A2@x[1]+self.Ac2@x[0]+np.random.normal(0,0.1,size=(z_.shape)),0.001)
         return z
 
