@@ -2,27 +2,34 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 import sys
+from mpl_toolkits.axes_grid1.inset_locator import inset_axes
+import matplotlib.gridspec as gridspec
+from matplotlib.ticker import EngFormatter
+from matplotlib.patches import Rectangle
+from matplotlib.ticker import ScalarFormatter
 # insert at 1, 0 is the script path (or '' in REPL)
 sys.path.insert(1,'./utils/' )
 from utilsrm import *
 
 ## Initialize the game class and set the random seed and initial point
 # seed 
-np.random.seed(42)
+seed = 42
+np.random.seed(seed)
 num_experiments = 10
-figuresize=(14, 7)
+figuresize=(25, 13)
 loc_cap=11
-eta=0.001 
-run_experiment = 1 # 1: run the experiment, 0: load the data
+eta=0.001
+run_experiment = 0 # 1: run the experiment, 0: load the data
 mu_A_list = [0.25,0.50,0.75,1.0] #25,0.50,0.75,1
-
+subrange = 26
 gamma = 2.1
 BATCH=10
-MAXITER=100
+MAXITER=1000
 tot_rev=1
 
 # 不同的模型
 models = ['RR', 'RGD','SFB','AGM','OPGD']
+# models = ['RR', 'OPGD']
 companies = ['Lyft', 'Uber']
 info_types = ['price','rev', 'demand']
 # 定义不同模型对应的颜色
@@ -38,17 +45,20 @@ company_styles = {
     'Lyft': {'linestyle': '-', 'alpha': 1},
     'Uber': {'linestyle': '--', 'alpha': 1}
 }
-fs=24
-lw=2
+fs=44
+lw=4
+lw2 = lw/2
 all_mu_A_data = {}
 total_revenue_stats = []
 all_mu_A_data_path = 'ride_share/data/all_mu_A_data.npy'
 if run_experiment:
     for mu_A in mu_A_list:
+        print('Runing at mu_A',mu_A)
         mu_AC = mu_A/2
         total_avg_data = {}
         total_var_data = {}
         for p in [0,1,2,3,4]:  #,1,2,3,4
+            print('  Runing at price_index',p)
             price_index = p
             data_file_path = f'ride_share/data/mu_A_{mu_A}_{price_index*5+10}_data.npy'
             # set up the game
@@ -58,12 +68,14 @@ if run_experiment:
             
             all_data={}
             for num_exper in range(num_experiments):
+                seed = seed+1
+                np.random.seed(seed)
                 params = {}
                 params['A1']  = generate_negative_definite_matrix(loc_cap, diag_scale=mu_A)
                 params['A2']  = generate_negative_definite_matrix(loc_cap, diag_scale=mu_A)
                 params['Ac1'] = generate_positive_definite_matrix(loc_cap, diag_scale=mu_AC)
                 params['Ac2'] = generate_positive_definite_matrix(loc_cap, diag_scale=mu_AC)
-                print('Runing at number',num_exper+1,'trail')
+                print('    Runing at number',num_exper+1,'trail')
                 x0=np.random.rand(2,loc_cap)*5 # initial point in the range [0,5]
                 all_data[num_exper]={}
                 all_data[num_exper]['x0']=x0
@@ -126,8 +138,9 @@ else:
 # 绘制 4 个大图
 info_types_extended = ['total_price', 'demand', 'each_revenue', 'total_revenue']
 for info_type in info_types_extended:
-    fig, axes = plt.subplots(1, 4, figsize=(28, 7))
-    axes = axes.flatten()
+    fig = plt.figure(figsize=figuresize)
+    gs = gridspec.GridSpec(2, 4, height_ratios=[1, 1])
+    # axes = axes.flatten()
 
     # 找出所有子图数据在该大图对应的指标下的最小值和最大值
     all_y_data = []
@@ -155,13 +168,22 @@ for info_type in info_types_extended:
                 key2 = f'{info_types[1]}_{model}_{companies[1]}'
                 all_y_data.extend(total_avg_data[key1] + total_avg_data[key2])
 
-    y_min = min(all_y_data)
-    y_max = max(all_y_data)
+    all_y_data = np.array(all_y_data)
+    if np.allclose(all_y_data, 0):
+        power = 0
+    else:
+        power = int(np.floor(np.log10(np.max(np.abs(all_y_data)))))
+    scale_factor = 10 ** power
+
+    y_min = min(all_y_data)/ scale_factor
+    y_max = max(all_y_data)/ scale_factor
 
     for i, mu_A in enumerate(mu_A_list):
         total_avg_data = all_mu_A_data[mu_A]['avg']
         total_var_data = all_mu_A_data[mu_A]['var']
-        ax = axes[i]
+        # ax = axes[i]
+        ax = fig.add_subplot(gs[0, i])
+        ax_inset = fig.add_subplot(gs[1, i])
 
         if info_type == 'total_price':
             for model in models:
@@ -170,18 +192,20 @@ for info_type in info_types_extended:
                     color = model_colors[model]
                     linestyle = company_styles[company]['linestyle']
                     alpha = company_styles[company]['alpha']
-                    ax.plot(total_avg_data[key] / 5, label=f'{model}, {company}', lw=lw, color=color, linestyle=linestyle,
+                    ax.plot(total_avg_data[key] / (5 * scale_factor), label=f'{model}, {company}', lw=lw2, color=color, linestyle=linestyle,
                             alpha=alpha)
-            ax.plot(total_avg_data['price_RR_Lyft'] / 5, lw=lw, color=model_colors['RR'],
+                    ax_inset.plot(total_avg_data[key][:subrange]/ (5 * scale_factor), color=color, linestyle=linestyle, alpha=alpha, lw=lw2)
+            ax.plot(total_avg_data['price_RR_Lyft'] / (5 * scale_factor), lw=lw2, color=model_colors['RR'],
                     linestyle=company_styles['Lyft']['linestyle'], alpha=alpha)
-            ax.plot(total_avg_data['price_RR_Uber'] / 5, lw=lw, color=model_colors['RR'],
+            ax.plot(total_avg_data['price_RR_Uber'] / (5 * scale_factor), lw=lw2, color=model_colors['RR'],
                     linestyle=company_styles['Uber']['linestyle'], alpha=alpha)
-            if i == 0:
-                ax.set_ylabel(r'prices', fontsize=fs)
+            # if i == 0:
+            #     ax.set_ylabel(r'prices', fontsize=fs)
             ax.set_title(f'$\mu_A = {mu_A}$', fontsize=fs)
+            ax_inset.set_title(f'Zoom In', fontsize=fs) 
             ax.grid(True)
-            ax.tick_params(labelsize=fs-2)
-            ax.set_xlabel(r'iterations', fontsize=fs)
+            ax.tick_params(labelsize=fs*0.7)
+            ax_inset.set_xlabel(r'Iterations', fontsize=fs)
             
         elif info_type == 'demand':
             for model in models:
@@ -190,18 +214,20 @@ for info_type in info_types_extended:
                     color = model_colors[model]
                     linestyle = company_styles[company]['linestyle']
                     alpha = company_styles[company]['alpha']
-                    ax.plot(np.sum(total_avg_data[key], axis=1), label=f'{model}, {company}', lw=lw, color=color,
+                    ax.plot(np.sum(total_avg_data[key]/ scale_factor, axis=1), label=f'{model}, {company}', lw=lw2, color=color,
                             linestyle=linestyle, alpha=alpha)
-            ax.plot(np.sum(total_avg_data['demand_RR_Lyft'], axis=1), lw=lw, color=model_colors['RR'],
+                    ax_inset.plot(np.sum(total_avg_data[key][:subrange]/ scale_factor, axis=1), color=color, linestyle=linestyle, alpha=alpha, lw=lw2)
+            ax.plot(np.sum(total_avg_data['demand_RR_Lyft'], axis=1), lw=lw2, color=model_colors['RR'],
                     linestyle=company_styles['Lyft']['linestyle'], alpha=alpha)
-            ax.plot(np.sum(total_avg_data['demand_RR_Uber'], axis=1), lw=lw, color=model_colors['RR'],
+            ax.plot(np.sum(total_avg_data['demand_RR_Uber'], axis=1), lw=lw2, color=model_colors['RR'],
                     linestyle=company_styles['Uber']['linestyle'], alpha=alpha)
-            if i == 0:
-                ax.set_ylabel(r'demand', fontsize=fs)
+            # if i == 0:
+            #     ax.set_ylabel(r'demand', fontsize=fs)
             ax.set_title(f'$\mu_A = {mu_A}$', fontsize=fs)
+            ax_inset.set_title(f'Zoom In', fontsize=fs) 
             ax.grid(True)
-            ax.tick_params(labelsize=fs-2)
-            ax.set_xlabel(r'iterations', fontsize=fs)
+            ax.tick_params(labelsize=fs*0.7)
+            ax_inset.set_xlabel(r'Iterations', fontsize=fs)
             
         elif info_type == 'each_revenue':
             mean_val = 1
@@ -211,20 +237,23 @@ for info_type in info_types_extended:
                     color = model_colors[model]
                     linestyle = company_styles[company]['linestyle']
                     alpha = company_styles[company]['alpha']
-                    ax.plot(running_mean(total_avg_data[key], N=mean_val), label=f'{model}, {company}', lw=lw,
+                    revenue_data = running_mean(total_avg_data[key]/ scale_factor, N=mean_val)
+                    ax.plot(revenue_data, label=f'{model}, {company}', lw=lw2,
                             color=color, linestyle=linestyle, alpha=alpha)
+                    ax_inset.plot(revenue_data[:subrange], color=color, linestyle=linestyle, alpha=alpha, lw=lw2)
                     # ax.fill_between(range(len(total_avg_data[key])), running_mean(total_avg_data[key], N=mean_val) - np.sqrt(
                     #     total_var_data[key]), running_mean(total_avg_data[key], N=mean_val) + np.sqrt(total_var_data[key]),color=color, alpha=0.5)
-            ax.plot(running_mean(total_avg_data['rev_RR_Lyft'], N=mean_val), lw=lw, color=model_colors['RR'],
+            ax.plot(running_mean(total_avg_data['rev_RR_Lyft'], N=mean_val), lw=lw2, color=model_colors['RR'],
                     linestyle=company_styles['Lyft']['linestyle'], alpha=alpha)
-            ax.plot(running_mean(total_avg_data['rev_RR_Uber'], N=mean_val), lw=lw, color=model_colors['RR'],
+            ax.plot(running_mean(total_avg_data['rev_RR_Uber'], N=mean_val), lw=lw2, color=model_colors['RR'],
                     linestyle=company_styles['Uber']['linestyle'], alpha=alpha)
-            if i == 0:
-                ax.set_ylabel(r'revenue', fontsize=fs)
+            # if i == 0:
+            #     ax.set_ylabel(r'revenue', fontsize=fs)
             ax.set_title(f'$\mu_A = {mu_A}$', fontsize=fs)
+            ax_inset.set_title(f'Zoom In', fontsize=fs) 
             ax.grid(True)
-            ax.set_xlabel(r'iterations', fontsize=fs)
-            ax.tick_params(labelsize=fs-2)
+            ax_inset.set_xlabel(r'Iterations', fontsize=fs)
+            ax.tick_params(labelsize=fs*0.7)
 
         elif info_type == 'total_revenue':
             for model in models:
@@ -232,21 +261,55 @@ for info_type in info_types_extended:
                 key2 = f'{info_types[1]}_{model}_{companies[1]}'
                 color = model_colors[model]
                 alpha = company_styles[company]['alpha']
-                ax.plot(total_avg_data[key1] + total_avg_data[key2], label=f'{model}', lw=lw, color=color, alpha=alpha)
-            ax.plot(total_avg_data['rev_RR_Lyft'] + total_avg_data['rev_RR_Uber'], lw=lw, color=model_colors['RR'], alpha=alpha)
-            if i == 0:
-                ax.set_ylabel(r'total revenue', fontsize=fs)
+                total_rev = (total_avg_data[key1] + total_avg_data[key2])/ scale_factor
+                ax.plot(total_rev, label=f'{model}', lw=lw, color=color, alpha=alpha)
+                ax_inset.plot(total_rev[:subrange], color=color, alpha=alpha, lw=lw)
+            ax.plot((total_avg_data['rev_RR_Lyft'] + total_avg_data['rev_RR_Uber'])/ scale_factor, lw=lw, color=model_colors['RR'], alpha=alpha)
+            # if i == 0:
+            #     ax.set_ylabel(r'total revenue', fontsize=fs)
             ax.set_title(f'$\mu_A = {mu_A}$', fontsize=fs) 
+            ax_inset.set_title(f'Zoom In', fontsize=fs) 
             ax.grid(True)
-            ax.set_xlabel(r'iterations', fontsize=fs)
-            ax.tick_params(labelsize=fs-2)
+            ax_inset.set_xlabel(r'Iterations', fontsize=fs)
+            ax.tick_params(labelsize=fs*0.7)
         ax.set_ylim(y_min, y_max)
-    handles, labels = axes[0].get_legend_handles_labels()
+        # ax_inset.set_ylim(y_min, y_max)
+        ax_inset.set_xlim(-1, subrange+0.5)
+        ax_inset.grid(True)
+        tick_positions = np.arange(0, len(total_avg_data['rev_RR_Lyft'])+1, 250)
+        ax.set_xticks(tick_positions)
+        ax.set_xticklabels(tick_positions, fontsize=fs*0.7)
+        tick_positions = np.arange(0, subrange+1, 5)
+        ax_inset.set_xticks(tick_positions)
+        ax_inset.set_xticklabels(tick_positions, fontsize=fs*0.7)
+        ax_inset.tick_params(labelsize=fs*0.7)
+
+        # # 添加虚线方框
+        # rect = Rectangle((0, y_min), subrange, y_max - y_min, linewidth=1, edgecolor='r', facecolor='none', linestyle='--')
+        # ax.add_patch(rect)
+        formatter = ScalarFormatter()
+        formatter.set_scientific(False)
+        ax.yaxis.set_major_formatter(formatter)
+        ax_inset.yaxis.set_major_formatter(formatter)
+        ax.text(-0.1, 1.1, f'$\\times 10^{power}$', transform=ax.transAxes, fontsize=fs*0.7, verticalalignment='top')
+        ax_inset.text(-0.1, 1.1, f'$\\times 10^{power}$', transform=ax_inset.transAxes, fontsize=fs*0.7, verticalalignment='top')
+
+    # 在整个图的左侧添加共享的 ylabel
+    if info_type == 'total_price':
+        label = 'Prices'
+    elif info_type == 'demand':
+        label = 'Demand'
+    elif info_type == 'each_revenue':
+        label = 'Revenue'
+    elif info_type == 'total_revenue':
+        label = 'Total Revenue'
+    fig.text(-0.03, 0.6, label, va='center', rotation='vertical', fontsize=fs)
+    handles, labels = fig.axes[0].get_legend_handles_labels()
     if info_type == 'total_revenue':
-        fig.legend(handles, labels, loc='lower center', fontsize=fs - 2, ncol=len(models) * len(companies))
-        plt.tight_layout(rect=[0, 0.1, 1, 1])
+        fig.legend(handles, labels, loc='lower center', fontsize=fs, ncol=len(models) * len(companies))
+        plt.tight_layout(rect=[0, 0.11, 1, 1])
     else:
-        fig.legend(handles, labels, loc='lower center', fontsize=fs - 2, ncol=len(models) * len(companies)/2)
+        fig.legend(handles, labels, loc='lower center', fontsize=fs*0.82, ncol=len(models) * len(companies)//2)
         plt.tight_layout(rect=[0, 0.15, 1, 1])
     plt.savefig(f'ride_share/figs/{info_type}.pdf', transparent=True, bbox_inches='tight')
     plt.close()
@@ -268,7 +331,7 @@ for mu_A, data in all_mu_A_data.items():
         stat_str = f'{final_revenue:0.0f} $\pm$ {np.sqrt(final_var):0.0f}'
         total_revenue_stats.append({
             'model': model,
-            'mu_A': f'$\mu_A$={mu_A}',
+            'mu_A': f'$\mu_A$ = {mu_A}',
             'total_revenue': stat_str
         })
 

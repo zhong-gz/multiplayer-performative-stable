@@ -30,7 +30,6 @@ sigma_A_values = [0.25, 0.5, 0.75, 1.0]
 eta=0.1
 mu=2
 nu0=1
-models = ['RR', 'RGD','SFB','AGM','OPGD']
 
 lw = 4
 fs=44
@@ -204,7 +203,6 @@ axes = axes.flatten()
 handles = []
 labels = []
 all_y_data = []
-all_stats = []
 
 for i, sigma_A in enumerate(sigma_A_values):
     sigma_AC = 1.25 - sigma_A
@@ -241,24 +239,6 @@ for i, sigma_A in enumerate(sigma_A_values):
     errs_sfb_mean = np.mean(errs_sfb, axis=0)
     errs_opgd_mean = np.mean(errs_opgd, axis=0)
     errs_rr_mean = np.mean(errs_rr, axis=0)
-
-    errs_agd_var = np.var(errs_agd, axis=0)
-    errs_sgd_var = np.var(errs_sgd, axis=0)
-    errs_rgd_var = np.var(errs_rgd, axis=0)
-    errs_sfb_var = np.var(errs_sfb, axis=0)
-    errs_opgd_var = np.var(errs_opgd, axis=0)
-    errs_rr_var = np.var(errs_rr, axis=0)
-
-    stat_str = f'{errs_rr_mean[-1]:0.4f} $\pm$ {np.sqrt(errs_rr_var[-1]):0.4f}'
-    all_stats.append({'model': 'RR','sigma_A': f'$\sigma_A$ = {sigma_A}','result': stat_str})
-    stat_str = f'{errs_rgd_mean[-1]:0.4f} $\pm$ {np.sqrt(errs_rgd_var[-1]):0.4f}'
-    all_stats.append({'model': 'RGD','sigma_A': f'$\sigma_A$ = {sigma_A}','result': stat_str})
-    stat_str = f'{errs_sfb_mean[-1]:0.4f} $\pm$ {np.sqrt(errs_sfb_var[-1]):0.4f}'
-    all_stats.append({'model': 'SFB','sigma_A': f'$\sigma_A$ = {sigma_A}','result': stat_str})
-    stat_str = f'{errs_agd_mean[-1]:0.4f} $\pm$ {np.sqrt(errs_agd_var[-1]):0.4f}'
-    all_stats.append({'model': 'AGM','sigma_A': f'$\sigma_A$ = {sigma_A}','result': stat_str})
-    stat_str = f'{errs_opgd_mean[-1]:0.4f} $\pm$ {np.sqrt(errs_opgd_var[-1]):0.4f}'
-    all_stats.append({'model': 'OPGD','sigma_A': f'$\sigma_A$ = {sigma_A}','result': stat_str})
 
     iterations = np.arange(0, MAXITER + 1)
 
@@ -298,10 +278,75 @@ save_path = os.path.join(filepath, 'combined_plot_multi_regression.pdf')
 plt.savefig(save_path)
 print(f"Combined plot saved to {save_path}")
 
+    # ## Generate Plots
+    # print(f"Figure plot to {filename}")
 
-# 创建 DataFrame 并保存为 Excel
-df = pd.DataFrame(all_stats)
-pivot_df = df.pivot(index='model', columns='sigma_A', values='result')
-# 确保 model 顺序和列表一致
-pivot_df = pivot_df.reindex(models)
-pivot_df.to_excel('multi_regression/figs_100/regression_result.xlsx')
+    # errs_agd=[]
+    # errs_sgd=[]
+    # errs_dfo=[]
+    # errs_rgd=[]
+    # errs_sfb=[]
+    # errs_opgd=[]
+    # errs_rr = []
+    # for seed in seeds:
+    #     errs_agd.append(all_data[seed]['error_agd'])
+    #     errs_sgd.append(all_data[seed]['error_sgd'])
+    #     errs_rgd.append(all_data[seed]['error_rgd'])
+    #     errs_sfb.append(all_data[seed]['error_sfb'])
+    #     errs_opgd.append(all_data[seed]['error_opgd'])
+    #     errs_rr.append(all_data[seed]['error_rr'])
+
+    # errs_agd=np.asarray(errs_agd)
+    # errs_sgd=np.asarray(errs_sgd)
+    # errs_rgd=np.asarray(errs_rgd)
+    # errs_sfb=np.asarray(errs_sfb)
+    # errs_opgd=np.asarray(errs_opgd)
+    # errs_rr=np.asarray(errs_rr)
+
+
+    # errs_agd_mean=np.mean(errs_agd,axis=0)
+    # errs_sgd_mean=np.mean(errs_sgd,axis=0)
+    # errs_rgd_mean=np.mean(errs_rgd,axis=0)
+    # errs_sfb_mean=np.mean(errs_sfb,axis=0)
+    # errs_opgd_mean=np.mean(errs_opgd,axis=0)
+    # errs_rr_mean=np.mean(errs_rr,axis=0)
+
+    # errs_agd_var=np.std(errs_agd,axis=0)
+    # errs_sgd_var=np.std(errs_sgd,axis=0)
+    # errs_rgd_var=np.std(errs_rgd,axis=0)
+    # errs_sfb_var=np.std(errs_sfb,axis=0)
+    # errs_opgd_var=np.std(errs_opgd,axis=0)
+    # errs_rr_var=np.std(errs_rr,axis=0)
+    # # print(np.shape(errs_agd_var))
+
+    # iterations=np.arange(0,MAXITER+1)
+    # fig=plt.figure(figsize=(10,7))
+    # # plt.title(f'mu_A:{mu_A:.1f},mu_AC:{mu_AC:.1f},m:{m:.0f}') 
+    # # for i in range(len(errs_agd)):
+    # #     # plt.plot(errs_sgd[i,:], linewidth=3,color='xkcd:cerulean', alpha=0.1)
+    # #     plt.plot(errs_agd[i,:], linewidth=3, alpha=0.1, color='xkcd:light orange')
+    # #     plt.plot(errs_rgd[i,:], linewidth=3, alpha=0.1, color='xkcd:light green')
+    # # plt.plot(errs_sgd_mean, linewidth=3,color='xkcd:cerulean', label='SGM')
+    # plt.plot(errs_rgd_mean, linewidth=lw, color='#444444', label='RGD')
+    # plt.plot(errs_agd_mean, linewidth=lw, color='#9467bd', label='AGM')
+    # plt.plot(errs_sfb_mean, linewidth=lw, color='#2ca02c', label='SFB')
+    # plt.plot(errs_opgd_mean, linewidth=lw, color='#1f77b4', label='OPGD')
+    # plt.plot(errs_rr_mean, linewidth=lw+0.7, color='#FF7F50', label='RR')
+    # # plt.fill_between(iterations,errs_sgd_mean+errs_sgd_var,errs_sgd_mean-errs_sgd_var, alpha=0.5, linewidth=0,color='xkcd:cerulean')
+    # # plt.fill_between(iterations,errs_agd_mean+errs_agd_var,errs_agd_mean-errs_agd_var, alpha=0.4, linewidth=0, color='xkcd:light orange')
+    # # plt.fill_between(iterations,errs_rgd_mean+errs_rgd_var,errs_rgd_mean-errs_rgd_var, alpha=0.4, linewidth=0, color='xkcd:light green')
+    # # plt.fill_between(iterations,errs_rr_mean+errs_rr_var,errs_rr_mean-errs_rr_var, alpha=0.4, linewidth=0, color='xkcd:light blue')
+    # plt.yscale('log')
+    # # plt.xscale('log')
+    # plt.grid(True)
+
+    # plt.tick_params(labelsize=fs-2)
+    # # plt.ylabel(r'$\mathbb{E}\sum_{i=1}^n \Vert z_i^t- \theta^\top x_i^t\Vert^2$', fontsize=fs)
+    # plt.ylabel(r'RMSE', fontsize=fs)
+    # plt.ylim([2*1e-3,3])
+    # plt.xlabel(r'iterations', fontsize=fs)
+    # plt.tight_layout()
+    # plt.legend(fontsize=fs-2, loc='upper right',ncol=1)
+    # plt.savefig(filename+'pdf',  bbox_inches='tight', dpi=300)
+
+# winsound.Beep(1500, 500)

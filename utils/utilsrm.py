@@ -260,7 +260,7 @@ class ddrideshare:
         self.maxiter_rr=MAXITER
         self.perform_comp_rr=perform_rr
         self.price_index_rr=price_index
-        print("RR  Price we are running at : ", self.prices_[self.price_index_rr])
+        # print("RR  Price we are running at : ", self.prices_[self.price_index_rr])
         q_lyft_=self.ql_[:,:,self.price_index_rr].T
         q_uber_=self.qu_[:,:,self.price_index_rr].T
         self.tot_rev=tot_rev
@@ -333,7 +333,7 @@ class ddrideshare:
         self.perform_comp_sgd=perform_sgd
         self.tot_rev=tot_rev
         self.price_index_sgd=price_index
-        print("Price we are running at : ", self.prices_[self.price_index_sgd])
+        # print("Price we are running at : ", self.prices_[self.price_index_sgd])
         q_lyft_=self.ql_[:,:,self.price_index_sgd].T
         q_uber_=self.qu_[:,:,self.price_index_sgd].T
         #print(np.shape(q_lyft_))
@@ -384,7 +384,7 @@ class ddrideshare:
         self.maxiter_so=MAXITER
         self.tot_rev=tot_rev
         self.price_index_so=price_index
-        print("Price we are running at : ", self.prices_[self.price_index_so])
+        # print("Price we are running at : ", self.prices_[self.price_index_so])
         q_lyft_=self.ql_[:,:,self.price_index_so].T
         q_uber_=self.qu_[:,:,self.price_index_so].T
         #print(np.shape(q_lyft_))
@@ -533,7 +533,7 @@ class ddrideshare:
         self.Ac2_hat=[A_dic['Ac2_hat']]
         self.tot_rev=tot_rev
         self.price_index_agd=price_index
-        print("AGM Price we are running at : ", self.prices_[self.price_index_agd])
+        # print("AGM Price we are running at : ", self.prices_[self.price_index_agd])
         self.z1_base=self.ql_[:,:,self.price_index_agd].T
         self.z2_base=self.qu_[:,:,self.price_index_agd].T
         #print(np.shape(q_lyft_))
@@ -554,7 +554,7 @@ class ddrideshare:
         for i in range(self.maxiter_agd):
             z1=self.D_z(self.z1_base, batch=self.batch_agd)
             z2=self.D_z(self.z2_base,batch=self.batch_agd)
-            a = ((i+1)**(-0.6))
+            a = 2#((i+1)**(-0.2))
             self.x_agd.append(self.proj(self.x_agd[-1]-(eta*a)*self.getgrad_adaptive(self.x_agd[-1], z1, z2)))
             for j in range(INNERITER):
                 A1_hat,Ac1_hat,A2_hat,Ac2_hat = self.update_estimate(self.x_agd[-1], z1, z2, B=B, UNCORR=UNCORR,i = i)
@@ -592,13 +592,13 @@ class ddrideshare:
         '''
         Runs for one price bin and all locations
         '''
-        self.stepsize_opgd = eta #0.0008
+        self.stepsize_opgd = eta*10 #0.0008
         self.batch_opgd = BATCH
         self.maxiter_opgd = MAXITER
         self.perform_copm_opgd = perform_opgd
         self.tot_rev=tot_rev
         self.price_index_opgd=price_index
-        print("OPGD Price we are running at: ", self.prices_[self.price_index_opgd])
+        # print("OPGD Price we are running at: ", self.prices_[self.price_index_opgd])
         self.A1_hat_opgd = [np.diag(-10*np.random.rand(np.shape(self.A1)[1]))]
         self.A2_hat_opgd = [np.diag(-10*np.random.rand(np.shape(self.A2)[1]))]
         self.z1_base=self.ql_[:,:,self.price_index_opgd].T
@@ -685,7 +685,7 @@ class ddrideshare:
         self.maxiter_rgd=MAXITER
         self.tot_rev=tot_rev
         self.price_index_rgd=price_index
-        print("RGD Price we are running at : ", self.prices_[self.price_index_rgd])
+        # print("RGD Price we are running at : ", self.prices_[self.price_index_rgd])
         # print('maxiter : ', MAXITER)
         # print('maxiter rgd: ', self.maxiter_rgd)
         q_lyft_=self.ql_[:,:,self.price_index_rgd].T
@@ -740,7 +740,7 @@ class ddrideshare:
         self.maxiter_rgd=MAXITER
         self.tot_rev=tot_rev
         self.price_index_rgd=price_index
-        print("SFB Price we are running at : ", self.prices_[self.price_index_rgd])
+        # print("SFB Price we are running at : ", self.prices_[self.price_index_rgd])
         # print('maxiter : ', MAXITER)
         # print('maxiter rgd: ', self.maxiter_rgd)
         q_lyft_=self.ql_[:,:,self.price_index_rgd].T
@@ -900,7 +900,7 @@ class ddrideshare:
         self.Ac1_=np.copy(self.Ac1)
         self.Ac2_=np.copy(self.Ac2)
         self.price_index=price_index
-        print("Price we are running at : ", self.prices_[self.price_index])
+        # print("Price we are running at : ", self.prices_[self.price_index])
         q_lyft_=self.ql_[:,:,self.price_index].T
         q_uber_=self.qu_[:,:,self.price_index].T
         
