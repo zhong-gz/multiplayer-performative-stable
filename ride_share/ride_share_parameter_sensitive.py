@@ -26,7 +26,7 @@ MAXITER=15
 tot_rev=1
 
 fs=44
-lw=4
+lw=3
 # 定义橙色色系的颜色映射
 cmap = plt.get_cmap('YlOrRd')
 
