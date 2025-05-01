@@ -154,7 +154,7 @@ for i, mu_A in enumerate(mu_A_list):
     formatter = ScalarFormatter()
     formatter.set_scientific(False)
     ax.yaxis.set_major_formatter(formatter)
-    ax.text(-0.1, 1.1, f'$\\times 10^{power}$', transform=ax.transAxes, fontsize=fs*0.5, verticalalignment='top')
+    ax.text(-0.1, 1.1, f'$\\times 10^{power}$', transform=ax.transAxes, fontsize=fs*0.7, verticalalignment='top')
 
 handles, labels = fig.axes[0].get_legend_handles_labels()
 fig.legend(handles, labels, loc='lower center', fontsize=fs-2, ncol=len(gamma_list))
