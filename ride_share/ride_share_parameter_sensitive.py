@@ -26,7 +26,19 @@ MAXITER=15
 tot_rev=1
 
 fs=44
-lw=3
+lw=4
+# 定义橙色色系的颜色映射
+cmap = plt.get_cmap('YlOrRd')
+
+# 定义不同的线形
+linestyles = ['-', '--', '-.', ':', (0, (5, 5))]
+
+# 事先定义字典来存储每个 gamma 值对应的颜色和线形
+style_dict = {}
+for i, gamma in enumerate(gamma_list):
+    color = cmap((i + 1) / len(gamma_list))  # 从颜色映射中获取颜色
+    linestyle = linestyles[i % len(linestyles)]  # 循环使用线形
+    style_dict[gamma] = {'color': color, 'linestyle': linestyle, 'linewidth': lw}
 para_sen_data = {}
 total_revenue_stats = []
 para_sen_data_path = 'ride_share/data/para_sen_data.npy'
@@ -126,7 +138,8 @@ for i, mu_A in enumerate(mu_A_list):
     for gamma in gamma_list:
         key = f'rev_{gamma}'
         total_rev = total_avg_data[key]/ scale_factor
-        ax.plot(total_rev, label=f'$\gamma$ = {gamma}', lw=lw) #, color=color
+        style = style_dict[gamma]
+        ax.plot(total_rev, label=f'$\gamma$ = {gamma}', **style) #, color=color
         if i == 0:
             ax.set_ylabel(r'Total Revenue', fontsize=fs)
     axes[i].set_xlabel('Iterations', fontsize=fs)
