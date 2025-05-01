@@ -1,48 +1,48 @@
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
 
-# 定义逻辑斯蒂函数
-def logistic_function(x, K, k_logistic, x0):
-    return K / (1 + np.exp(k_logistic * (x - x0)))
+# 生成示例数据
+x = np.linspace(0, 10, 100)
+# 假设有 5 种方法的数据
+y_data = [
+    np.sin(x),
+    np.cos(x),
+    np.sin(x)-2,
+    np.sin(x+2),
+    np.cos(x+3)
+]
 
-# 设定参数
-K = 1000  # 逻辑斯蒂函数的市场最大需求容量
-k_logistic = 0.6  # 逻辑斯蒂函数的价格敏感度参数
-x0 = 0  # 逻辑斯蒂函数的价格阈值
+# 定义方法名称
+method_names = ['Ours', 'Method 1', 'Method 2', 'Method 3', 'Method 4']
 
-# 生成 x 值
-x = np.linspace(-8, 8, 400)
+# 定义颜色和线形的字典
+style_dict = {
+    'Ours': {'color': 'red', 'linestyle': '-', 'linewidth': 2},
+    'Method 1': {'color': 'blue', 'linestyle': '--'},
+    'Method 2': {'color': 'green', 'linestyle': ':'},
+    'Method 3': {'color': 'purple', 'linestyle': '-.'},
+    'Method 4': {'color': 'orange', 'linestyle': (0, (5, 5))}
+}
 
-# 计算逻辑斯蒂函数和指数需求函数的 y 值
-y_logistic = logistic_function(x, K, k_logistic, x0)
+# 绘制图形
+plt.figure(figsize=(10, 6))
 
-# 绘制图像
-plt.figure(figsize=(18, 6))
+# 循环遍历方法
+for i, method in enumerate(method_names):
+    style = style_dict[method]
+    plt.plot(x, y_data[i], label=method, **style)
 
-# 绘制逻辑斯蒂函数图像
-plt.subplot(1, 2, 1)
-plt.plot(x, y_logistic, label='Logistic Function')
-plt.title('Logistic Demand Function')
-plt.xlabel('Price')
-plt.ylabel('Demand')
-plt.ylim(0, 1000)
+# 添加图例
 plt.legend()
+
+# 设置标题和坐标轴标签
+plt.title('Experimental Analysis Plot')
+plt.xlabel('X-axis')
+plt.ylabel('Y-axis')
+
+# 显示网格
 plt.grid(True)
 
-# 生成输入数据
-x = np.linspace(-8, 8, 400)
-# 计算 tanh + 线性项函数的值
-a = -60
-b = 500
-y = a * x + b
-# 绘制图像
-plt.subplot(1, 2, 2)
-plt.plot(x, y, label='Linear')
-plt.title('Linear Function')
-plt.xlabel('x')
-plt.ylabel('y')
-plt.ylim(0, 1000)
-plt.legend()
-plt.grid(True)
-plt.tight_layout()
+# 显示图形
 plt.show()
+    

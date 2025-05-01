@@ -138,9 +138,6 @@ for i, mu_A in enumerate(mu_A_list):
     ax.set_xticks(tick_positions)
     ax.set_xticklabels(tick_positions, fontsize=fs*0.7)
 
-    # # 添加虚线方框
-    # rect = Rectangle((0, y_min), subrange, y_max - y_min, linewidth=1, edgecolor='r', facecolor='none', linestyle='--')
-    # ax.add_patch(rect)
     formatter = ScalarFormatter()
     formatter.set_scientific(False)
     ax.yaxis.set_major_formatter(formatter)
