@@ -26,9 +26,9 @@ MAXITER=15
 tot_rev=1
 
 fs=44
-lw=3
+lw=4
 # 定义橙色色系的颜色映射
-cmap = plt.get_cmap('YlOrRd')
+cmap = plt.get_cmap('winter')
 
 # 定义不同的线形
 linestyles = ['-', '--', '-.', ':', (0, (5, 5))]
@@ -38,7 +38,11 @@ style_dict = {}
 for i, gamma in enumerate(gamma_list):
     color = cmap((i + 1) / len(gamma_list))  # 从颜色映射中获取颜色
     linestyle = linestyles[i % len(linestyles)]  # 循环使用线形
-    style_dict[gamma] = {'color': color, 'linestyle': linestyle, 'linewidth': lw}
+    if gamma == 2.1:
+
+        style_dict[gamma] = {'color': color, 'linestyle': linestyle, 'linewidth': lw}
+    else:
+        style_dict[gamma] = {'color': color, 'linestyle': linestyle, 'linewidth': lw}
 para_sen_data = {}
 total_revenue_stats = []
 para_sen_data_path = 'ride_share/data/para_sen_data.npy'
