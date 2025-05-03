@@ -26,12 +26,12 @@ MAXITER=15
 tot_rev=1
 
 fs=44
-lw=4
-# 定义橙色色系的颜色映射
+lw=3
+# 定义颜色映射
 cmap = plt.get_cmap('winter')
 
 # 定义不同的线形
-linestyles = ['-', '--', '-.', ':', (0, (5, 5))]
+linestyles = [(0, (5, 5)), ':','-.', '--', '-']
 
 # 事先定义字典来存储每个 gamma 值对应的颜色和线形
 style_dict = {}
@@ -132,7 +132,7 @@ else:
 scale_factor = 10 ** power
 
 y_min = min(all_y_data)/ scale_factor
-y_max = max(all_y_data)/ scale_factor
+y_max = max(all_y_data)/ scale_factor +0.1
 
 for i, mu_A in enumerate(mu_A_list):
     total_avg_data = para_sen_data[mu_A]['avg']
@@ -150,7 +150,7 @@ for i, mu_A in enumerate(mu_A_list):
     ax.set_title(f'$\mu_A = {mu_A}$', fontsize=fs) 
     ax.grid(True)
     ax.tick_params(labelsize=fs*0.7)
-    # ax.set_ylim(y_min, y_max)
+    ax.set_ylim(y_min, y_max)
     tick_positions = np.arange(0, len(total_avg_data[f'rev_{gamma}'])+1, 5)
     ax.set_xticks(tick_positions)
     ax.set_xticklabels(tick_positions, fontsize=fs*0.7)
