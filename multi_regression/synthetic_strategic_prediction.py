@@ -289,7 +289,7 @@ for k in range(2):
             handles.extend([l5, l1, l3, l2,l4])
             labels.extend(['SIR$^2$', 'RGD', 'SFB', 'AGM', 'OPGD'])
 
-        axes[i].set_title(f'$\sigma_A = {sigma_A}$', fontsize=fs)
+        axes[i].set_title(f'$\sigma_{{a_i}}^2 = {sigma_A}$', fontsize=fs)
         axes[i].set_xlabel('Iterations', fontsize=fs)
         axes[i].tick_params(labelsize=fs*0.7)
         axes[i].grid(True)
