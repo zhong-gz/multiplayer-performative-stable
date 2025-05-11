@@ -10,6 +10,9 @@ from matplotlib.ticker import ScalarFormatter
 # insert at 1, 0 is the script path (or '' in REPL)
 sys.path.insert(1,'./utils/' )
 from utilsrm import *
+import time
+
+start_time = time.time()
 
 ## Initialize the game class and set the random seed and initial point
 # seed 
@@ -19,7 +22,7 @@ num_experiments = 10
 figuresize=(25, 8)
 loc_cap=11
 eta=0.001
-run_experiment = 0 # 1: run the experiment, 0: load the data
+run_experiment = 1 # 1: run the experiment, 0: load the data
 mu_A_list = [0.25,0.50,0.75,1.0] #25,0.50,0.75,1
 subrange = 26
 gamma = 2.1
@@ -400,3 +403,8 @@ pivot_df = df.pivot(index='model', columns='mu_A', values='total_revenue')
 # 确保 model 顺序和列表一致
 pivot_df = pivot_df.reindex(models)
 pivot_df.to_excel('ride_share/figs/total_revenue.xlsx')
+
+end_time = time.time()  # 记录结束时间
+execution_time = end_time - start_time  # 计算耗时（秒）
+
+print(f"The time of this code need to run: {execution_time:.4f} 秒")

@@ -15,6 +15,10 @@ from utilssp_vector_map import *
 # %load_ext autoreload
 # %autoreload 2
 
+import time
+
+start_time = time.time()
+
 seed = 42
 np.random.seed(seed)
 seeds= range(42,52)
@@ -320,3 +324,8 @@ pivot_df = df.pivot(index='model', columns='sigma_A', values='result')
 # 确保 model 顺序和列表一致
 pivot_df = pivot_df.reindex(models)
 pivot_df.to_excel('multi_regression/figs_100/regression_result.xlsx')
+
+end_time = time.time()  # 记录结束时间
+execution_time = end_time - start_time  # 计算耗时（秒）
+
+print(f"The time of this code need to run: {execution_time:.4f} 秒")

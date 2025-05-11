@@ -11,6 +11,10 @@ from matplotlib.ticker import ScalarFormatter
 sys.path.insert(1,'./utils/' )
 from utilsrm import *
 
+import time
+
+start_time = time.time()
+
 ## Initialize the game class and set the random seed and initial point
 # seed 
 seed = 42
@@ -166,3 +170,8 @@ plt.tight_layout(rect=[0, 0.2, 1, 1])
 
 plt.savefig(f'ride_share/figs/parameter_sensitivity.pdf', transparent=True, bbox_inches='tight')
 plt.close()
+
+end_time = time.time()  # 记录结束时间
+execution_time = end_time - start_time  # 计算耗时（秒）
+
+print(f"The time of this code need to run: {execution_time:.4f} 秒")
