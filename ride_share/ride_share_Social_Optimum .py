@@ -136,7 +136,72 @@ if run_experiment:
 else:
     all_mu_A_data = np.load(all_mu_A_data_path, allow_pickle=True).item()
 
-# 绘制 4 个大图
+## Plotting variance
+info_type = 'total_revenue'
+fig, axes = plt.subplots(1, 4, figsize=figuresize)
+all_y_data = []
+for i, mu_A in enumerate(mu_A_list):
+    total_avg_data = all_mu_A_data[mu_A]['avg']
+    for model in models:    
+        key1 = f'{info_types[1]}_{model}_{companies[0]}'
+        key2 = f'{info_types[1]}_{model}_{companies[1]}'
+        all_y_data.extend(total_avg_data[key1] + total_avg_data[key2])
+all_y_data = np.array(all_y_data)
+if np.allclose(all_y_data, 0):
+    power = 0
+else:
+    power = int(np.floor(np.log10(np.max(np.abs(all_y_data)))))
+scale_factor = 10 ** power
+
+y_min = min(all_y_data)/ scale_factor
+y_max = max(all_y_data)/ scale_factor +0.1
+for i, mu_A in enumerate(mu_A_list):
+    total_avg_data = all_mu_A_data[mu_A]['avg']
+    total_var_data = all_mu_A_data[mu_A]['var']
+    # ax = fig.add_subplot(gs[0, i])
+    ax = axes[i]
+    for model in models:
+        key1 = f'{info_types[1]}_{model}_{companies[0]}'
+        key2 = f'{info_types[1]}_{model}_{companies[1]}'
+        style = style_dict[model]
+        # color = model_colors[model]
+        # alpha = company_styles[company]['alpha']
+        total_rev = (total_avg_data[key1] + total_avg_data[key2])/ scale_factor
+        total_rev_var = (total_var_data[key1] + total_var_data[key2])
+        ax.plot(total_rev, label=f'{model}',**style)
+        ax.fill_between(range(len(total_avg_data[key1])), total_rev - (np.sqrt(total_rev_var)/scale_factor), total_rev + (np.sqrt(total_rev_var)/scale_factor), alpha=0.2, color=style_dict[model]['color'],edgecolor='none')
+        # ax_inset.plot(total_rev[:subrange], color=color, alpha=alpha, lw=lw)
+    model = 'SIR$^2$'
+    style = style_dict[model]
+    key1 = f'{info_types[1]}_{model}_{companies[0]}'
+    key2 = f'{info_types[1]}_{model}_{companies[1]}'
+    total_rev = (total_avg_data[key1] + total_avg_data[key2])/ scale_factor
+    total_rev_var = (total_var_data[key1] + total_var_data[key2])/ scale_factor
+    ax.plot(total_rev,**style)
+    ax.fill_between(range(len(total_rev)), total_rev - (np.sqrt(total_rev_var)/scale_factor), total_rev + (np.sqrt(total_rev_var)/scale_factor), alpha=0.2, color=style_dict[model]['color'],edgecolor='none')
+    if i == 0:
+        ax.set_ylabel(r'Total revenue', fontsize=fs)
+    ax.set_title(f'$\mu_A = {mu_A}$', fontsize=fs)  
+    ax.set_xlabel(r'Iterations', fontsize=fs)
+    ax.grid(True)
+    ax.tick_params(labelsize=fs*0.5)
+    ax.set_ylim(y_min, y_max)
+    tick_positions = np.arange(0, len(total_avg_data['rev_SIR$^2$_Lyft'])+1, 250)
+    ax.set_xticks(tick_positions)
+    ax.set_xticklabels(tick_positions, fontsize=fs*0.7)
+    tick_positions = np.arange(0, subrange+1, 5)
+    formatter = ScalarFormatter()
+    formatter.set_scientific(False)
+    ax.yaxis.set_major_formatter(formatter)
+    # ax_inset.yaxis.set_major_formatter(formatter)
+    ax.text(-0.1, 1.1, f'$\\times 10^{power}$', transform=ax.transAxes, fontsize=fs*0.7, verticalalignment='top')
+handles, labels = fig.axes[0].get_legend_handles_labels()
+fig.legend(handles, labels, loc='lower center', fontsize=fs, ncol=len(models) * len(companies))
+plt.tight_layout(rect=[0, 0.18, 1, 1])
+plt.savefig(f'ride_share/figs/{info_type}_var.pdf', transparent=True, bbox_inches='tight')
+plt.close()
+
+
 info_types_extended = ['total_price', 'demand', 'each_revenue', 'total_revenue']
 for info_type in info_types_extended:
     if info_type != 'total_revenue':
