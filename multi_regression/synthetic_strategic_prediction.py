@@ -18,7 +18,7 @@ from utilssp_vector_map import *
 seed = 42
 np.random.seed(seed)
 seeds= range(42,52)
-run_experiment = 0 # 1: run the experiment, 0: load the data
+run_experiment = 1 # 1: run the experiment, 0: load the data
 sigma_theta= 0.1 ###
 sigma_w=0.0001
 nu=1e-3
@@ -139,13 +139,12 @@ for sigma_A in sigma_A_values:
                 g2_t=-theta_t@(z2_t-theta_t.T@x_rr[-1][1])/m
                 g1_t_1=-theta_t_1@(z1_t_1-theta_t_1.T@x_rr[-1][0])/m
                 g2_t_1=-theta_t_1@(z2_t_1-theta_t_1.T@x_rr[-1][1])/m
-                epsilon_1 = max(epsilon_1,la.norm(g1_t-g1_t_1)/la.norm(x_rr[-1][0]-x_rr[-2][0]))
-                epsilon_2 = max(epsilon_2,la.norm(g2_t-g2_t_1)/la.norm(x_rr[-1][1]-x_rr[-2][1]))
                 if (la.norm(x_rr[-1][0]-x_rr[-2][0]) > 1e-3 or la.norm(x_rr[-1][1]-x_rr[-2][1]) > 1e-3):
-                    count += 1
-                    if count < 10:
-                        alpha = gamma*((epsilon_1**2+epsilon_2**2)**0.5) #*0.01 + 0.99*alpha
-
+                    epsilon_1 = max(epsilon_1,la.norm(g1_t-g1_t_1)/(la.norm(x_rr[-1][0]-x_rr[-2][0])+1e-3))
+                    epsilon_2 = max(epsilon_2,la.norm(g2_t-g2_t_1)/(la.norm(x_rr[-1][1]-x_rr[-2][1])+1e-3))
+                    # count += 1
+                    # if count < 10:
+                    alpha = gamma*((epsilon_1**2+epsilon_2**2)**0.5) #*0.01 + 0.99*alpha
 
             x_sgd=np.asarray(x_sgd)
             x_agd=np.asarray(x_agd)
