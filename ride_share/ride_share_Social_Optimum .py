@@ -31,13 +31,13 @@ tot_rev=1
 fs=44
 lw=4
 lw2 = lw/2
-models = ['RR', 'RGD','SFB','AGM','OPGD']
-# models = ['RR', 'OPGD']
+models = ['SIR$^2$', 'RGD','SFB','AGM','OPGD']
+# models = ['SIR$^2$', 'OPGD']
 companies = ['Lyft', 'Uber']
 info_types = ['price','rev', 'demand']
 # 定义不同模型对应的颜色
 style_dict = {
-    'RR': {'color': '#FF7F50', 'linestyle': '-', 'linewidth': lw+1},
+    'SIR$^2$': {'color': '#FF7F50', 'linestyle': '-', 'linewidth': lw+1},
     'AGM': {'color': '#9467bd', 'linestyle': '--', 'linewidth': lw},
     'RGD': {'color': '#444444', 'linestyle': ':', 'linewidth': lw},
     'SFB': {'color': '#2ca02c', 'linestyle': '-.', 'linewidth': lw},
@@ -196,8 +196,8 @@ for info_type in info_types_extended:
                     style = style_dict[model]
                     ax.plot(total_avg_data[key] / (5 * scale_factor), label=f'{model}',**style)
                     # ax_inset.plot(total_avg_data[key][:subrange]/ (5 * scale_factor), color=color, linestyle=linestyle, alpha=alpha, lw=lw2)
-                style = style_dict['RR']
-                ax.plot(total_avg_data[f'price_RR_{company}'] / (5 * scale_factor), **style)
+                style = style_dict['SIR$^2$']
+                ax.plot(total_avg_data[f'price_SIR$^2$_{company}'] / (5 * scale_factor), **style)
                 if i == 0 :
                     ax.set_ylabel(f'{company} prices', fontsize=fs)
                 if company == 'Lyft':
@@ -219,8 +219,8 @@ for info_type in info_types_extended:
                     # alpha = company_styles[company]['alpha']
                     ax.plot(np.sum(total_avg_data[key]/ scale_factor, axis=1), label=f'{model}',**style)
                     # ax_inset.plot(np.sum(total_avg_data[key][:subrange]/ scale_factor, axis=1), color=color, linestyle=linestyle, alpha=alpha, lw=lw2)
-                style = style_dict['RR']
-                ax.plot(np.sum(total_avg_data[f'demand_RR_{company}'], axis=1), **style)
+                style = style_dict['SIR$^2$']
+                ax.plot(np.sum(total_avg_data[f'demand_SIR$^2$_{company}'], axis=1), **style)
                 if i == 0 :
                     ax.set_ylabel(f'{company} demand', fontsize=fs)
                 if company == 'Lyft':
@@ -246,8 +246,8 @@ for info_type in info_types_extended:
                     # ax_inset.plot(revenue_data[:subrange], color=color, linestyle=linestyle, alpha=alpha, lw=lw2)
                     # ax.fill_between(range(len(total_avg_data[key])), running_mean(total_avg_data[key], N=mean_val) - np.sqrt(
                     #     total_var_data[key]), running_mean(total_avg_data[key], N=mean_val) + np.sqrt(total_var_data[key]),color=color, alpha=0.5)
-                style = style_dict['RR']
-                ax.plot(running_mean(total_avg_data[f'rev_RR_{company}'], N=mean_val),**style)
+                style = style_dict['SIR$^2$']
+                ax.plot(running_mean(total_avg_data[f'rev_SIR$^2$_{company}'], N=mean_val),**style)
                 if i == 0:
                     ax.set_ylabel(f'{company} revenue', fontsize=fs)
                 if company == 'Lyft':
@@ -266,8 +266,8 @@ for info_type in info_types_extended:
                     total_rev = (total_avg_data[key1] + total_avg_data[key2])/ scale_factor
                     ax.plot(total_rev, label=f'{model}',**style)
                     # ax_inset.plot(total_rev[:subrange], color=color, alpha=alpha, lw=lw)
-                style = style_dict['RR']
-                ax.plot((total_avg_data['rev_RR_Lyft'] + total_avg_data['rev_RR_Uber'])/ scale_factor,**style)
+                style = style_dict['SIR$^2$']
+                ax.plot((total_avg_data['rev_SIR$^2$_Lyft'] + total_avg_data['rev_SIR$^2$_Uber'])/ scale_factor,**style)
                 if i == 0:
                     ax.set_ylabel(r'Total revenue', fontsize=fs)
                 ax.set_title(f'$\mu_A = {mu_A}$', fontsize=fs)  
@@ -278,7 +278,7 @@ for info_type in info_types_extended:
             # ax_inset.set_ylim(y_min, y_max)
             # ax_inset.set_xlim(-1, subrange+0.5)
             # ax_inset.grid(True)
-            tick_positions = np.arange(0, len(total_avg_data['rev_RR_Lyft'])+1, 250)
+            tick_positions = np.arange(0, len(total_avg_data['rev_SIR$^2$_Lyft'])+1, 250)
             ax.set_xticks(tick_positions)
             ax.set_xticklabels(tick_positions, fontsize=fs*0.7)
             tick_positions = np.arange(0, subrange+1, 5)

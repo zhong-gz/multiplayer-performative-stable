@@ -30,11 +30,17 @@ sigma_A_values = [0.25, 0.5, 0.75, 1.0]
 eta=0.1
 mu=2
 nu0=1
-models = ['RR', 'RGD','SFB','AGM','OPGD']
-
+models = ['SIR$^2$', 'RGD','SFB','AGM','OPGD']
 lw = 4
 fs=44
 figuresize = (25, 8)
+style_dict = {
+    'SIR$^2$': {'color': '#FF7F50', 'linestyle': '-', 'linewidth': lw+1},
+    'AGM': {'color': '#9467bd', 'linestyle': '--', 'linewidth': lw},
+    'RGD': {'color': '#444444', 'linestyle': ':', 'linewidth': lw},
+    'SFB': {'color': '#2ca02c', 'linestyle': '-.', 'linewidth': lw},
+    'OPGD': {'color': '#1f77b4', 'linestyle': (0, (5, 5)), 'linewidth': lw}
+}
 
 all_data={}
 # lam=[1.0,1.0]
@@ -199,104 +205,114 @@ for sigma_A in sigma_A_values:
 
 # Generate Plots
 print("Generating combined figure")
-fig, axes = plt.subplots(1, 4, figsize=figuresize)
-axes = axes.flatten()
-handles = []
-labels = []
-all_y_data = []
-all_stats = []
+for k in range(2):
+    fig, axes = plt.subplots(1, 4, figsize=figuresize)
+    axes = axes.flatten()
+    handles = []
+    labels = []
+    all_y_data = []
+    all_stats = []
 
-for i, sigma_A in enumerate(sigma_A_values):
-    sigma_AC = 1.25 - sigma_A
-    sigma_C = sigma_A / n
-    filepath = 'multi_regression/figs_' + str(MAXITER) + '/'
-    file_name_npy = filepath + 'sig_A_' + str(sigma_A) + '_sigma_AC_' + str(sigma_AC) + '_m_' + str(m) + '_sigma_C_' + str(sigma_C) + '.npz'
-    all_data = np.load(file_name_npy, allow_pickle=True)['all_data'].item()
 
-    errs_agd = []
-    errs_sgd = []
-    errs_rgd = []
-    errs_sfb = []
-    errs_opgd = []
-    errs_rr = []
+    for i, sigma_A in enumerate(sigma_A_values):
+        sigma_AC = 1.25 - sigma_A
+        sigma_C = sigma_A / n
+        filepath = 'multi_regression/figs_' + str(MAXITER) + '/'
+        file_name_npy = filepath + 'sig_A_' + str(sigma_A) + '_sigma_AC_' + str(sigma_AC) + '_m_' + str(m) + '_sigma_C_' + str(sigma_C) + '.npz'
+        all_data = np.load(file_name_npy, allow_pickle=True)['all_data'].item()
 
-    for seed in seeds:
-        errs_agd.append(all_data[seed]['error_agd'])
-        errs_sgd.append(all_data[seed]['error_sgd'])
-        errs_rgd.append(all_data[seed]['error_rgd'])
-        errs_sfb.append(all_data[seed]['error_sfb'])
-        errs_opgd.append(all_data[seed]['error_opgd'])
-        errs_rr.append(all_data[seed]['error_rr'])
+        errs_agd = []
+        errs_sgd = []
+        errs_rgd = []
+        errs_sfb = []
+        errs_opgd = []
+        errs_rr = []
 
-    errs_agd = np.asarray(errs_agd)
-    errs_sgd = np.asarray(errs_sgd)
-    errs_rgd = np.asarray(errs_rgd)
-    errs_sfb = np.asarray(errs_sfb)
-    errs_opgd = np.asarray(errs_opgd)
-    errs_rr = np.asarray(errs_rr)
+        for seed in seeds:
+            errs_agd.append(all_data[seed]['error_agd'])
+            errs_sgd.append(all_data[seed]['error_sgd'])
+            errs_rgd.append(all_data[seed]['error_rgd'])
+            errs_sfb.append(all_data[seed]['error_sfb'])
+            errs_opgd.append(all_data[seed]['error_opgd'])
+            errs_rr.append(all_data[seed]['error_rr'])
 
-    errs_agd_mean = np.mean(errs_agd, axis=0)
-    errs_sgd_mean = np.mean(errs_sgd, axis=0)
-    errs_rgd_mean = np.mean(errs_rgd, axis=0)
-    errs_sfb_mean = np.mean(errs_sfb, axis=0)
-    errs_opgd_mean = np.mean(errs_opgd, axis=0)
-    errs_rr_mean = np.mean(errs_rr, axis=0)
+        errs_agd = np.asarray(errs_agd)
+        errs_sgd = np.asarray(errs_sgd)
+        errs_rgd = np.asarray(errs_rgd)
+        errs_sfb = np.asarray(errs_sfb)
+        errs_opgd = np.asarray(errs_opgd)
+        errs_rr = np.asarray(errs_rr)
 
-    errs_agd_var = np.var(errs_agd, axis=0)
-    errs_sgd_var = np.var(errs_sgd, axis=0)
-    errs_rgd_var = np.var(errs_rgd, axis=0)
-    errs_sfb_var = np.var(errs_sfb, axis=0)
-    errs_opgd_var = np.var(errs_opgd, axis=0)
-    errs_rr_var = np.var(errs_rr, axis=0)
+        errs_agd_mean = np.mean(errs_agd, axis=0)
+        errs_sgd_mean = np.mean(errs_sgd, axis=0)
+        errs_rgd_mean = np.mean(errs_rgd, axis=0)
+        errs_sfb_mean = np.mean(errs_sfb, axis=0)
+        errs_opgd_mean = np.mean(errs_opgd, axis=0)
+        errs_rr_mean = np.mean(errs_rr, axis=0)
 
-    stat_str = f'{errs_rr_mean[-1]:0.4f} $\pm$ {np.sqrt(errs_rr_var[-1]):0.4f}'
-    all_stats.append({'model': 'RR','sigma_A': f'$\sigma_A$ = {sigma_A}','result': stat_str})
-    stat_str = f'{errs_rgd_mean[-1]:0.4f} $\pm$ {np.sqrt(errs_rgd_var[-1]):0.4f}'
-    all_stats.append({'model': 'RGD','sigma_A': f'$\sigma_A$ = {sigma_A}','result': stat_str})
-    stat_str = f'{errs_sfb_mean[-1]:0.4f} $\pm$ {np.sqrt(errs_sfb_var[-1]):0.4f}'
-    all_stats.append({'model': 'SFB','sigma_A': f'$\sigma_A$ = {sigma_A}','result': stat_str})
-    stat_str = f'{errs_agd_mean[-1]:0.4f} $\pm$ {np.sqrt(errs_agd_var[-1]):0.4f}'
-    all_stats.append({'model': 'AGM','sigma_A': f'$\sigma_A$ = {sigma_A}','result': stat_str})
-    stat_str = f'{errs_opgd_mean[-1]:0.4f} $\pm$ {np.sqrt(errs_opgd_var[-1]):0.4f}'
-    all_stats.append({'model': 'OPGD','sigma_A': f'$\sigma_A$ = {sigma_A}','result': stat_str})
+        errs_agd_var = np.var(errs_agd, axis=0)
+        errs_sgd_var = np.var(errs_sgd, axis=0)
+        errs_rgd_var = np.var(errs_rgd, axis=0)
+        errs_sfb_var = np.var(errs_sfb, axis=0)
+        errs_opgd_var = np.var(errs_opgd, axis=0)
+        errs_rr_var = np.var(errs_rr, axis=0)
 
-    iterations = np.arange(0, MAXITER + 1)
+        stat_str = f'{errs_rr_mean[-1]:0.4f} $\pm$ {np.sqrt(errs_rr_var[-1]):0.4f}'
+        all_stats.append({'model': 'SIR$^2$','sigma_A': f'$\sigma_A$ = {sigma_A}','result': stat_str})
+        stat_str = f'{errs_rgd_mean[-1]:0.4f} $\pm$ {np.sqrt(errs_rgd_var[-1]):0.4f}'
+        all_stats.append({'model': 'RGD','sigma_A': f'$\sigma_A$ = {sigma_A}','result': stat_str})
+        stat_str = f'{errs_sfb_mean[-1]:0.4f} $\pm$ {np.sqrt(errs_sfb_var[-1]):0.4f}'
+        all_stats.append({'model': 'SFB','sigma_A': f'$\sigma_A$ = {sigma_A}','result': stat_str})
+        stat_str = f'{errs_agd_mean[-1]:0.4f} $\pm$ {np.sqrt(errs_agd_var[-1]):0.4f}'
+        all_stats.append({'model': 'AGM','sigma_A': f'$\sigma_A$ = {sigma_A}','result': stat_str})
+        stat_str = f'{errs_opgd_mean[-1]:0.4f} $\pm$ {np.sqrt(errs_opgd_var[-1]):0.4f}'
+        all_stats.append({'model': 'OPGD','sigma_A': f'$\sigma_A$ = {sigma_A}','result': stat_str})
 
-    l1, = axes[i].plot(errs_rgd_mean, linewidth=lw, color='#444444', label='RGD')
-    l3, = axes[i].plot(errs_sfb_mean, linewidth=lw, color='#2ca02c', label='SFB')
-    l2, = axes[i].plot(errs_agd_mean, linewidth=lw, color='#9467bd', label='AGM')
-    l4, = axes[i].plot(errs_opgd_mean, linewidth=lw, color='#1f77b4', label='OPGD')
-    l5, = axes[i].plot(errs_rr_mean, linewidth=lw + 0.7, color='#FF7F50', label='RR')
+        iterations = np.arange(0, MAXITER)
 
-    if i == 0:
-        axes[i].set_ylabel('RMSE', fontsize=fs)
-        handles.extend([l5, l1, l3, l2,l4])
-        labels.extend(['RR', 'RGD', 'SFB', 'AGM', 'OPGD'])
+        if k == 0:
+            axes[i].fill_between(iterations, errs_rgd_mean - np.sqrt(errs_rgd_var), errs_rgd_mean + np.sqrt(errs_rgd_var), alpha=0.2, color=style_dict['RGD']['color'],edgecolor='none')
+            axes[i].fill_between(iterations, errs_sfb_mean - np.sqrt(errs_sfb_var), errs_sfb_mean + np.sqrt(errs_sfb_var), alpha=0.2, color=style_dict['SFB']['color'],edgecolor='none')
+            axes[i].fill_between(iterations, errs_agd_mean - np.sqrt(errs_agd_var), errs_agd_mean + np.sqrt(errs_agd_var), alpha=0.2, color=style_dict['AGM']['color'],edgecolor='none')
+            axes[i].fill_between(iterations, errs_opgd_mean - np.sqrt(errs_opgd_var), errs_opgd_mean + np.sqrt(errs_opgd_var), alpha=0.2, color=style_dict['OPGD']['color'],edgecolor='none')
+            axes[i].fill_between(iterations, errs_rr_mean - np.sqrt(errs_rr_var), errs_rr_mean + np.sqrt(errs_rr_var), alpha=0.2, color=style_dict['SIR$^2$']['color'],edgecolor='none')
+        l1, = axes[i].plot(errs_rgd_mean, label='RGD',**style_dict['RGD'])
+        l3, = axes[i].plot(errs_sfb_mean, label='SFB',**style_dict['SFB'])
+        l2, = axes[i].plot(errs_agd_mean, label='AGM',**style_dict['AGM'])
+        l4, = axes[i].plot(errs_opgd_mean, label='OPGD',**style_dict['OPGD'])
+        l5, = axes[i].plot(errs_rr_mean, label='SIR$^2$',**style_dict['SIR$^2$'])
+        if i == 0:
+            axes[i].set_ylabel('RMSE', fontsize=fs)
+            handles.extend([l5, l1, l3, l2,l4])
+            labels.extend(['SIR$^2$', 'RGD', 'SFB', 'AGM', 'OPGD'])
 
-    axes[i].set_title(f'$\sigma_A = {sigma_A}$', fontsize=fs)
-    axes[i].set_xlabel('Iterations', fontsize=fs)
-    axes[i].tick_params(labelsize=fs*0.7)
-    axes[i].grid(True)
-    axes[i].set_yscale('log')
-    all_y_data.extend([errs_rr_mean, errs_rgd_mean, errs_agd_mean, errs_sfb_mean, errs_opgd_mean])
-# 找出所有 y 数据的最小值和最大值
-all_y_data = np.concatenate(all_y_data)
-y_min = np.min(all_y_data)
-y_max = np.max(all_y_data)
+        axes[i].set_title(f'$\sigma_A = {sigma_A}$', fontsize=fs)
+        axes[i].set_xlabel('Iterations', fontsize=fs)
+        axes[i].tick_params(labelsize=fs*0.7)
+        axes[i].grid(True)
+        axes[i].set_yscale('log')
+        all_y_data.extend([errs_rr_mean, errs_rgd_mean, errs_agd_mean, errs_sfb_mean, errs_opgd_mean])
+    # 找出所有 y 数据的最小值和最大值
+    all_y_data = np.concatenate(all_y_data)
+    y_min = np.min(all_y_data)
+    y_max = np.max(all_y_data)
 
-# 统一所有子图的 y 轴范围
-for ax in axes:
-    ax.set_ylim(y_min, y_max)
+    # 统一所有子图的 y 轴范围
+    for ax in axes:
+        ax.set_ylim(y_min, y_max)
 
-fig.legend(handles, labels, loc='lower center', ncol=5, fontsize=fs-2) #,bbox_to_anchor=(0.5, -0.02)
-plt.tight_layout(rect=[0, 0.14, 1, 1])  # 底部留出 10% 的空间
+    fig.legend(handles, labels, loc='lower center', ncol=5, fontsize=fs-2) #,bbox_to_anchor=(0.5, -0.02)
+    plt.tight_layout(rect=[0, 0.14, 1, 1])  # 底部留出 10% 的空间
 
-# 保存图片
-if not os.path.exists(filepath):
-    os.makedirs(filepath)
-save_path = os.path.join(filepath, 'combined_plot_multi_regression.pdf')
-plt.savefig(save_path)
-print(f"Combined plot saved to {save_path}")
+    # 保存图片
+    if not os.path.exists(filepath):
+        os.makedirs(filepath)
+    if k == 0:
+        save_path = os.path.join(filepath, 'combined_plot_multi_regression_var.pdf')
+    else:
+        save_path = os.path.join(filepath, 'combined_plot_multi_regression.pdf')
+    plt.savefig(save_path)
+    print(f"Combined plot saved to {save_path}")
 
 
 # 创建 DataFrame 并保存为 Excel
