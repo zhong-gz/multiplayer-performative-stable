@@ -144,7 +144,8 @@ if run_experiment:
                 else:
                     total_var_data[key] = value
 
-        all_mu_A_data[mu_A] = {'avg': total_avg_data, 'var': total_var_data,'p_data': all_p_data}  # 嵌套结构：all_mu_A_data[mu_A]['p_data'][p]['avg/var']}
+        all_mu_A_data[mu_A] = {'avg': total_avg_data, 'var': total_var_data,'p_data': all_p_data}  
+        # 嵌套结构：all_mu_A_data[mu_A]['p_data'][p]['avg/var']}
     np.save(all_mu_A_data_path, all_mu_A_data)
 else:
     all_mu_A_data = np.load(all_mu_A_data_path, allow_pickle=True).item()
