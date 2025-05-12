@@ -22,7 +22,7 @@ start_time = time.time()
 seed = 42
 np.random.seed(seed)
 seeds= range(42,52)
-run_experiment = 1 # 1: run the experiment, 0: load the data
+run_experiment = 0 # 1: run the experiment, 0: load the data
 sigma_theta= 0.1 ###
 sigma_w=0.0001
 nu=1e-3
@@ -36,8 +36,8 @@ mu=2
 nu0=1
 models = ['SIR$^2$', 'RGD','SFB','AGM','OPGD']
 lw = 4
-fs=44
-figuresize = (25, 8)
+fs=40
+figuresize = (25, 5)
 style_dict = {
     'SIR$^2$': {'color': '#FF7F50', 'linestyle': '-', 'linewidth': lw+1},
     'AGM': {'color': '#9467bd', 'linestyle': '--', 'linewidth': lw},
@@ -305,7 +305,7 @@ for k in range(2):
         ax.set_ylim(y_min, y_max)
 
     fig.legend(handles, labels, loc='lower center', ncol=5, fontsize=fs-2) #,bbox_to_anchor=(0.5, -0.02)
-    plt.tight_layout(rect=[0, 0.14, 1, 1])  # 底部留出 10% 的空间
+    plt.tight_layout(rect=[0, 0.2, 1, 1])  # 底部留出 10% 的空间
 
     # 保存图片
     if not os.path.exists(filepath):

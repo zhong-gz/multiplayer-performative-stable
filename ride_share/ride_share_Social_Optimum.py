@@ -19,7 +19,7 @@ start_time = time.time()
 seed = 42
 np.random.seed(seed)
 num_experiments = 10
-figuresize=(25, 8)
+figuresize=(25, 6)
 loc_cap=11
 eta=0.001
 run_experiment = 1 # 1: run the experiment, 0: load the data
@@ -31,7 +31,7 @@ MAXITER=1000
 tot_rev=1
 
 # 不同的模型
-fs=44
+fs=40
 lw=4
 lw2 = lw/2
 models = ['SIR$^2$', 'RGD','SFB','AGM','OPGD']
@@ -61,6 +61,7 @@ if run_experiment:
         mu_AC = mu_A/2
         total_avg_data = {}
         total_var_data = {}
+        all_p_data = {}
         for p in [0,1,2,3,4]:  #,1,2,3,4
             print('  Runing at price_index',p)
             price_index = p
@@ -122,6 +123,15 @@ if run_experiment:
                         avg_data[key] = np.mean(all_values_arr, axis=0)
                         var_data[key] = np.var(all_values_arr, axis=0)  # 计算方差
 
+            # 为当前p值创建一个结果字典，包含avg_data和var_data
+            p_result = {
+                'avg': avg_data,
+                'var': var_data
+            }
+            
+            # 将当前p值的结果存入主字典
+            all_p_data[p] = p_result
+
             for key, value in avg_data.items():
                 if key in total_avg_data:
                     total_avg_data[key] += value
@@ -134,7 +144,7 @@ if run_experiment:
                 else:
                     total_var_data[key] = value
 
-        all_mu_A_data[mu_A] = {'avg': total_avg_data, 'var': total_var_data}
+        all_mu_A_data[mu_A] = {'avg': total_avg_data, 'var': total_var_data,'p_data': all_p_data}  # 嵌套结构：all_mu_A_data[mu_A]['p_data'][p]['avg/var']}
     np.save(all_mu_A_data_path, all_mu_A_data)
 else:
     all_mu_A_data = np.load(all_mu_A_data_path, allow_pickle=True).item()
@@ -156,7 +166,7 @@ else:
     power = int(np.floor(np.log10(np.max(np.abs(all_y_data)))))
 scale_factor = 10 ** power
 
-y_min = min(all_y_data)/ scale_factor
+y_min = 0 #min(all_y_data)/ scale_factor
 y_max = max(all_y_data)/ scale_factor +0.1
 for i, mu_A in enumerate(mu_A_list):
     total_avg_data = all_mu_A_data[mu_A]['avg']
@@ -197,19 +207,26 @@ for i, mu_A in enumerate(mu_A_list):
     formatter.set_scientific(False)
     ax.yaxis.set_major_formatter(formatter)
     # ax_inset.yaxis.set_major_formatter(formatter)
-    ax.text(-0.1, 1.1, f'$\\times 10^{power}$', transform=ax.transAxes, fontsize=fs*0.7, verticalalignment='top')
+    ax.text(-0.1, 1.11, f'$\\times 10^{power}$', transform=ax.transAxes, fontsize=fs*0.7, verticalalignment='top')
 handles, labels = fig.axes[0].get_legend_handles_labels()
 fig.legend(handles, labels, loc='lower center', fontsize=fs, ncol=len(models) * len(companies))
-plt.tight_layout(rect=[0, 0.18, 1, 1])
+plt.tight_layout(rect=[0, 0.21, 1, 1])
 plt.savefig(f'ride_share/figs/{info_type}_var.pdf', transparent=True, bbox_inches='tight')
 plt.close()
 
 
 info_types_extended = ['total_price', 'demand', 'each_revenue', 'total_revenue']
 for info_type in info_types_extended:
-    if info_type != 'total_revenue':
+    if info_type == 'total_price':
+        new_figsize = (figuresize[0], figuresize[1]+10)
+        fig, axes = plt.subplots(2, 4, figsize=new_figsize)
+    elif info_type == 'demand':
+        new_figsize = (figuresize[0], figuresize[1]+10)
+        fig, axes = plt.subplots(2, 4, figsize=new_figsize)
+    elif info_type == 'each_revenue':
         new_figsize = (figuresize[0], figuresize[1]+5)
         fig, axes = plt.subplots(2, 4, figsize=new_figsize)
+
     for company in companies:
         if info_type == 'total_revenue':
             fig, axes = plt.subplots(1, 4, figsize=figuresize)
@@ -244,7 +261,7 @@ for info_type in info_types_extended:
             power = int(np.floor(np.log10(np.max(np.abs(all_y_data)))))
         scale_factor = 10 ** power
 
-        y_min = min(all_y_data)/ scale_factor
+        y_min = 0 # min(all_y_data)/ scale_factor
         y_max = max(all_y_data)/ scale_factor +0.1
 
         for i, mu_A in enumerate(mu_A_list):
@@ -282,11 +299,7 @@ for info_type in info_types_extended:
                 for model in models:
                     key = f'{info_types[2]}_{model}_{company}'
                     style = style_dict[model]
-                    # color = model_colors[model]
-                    # linestyle = company_styles[company]['linestyle']
-                    # alpha = company_styles[company]['alpha']
                     ax.plot(np.sum(total_avg_data[key]/ scale_factor, axis=1), label=f'{model}',**style)
-                    # ax_inset.plot(np.sum(total_avg_data[key][:subrange]/ scale_factor, axis=1), color=color, linestyle=linestyle, alpha=alpha, lw=lw2)
                 style = style_dict['SIR$^2$']
                 ax.plot(np.sum(total_avg_data[f'demand_SIR$^2$_{company}'], axis=1), **style)
                 if i == 0 :
@@ -361,17 +374,19 @@ for info_type in info_types_extended:
             formatter.set_scientific(False)
             ax.yaxis.set_major_formatter(formatter)
             # ax_inset.yaxis.set_major_formatter(formatter)
-            ax.text(-0.1, 1.1, f'$\\times 10^{power}$', transform=ax.transAxes, fontsize=fs*0.7, verticalalignment='top')
+            ax.text(-0.1, 1.11, f'$\\times 10^{power}$', transform=ax.transAxes, fontsize=fs*0.7, verticalalignment='top')
             # ax_inset.text(-0.1, 1.1, f'$\\times 10^{power}$', transform=ax_inset.transAxes, fontsize=fs*0.7, verticalalignment='top')
         if company =='Uber':
             handles, labels = fig.axes[0].get_legend_handles_labels()
             fig.legend(handles, labels, loc='lower center', fontsize=fs, ncol=len(models) * len(companies))
             # plt.tight_layout(rect=[0, 0.18, 1, 1])
             if info_type == 'total_revenue':
-                # fig.legend(handles, labels, loc='lower center', fontsize=fs, ncol=len(models) * len(companies))
-                plt.tight_layout(rect=[0, 0.18, 1, 1])
-            else:
-                # fig.legend(handles, labels, loc='lower center', fontsize=fs*0.82, ncol=len(models) * len(companies)//2)
+                plt.tight_layout(rect=[0, 0.21, 1, 1])
+            elif info_type == 'total_price':
+                plt.tight_layout(rect=[0, 0.12, 1, 1])
+            elif info_type == 'demand': 
+                plt.tight_layout(rect=[0, 0.12, 1, 1])
+            elif info_type == 'each_revenue':
                 plt.tight_layout(rect=[0, 0.12, 1, 1])
             plt.savefig(f'ride_share/figs/{info_type}.pdf', transparent=True, bbox_inches='tight')
             plt.close()
