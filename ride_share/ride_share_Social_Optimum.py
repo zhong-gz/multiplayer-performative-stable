@@ -22,7 +22,7 @@ num_experiments = 10
 figuresize=(25, 6)
 loc_cap=11
 eta=0.001
-run_experiment = 1 # 1: run the experiment, 0: load the data
+run_experiment = 0 # 1: run the experiment, 0: load the data
 mu_A_list = [0.25,0.50,0.75,1.0] #25,0.50,0.75,1
 subrange = 26
 gamma = 2.1
@@ -134,15 +134,15 @@ if run_experiment:
 
             for key, value in avg_data.items():
                 if key in total_avg_data:
-                    total_avg_data[key] += value
+                    total_avg_data[key] = total_avg_data[key] + value.copy()
                 else:
-                    total_avg_data[key] = value
+                    total_avg_data[key] = value.copy()
 
             for key, value in var_data.items():
                 if key in total_var_data:
-                    total_var_data[key] += value
+                    total_var_data[key] = total_var_data[key] + value.copy()
                 else:
-                    total_var_data[key] = value
+                    total_var_data[key] = value.copy()
 
         all_mu_A_data[mu_A] = {'avg': total_avg_data, 'var': total_var_data,'p_data': all_p_data}  
         # 嵌套结构：all_mu_A_data[mu_A]['p_data'][p]['avg/var']}
@@ -214,6 +214,124 @@ fig.legend(handles, labels, loc='lower center', fontsize=fs, ncol=len(models) * 
 plt.tight_layout(rect=[0, 0.21, 1, 1])
 plt.savefig(f'ride_share/figs/{info_type}_var.pdf', transparent=True, bbox_inches='tight')
 plt.close()
+
+# all_mu_A_data[mu_A]['p_data'][p]['avg/var'][key]
+big_figsize = (25, 40)
+info_type = 'price'
+fig, axes = plt.subplots(10, 4, figsize=big_figsize)
+for company in companies:
+    for p in range(5):
+        all_y_data = []
+        for i, mu_A in enumerate(mu_A_list):
+            p_avg_data = all_mu_A_data[mu_A]['p_data'][p]['avg']
+            for model in models:
+                key = f'{info_type}_{model}_{company}'
+                all_y_data.extend(p_avg_data[key])
+        all_y_data = np.array(all_y_data)
+        # if np.allclose(all_y_data, 0):
+        #     power = 0
+        # else:
+        #     power = int(np.floor(np.log10(np.max(np.abs(all_y_data)))))
+        # scale_factor = 10 ** power
+
+        y_min = (p*5+10)  # min(all_y_data)/ scale_factor
+        y_max = max(all_y_data) +0.1
+        for i, mu_A in enumerate(mu_A_list):
+            p_avg_data = all_mu_A_data[mu_A]['p_data'][p]['avg']
+            if company == 'Lyft':
+                ax = axes[p,i]
+            else:
+                ax = axes[p+5,i]
+            for model in models:
+                key = f'{info_type}_{model}_{company}'
+                style = style_dict[model]
+                ax.plot(p_avg_data[key], label=f'{model}',**style)
+                # ax_inset.plot(total_avg_data[key][:subrange]/ (5 * scale_factor), color=color, linestyle=linestyle, alpha=alpha, lw=lw2)
+            style = style_dict['SIR$^2$']
+            ax.plot(p_avg_data[f'price_SIR$^2$_{company}'], **style)
+            if i == 0 :
+                ax.set_ylabel(f'{company} (p={p*5+10})', fontsize=fs)
+            if company == 'Lyft' and p == 0:
+                ax.set_title(f'$\mu_A = {mu_A}$', fontsize=fs)  
+            elif company == 'Uber' and p == 4:
+                ax.set_xlabel(r'Iterations', fontsize=fs)
+            ax.grid(True)
+            ax.tick_params(labelsize=fs*0.5)
+            ax.set_ylim(y_min, y_max)
+            tick_positions = np.arange(0, len(total_avg_data['rev_SIR$^2$_Lyft'])+1, 250)
+            ax.set_xticks(tick_positions)
+            ax.set_xticklabels(tick_positions, fontsize=fs*0.7)
+            y_ticks = np.arange(y_min, np.ceil(y_max), 2) 
+            ax.set_yticks(y_ticks)
+            formatter = ScalarFormatter()
+            formatter.set_scientific(False)
+            ax.yaxis.set_major_formatter(formatter)
+            # ax.text(-0.1, 1.11, f'$\\times 10^{power}$', transform=ax.transAxes, fontsize=fs*0.7, verticalalignment='top')
+if company =='Uber':
+    handles, labels = fig.axes[0].get_legend_handles_labels()
+    fig.legend(handles, labels, loc='lower center', fontsize=fs, ncol=len(models) * len(companies))
+    plt.tight_layout(rect=[0, 0.05, 1, 1])
+    plt.savefig(f'ride_share/figs/{info_type}_each_p.pdf', transparent=True, bbox_inches='tight')
+    plt.close()
+
+
+info_type = 'demand'
+fig, axes = plt.subplots(10, 4, figsize=big_figsize)
+for company in companies:
+    for p in range(5):
+        all_y_data = []
+        for i, mu_A in enumerate(mu_A_list):
+            p_avg_data = all_mu_A_data[mu_A]['p_data'][p]['avg']
+            for model in models:
+                key = f'{info_type}_{model}_{company}'
+                all_y_data.extend(np.sum(p_avg_data[key], axis=1))
+        all_y_data = np.array(all_y_data)
+        if np.allclose(all_y_data, 0):
+            power = 0
+        else:
+            power = int(np.floor(np.log10(np.max(np.abs(all_y_data)))))
+        scale_factor = 10 ** power
+
+        y_min = 0 # min(all_y_data)/ scale_factor
+        y_max = max(all_y_data)/ scale_factor +0.1
+        for i, mu_A in enumerate(mu_A_list):
+            p_avg_data = all_mu_A_data[mu_A]['p_data'][p]['avg']
+            if company == 'Lyft':
+                ax = axes[p,i]
+            else:
+                ax = axes[p+5,i]
+            for model in models:
+                key = f'{info_type}_{model}_{company}'
+                style = style_dict[model]
+                ax.plot(np.sum(p_avg_data[key]/ scale_factor, axis=1), label=f'{model}',**style)
+            style = style_dict['SIR$^2$']
+            ax.plot(np.sum(p_avg_data[f'demand_SIR$^2$_{company}'], axis=1), **style)
+            if i == 0 :
+                ax.set_ylabel(f'{company} (p={p*5+10})', fontsize=fs)
+            if company == 'Lyft' and p == 0:
+                ax.set_title(f'$\mu_A = {mu_A}$', fontsize=fs)  
+            elif company == 'Uber' and p == 4:
+                ax.set_xlabel(r'Iterations', fontsize=fs)
+            ax.grid(True)
+            ax.tick_params(labelsize=fs*0.5)
+            ax.set_ylim(y_min, y_max)
+            tick_positions = np.arange(0, len(total_avg_data['rev_SIR$^2$_Lyft'])+1, 250)
+            ax.set_xticks(tick_positions)
+            ax.set_xticklabels(tick_positions, fontsize=fs*0.7)
+            y_ticks = np.arange(y_min, np.ceil(y_max), 1) 
+            ax.set_yticks(y_ticks)
+            tick_positions = np.arange(0, subrange+1, 5)
+            formatter = ScalarFormatter()
+            formatter.set_scientific(False)
+            ax.yaxis.set_major_formatter(formatter)
+            ax.text(-0.05, 1.12, f'$\\times 10^{power}$', transform=ax.transAxes, fontsize=fs*0.7, verticalalignment='top')
+if company =='Uber':
+    handles, labels = fig.axes[0].get_legend_handles_labels()
+    fig.legend(handles, labels, loc='lower center', fontsize=fs, ncol=len(models) * len(companies))
+    plt.tight_layout(rect=[0, 0.05, 1, 1])
+    plt.savefig(f'ride_share/figs/{info_type}_each_p.pdf', transparent=True, bbox_inches='tight')
+    plt.close()
+
 
 
 info_types_extended = ['total_price', 'demand', 'each_revenue', 'total_revenue']
@@ -423,4 +541,4 @@ pivot_df.to_excel('ride_share/figs/total_revenue.xlsx')
 end_time = time.time()  # 记录结束时间
 execution_time = end_time - start_time  # 计算耗时（秒）
 
-print(f"The time of this code need to run: {execution_time:.4f} 秒")
+print(f"The time of this code need to run: {execution_time:.4f} seconds")
