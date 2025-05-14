@@ -306,7 +306,7 @@ for company in companies:
                 style = style_dict[model]
                 ax.plot(np.sum(p_avg_data[key]/ scale_factor, axis=1), label=f'{model}',**style)
             style = style_dict['SIR$^2$']
-            ax.plot(np.sum(p_avg_data[f'demand_SIR$^2$_{company}'], axis=1), **style)
+            ax.plot(np.sum(p_avg_data[f'demand_SIR$^2$_{company}']/ scale_factor, axis=1), **style)
             if i == 0 :
                 ax.set_ylabel(f'{company} (p={p*5+10})', fontsize=fs)
             if company == 'Lyft' and p == 0:
