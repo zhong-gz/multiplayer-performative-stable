@@ -20,16 +20,16 @@ start_time = time.time()
 seed = 42
 np.random.seed(seed)
 num_experiments = 10
-figuresize=(25, 8)
+figuresize=(25, 6)
 loc_cap=11
-run_experiment = 1 # 1: run the experiment, 0: load the data
+run_experiment = 0 # 1: run the experiment, 0: load the data
 mu_A_list = [0.25,0.50,0.75,1.0] #25,0.50,0.75,1
 gamma_list = [2.1,4,6,8,10]
 BATCH=10
 MAXITER=15
 tot_rev=1
 
-fs=44
+fs=40
 lw=3
 # 定义颜色映射
 cmap = plt.get_cmap('winter')
