@@ -7,6 +7,7 @@ import matplotlib.gridspec as gridspec
 from matplotlib.ticker import EngFormatter
 from matplotlib.patches import Rectangle
 from matplotlib.ticker import ScalarFormatter
+from matplotlib.ticker import FormatStrFormatter
 # insert at 1, 0 is the script path (or '' in REPL)
 sys.path.insert(1,'./utils/' )
 from utilsrm import *
@@ -318,12 +319,13 @@ for company in companies:
             tick_positions = np.arange(0, len(total_avg_data['rev_SIR$^2$_Lyft'])+1, 250)
             ax.set_xticks(tick_positions)
             ax.set_xticklabels(tick_positions, fontsize=fs*0.7)
-            y_ticks = np.arange(y_min, np.ceil(y_max), 1) 
-            ax.set_yticks(y_ticks)
+            # y_ticks = np.arange(y_min, np.ceil(y_max), 1) 
+            # ax.set_yticks(y_ticks)
             tick_positions = np.arange(0, subrange+1, 5)
             formatter = ScalarFormatter()
             formatter.set_scientific(False)
             ax.yaxis.set_major_formatter(formatter)
+            ax.yaxis.set_major_formatter(FormatStrFormatter('%.1f'))
             ax.text(-0.05, 1.12, f'$\\times 10^{power}$', transform=ax.transAxes, fontsize=fs*0.7, verticalalignment='top')
 if company =='Uber':
     handles, labels = fig.axes[0].get_legend_handles_labels()
