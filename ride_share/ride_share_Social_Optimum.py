@@ -217,9 +217,10 @@ plt.savefig(f'ride_share/figs/{info_type}_var.pdf', transparent=True, bbox_inche
 plt.close()
 
 # all_mu_A_data[mu_A]['p_data'][p]['avg/var'][key]
-big_figsize = (25, 40)
+big_figsize = (26, 40)
 info_type = 'price'
-fig, axes = plt.subplots(10, 4, figsize=big_figsize)
+# fig, axes = plt.subplots(10, 4, figsize=big_figsize)
+fig, axes = plt.subplots(11, 4, figsize=big_figsize, gridspec_kw={'height_ratios': [1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1]})
 for company in companies:
     for p in range(5):
         all_y_data = []
@@ -242,7 +243,7 @@ for company in companies:
             if company == 'Lyft':
                 ax = axes[p,i]
             else:
-                ax = axes[p+5,i]
+                ax = axes[p+6,i]
             for model in models:
                 key = f'{info_type}_{model}_{company}'
                 style = style_dict[model]
@@ -268,16 +269,19 @@ for company in companies:
             formatter.set_scientific(False)
             ax.yaxis.set_major_formatter(formatter)
             # ax.text(-0.1, 1.11, f'$\\times 10^{power}$', transform=ax.transAxes, fontsize=fs*0.7, verticalalignment='top')
+for i in range(4):
+    axes[5,i].axis('off')
 if company =='Uber':
     handles, labels = fig.axes[0].get_legend_handles_labels()
     fig.legend(handles, labels, loc='lower center', fontsize=fs, ncol=len(models) * len(companies))
-    plt.tight_layout(rect=[0, 0.05, 1, 1])
+    plt.tight_layout(rect=[0, 0.04, 1, 1])
     plt.savefig(f'ride_share/figs/{info_type}_each_p.pdf', transparent=True, bbox_inches='tight')
     plt.close()
 
 
 info_type = 'demand'
-fig, axes = plt.subplots(10, 4, figsize=big_figsize)
+# fig, axes = plt.subplots(10, 4, figsize=big_figsize)
+fig, axes = plt.subplots(11, 4, figsize=big_figsize, gridspec_kw={'height_ratios': [1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1]})
 for company in companies:
     for p in range(5):
         all_y_data = []
@@ -300,7 +304,7 @@ for company in companies:
             if company == 'Lyft':
                 ax = axes[p,i]
             else:
-                ax = axes[p+5,i]
+                ax = axes[p+6,i]
             for model in models:
                 key = f'{info_type}_{model}_{company}'
                 style = style_dict[model]
@@ -327,10 +331,12 @@ for company in companies:
             ax.yaxis.set_major_formatter(formatter)
             ax.yaxis.set_major_formatter(FormatStrFormatter('%.1f'))
             ax.text(-0.05, 1.12, f'$\\times 10^{power}$', transform=ax.transAxes, fontsize=fs*0.7, verticalalignment='top')
+for i in range(4):
+    axes[5,i].axis('off')
 if company =='Uber':
     handles, labels = fig.axes[0].get_legend_handles_labels()
     fig.legend(handles, labels, loc='lower center', fontsize=fs, ncol=len(models) * len(companies))
-    plt.tight_layout(rect=[0, 0.05, 1, 1])
+    plt.tight_layout(rect=[0, 0.04, 1, 1])
     plt.savefig(f'ride_share/figs/{info_type}_each_p.pdf', transparent=True, bbox_inches='tight')
     plt.close()
 
