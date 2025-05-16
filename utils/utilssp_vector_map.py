@@ -49,10 +49,10 @@ class ddstrategic_prediction:
         # self.Cc2=params['Cc2']
         self.B1_hat_ = np.zeros((self.d,1))
         self.B2_hat_ = np.zeros((self.d,1))
-        self.A1_hat_ = np.zeros((1,self.d)) #np.random.rand(m,d)
-        self.Ac1_hat_ =np.zeros((1,self.d))# np.random.rand(m,d)
-        self.A2_hat_ = np.zeros((1,self.d)) #np.random.rand(m,d)
-        self.Ac2_hat_ = np.zeros((1,self.d)) #np.random.rand(m,d)
+        self.A1_hat_ = np.zeros((1,self.d)) 
+        self.Ac1_hat_ =np.zeros((1,self.d))
+        self.A2_hat_ = np.zeros((1,self.d)) 
+        self.Ac2_hat_ = np.zeros((1,self.d)) 
         self.seed=seed
         np.random.seed(seed)
         self.A1_hat=[self.A1_hat_]
@@ -79,18 +79,6 @@ class ddstrategic_prediction:
             return np.random.normal(self.mu_w1,self.sigma_w,size=(self.m,))
         else:
             return np.random.normal(self.mu_w2,self.sigma_w,size=(self.m,))
-
-    # def proj(self,x):
-    #     y=np.zeros(np.shape(x))
-    #     for i in range(self.n):
-    #         for j in range(self.d):
-    #             if x[i][j]<=self.l[j]:
-    #                 y[i][j]=self.l[j]
-    #             elif self.l[j]<x[i][j] and x[i][j]<self.u[j]:
-    #                 y[i][j]=x[i][j]
-    #             else:
-    #                 y[i][j]=self.u[j]
-    #     return y
 
     def getgrad_so(self,x,theta):
         w=self.D_w(0)

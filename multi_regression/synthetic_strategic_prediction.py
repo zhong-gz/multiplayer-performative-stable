@@ -146,9 +146,7 @@ for sigma_A in sigma_A_values:
                 if (la.norm(x_rr[-1][0]-x_rr[-2][0]) > 1e-3 or la.norm(x_rr[-1][1]-x_rr[-2][1]) > 1e-3):
                     epsilon_1 = max(epsilon_1,la.norm(g1_t-g1_t_1)/(la.norm(x_rr[-1][0]-x_rr[-2][0])+1e-3))
                     epsilon_2 = max(epsilon_2,la.norm(g2_t-g2_t_1)/(la.norm(x_rr[-1][1]-x_rr[-2][1])+1e-3))
-                    # count += 1
-                    # if count < 10:
-                    alpha = gamma*((epsilon_1**2+epsilon_2**2)**0.5) #*0.01 + 0.99*alpha
+                    alpha = gamma*((epsilon_1**2+epsilon_2**2)**0.5)
 
             x_sgd=np.asarray(x_sgd)
             x_agd=np.asarray(x_agd)

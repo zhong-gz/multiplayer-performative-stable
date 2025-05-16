@@ -206,16 +206,12 @@ class ddrideshare:
               return environment query with the performative effects
         '''
         z_=self.D_z(q_,locs=locs, batch=batch)
-        #print(z_)
-        #print(np.shape(z_))
         if player==0:
             y1 = self.A1 @ x[0] + self.Ac1 @ x[1]
             z = (2 * z_) / (1 + 1 / np.exp(y1)) + np.random.normal(0, 0.01, size=z_.shape)
-            # z= np.maximum(z_+self.A1@x[0]+self.Ac1@x[1]+np.random.normal(0,0.1,size=(z_.shape)),0.001)
         if player==1:
             y2 = self.A2@x[1]+self.Ac2@x[0]
             z = (2 * z_) / (1 + 1 / np.exp(y2)) + np.random.normal(0, 0.01, size=z_.shape)
-            # z= np.maximum(z_+self.A2@x[1]+self.Ac2@x[0]+np.random.normal(0,0.1,size=(z_.shape)),0.001)
         return z
 
     def loss(self,x,player,q_,locs=None,batch=1):
@@ -288,9 +284,7 @@ class ddrideshare:
             if (la.norm(self.x_rr[-1][0]-self.x_rr[-2][0]) > 1e-3 or la.norm(self.x_rr[-1][1]-self.x_rr[-2][1]) > 1e-3):
                 epsilon_1 = max(epsilon_1,la.norm(g1_t-g1_t_1)/(la.norm(self.x_rr[-1][0]-self.x_rr[-2][0])+1e-3))
                 epsilon_2 = max(epsilon_2,la.norm(g2_t-g2_t_1)/(la.norm(self.x_rr[-1][1]-self.x_rr[-2][1])+1e-3))
-                # count += 1
-                # if count < 6:
-                alpha = gamma*((epsilon_1**2+epsilon_2**2)**0.5) #*0.01 + 0.99*alpha
+                alpha = gamma*((epsilon_1**2+epsilon_2**2)**0.5) 
             
             if i == 0 :
                 self.rev_rr_p1=[self.revenue(self.x_rr[-1],0,q_lyft_,price_index=self.price_index_rr)]
@@ -460,7 +454,7 @@ class ddrideshare:
             dAc1=np.diag(np.diagonal(self.Ac1_hat[-1]))
             barA1_hat = np.hstack((dA1,dAc1))
 
-            #print("shape barA1_hat redesign : ", np.shape(barA1_hat))
+        # print("shape barA1_hat redesign : ", np.shape(barA1_hat))
         #print("shape     A1 hat: ", np.shape(self.A1_hat))
         #print("shape     A1    : ", np.shape(self.A1))
         #print("shape    Ac1 hat: ", np.shape(self.Ac1_hat))
@@ -494,8 +488,8 @@ class ddrideshare:
         '''
         '''
         if np.all(self.perform_agd):
-            p1=-(self.A1_hat[-1]-self.lam1*self.I).T@x[0]-1/2*(z1_+self.Ac1_hat[-1]@x[1]) #-self.A1_hat[-1].T@(self.tot_rev*self.prices_[self.price_index_agd]*np.ones(self.d))
-            p2=-(self.A2_hat[-1]-self.lam2*self.I).T@x[1]-1/2*(z2_+self.Ac2_hat[-1]@x[0]) #-self.A2_hat[-1].T@(self.tot_rev*self.prices_[self.price_index_agd]*np.ones(self.d))
+            p1=-(self.A1_hat[-1]-self.lam1*self.I).T@x[0]-1/2*(z1_+self.Ac1_hat[-1]@x[1]) 
+            p2=-(self.A2_hat[-1]-self.lam2*self.I).T@x[1]-1/2*(z2_+self.Ac2_hat[-1]@x[0]) 
         else:
             if self.perform_agd[0]:
                 p1=-(self.A1_hat[-1]-self.lam1*self.I).T@x[0]-1/2*(z1_+self.Ac1_hat[-1]@x[1])
@@ -541,7 +535,7 @@ class ddrideshare:
         self.xo_agd=x0
         self.x_agd=[x0]; 
         eta=eta/(np.log(len(self.x_agd))+1)
-        nu=nu/len(self.x_agd) #(np.log(len(self.x_agd))+1)
+        nu=nu/len(self.x_agd) 
         self.rev_agd_p1=[self.revenue(self.x_agd[-1],0,self.z1_base,price_index=self.price_index_agd)]
         self.rev_agd_p2=[self.revenue(self.x_agd[-1],1,self.z2_base,price_index=self.price_index_agd)]
         self.rev_agd_p1_loc=[self.revenue_loc(self.x_agd[-1],0,self.z1_base,price_index=self.price_index_agd)]
@@ -554,7 +548,7 @@ class ddrideshare:
         for i in range(self.maxiter_agd):
             z1=self.D_z(self.z1_base, batch=self.batch_agd)
             z2=self.D_z(self.z2_base,batch=self.batch_agd)
-            a = 2#((i+1)**(-0.2))
+            a = 2
             self.x_agd.append(self.proj(self.x_agd[-1]-(eta*a)*self.getgrad_adaptive(self.x_agd[-1], z1, z2)))
             for j in range(INNERITER):
                 A1_hat,Ac1_hat,A2_hat,Ac2_hat = self.update_estimate(self.x_agd[-1], z1, z2, B=B, UNCORR=UNCORR,i = i)
@@ -592,7 +586,7 @@ class ddrideshare:
         '''
         Runs for one price bin and all locations
         '''
-        self.stepsize_opgd = eta*10 #0.0008
+        self.stepsize_opgd = eta*10 
         self.batch_opgd = BATCH
         self.maxiter_opgd = MAXITER
         self.perform_copm_opgd = perform_opgd
@@ -920,19 +914,6 @@ class ddrideshare:
         for ind_i_,ind_j_ in zip(ind_i,ind_j):
             self.Ac2[ind_i_,ind_j_]=Ac2_[ind_i_,ind_j_]
             #print(Ac2_[ind_i_,ind_j_],ind_i_,ind_j_)
-            
-        #for pair in cors.values():
-        #    ind_i=pair[0][0]
-        #    ind_j=pair[0][1]
-        #    val= pair[1]
-        #    if pair[3]=='mu' and pair[2]==0:
-        #        self.A1[ind_i,ind_j]=val
-        #    elif pair[3]=='mu' and pair[2]==1:
-        #        self.A2[ind_i,ind_j]=val
-        #    elif pair[3]=='gamma' and pair[2]==0:
-        #        self.Ac1[ind_i,ind_j]=val
-        #    elif pair[3]=='gamma' and pair[2]==1:
-        #        self.Ac2[ind_i,ind_j]=val
 
         self.x_comp=[x0]; perform_comp=[True,True]
 
