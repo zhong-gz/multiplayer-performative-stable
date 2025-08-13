@@ -1,5 +1,7 @@
 # multiplayer-performative-stable
 
+Python 3.8.10
+
 The packages for experiment can be found in 'requirement.txt'
 
 The result can be reproduced by executing three Python files: 
