@@ -11,7 +11,7 @@ import winsound
 import sys, os
 # insert at 1, 0 is the script path (or '' in REPL)
 sys.path.insert(1,'./utils/' )
-from utilssp_vector_map import *
+from utils.utilssp_vector_map import *
 # %load_ext autoreload
 # %autoreload 2
 
