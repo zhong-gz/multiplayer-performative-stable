@@ -16,13 +16,13 @@ import time
 global_oil_volume = read_data('CournotCompetition/Global Crude Petroleum Trade 1995-2021.csv')
 data = global_oil_volume.to_numpy()
 data=data[:, 1]
-data = np.partition(data, -28)[-28:]
+data = np.partition(data, -28)[-28:] #first 28 countries contain 99% of the total oil exportation
 n = np.size(data)
-print(max(data))
-print(min(data))
-print(np.mean(data))
-print(np.median(data))
-print(n)
+# print(max(data))
+# print(min(data))
+# print(np.mean(data))
+# print(np.median(data))
+# print(n)
 
 # print(global_oil_volume)
 # 68.22 is the average price of crude oil per barrel in 2021 according to WTI data
@@ -88,7 +88,6 @@ if run_experiment:
 #             dic_data.append(ddgame.runSFB(x0,price_index=price_index,eta=eta,BATCH=BATCH,MAXITER=MAXITER,tot_rev=tot_rev))
 #             dic_data.append(ddgame.runAGD(x0,eta=eta,price_index=price_index,BATCH=BATCH,MAXITER=MAXITER,tot_rev=tot_rev))
 #             dic_data.append(ddgame.runOPGD(x0,price_index=price_index,eta=eta,BATCH=BATCH,MAXITER=MAXITER,tot_rev=tot_rev))
-
 #             for model, dic in zip(models, dic_data):
 #                 # 从字典中获取 x 数据
 #                 x = np.asarray(dic['x'])
