@@ -8,6 +8,7 @@ from matplotlib.ticker import EngFormatter
 from matplotlib.patches import Rectangle
 from matplotlib.ticker import ScalarFormatter
 from matplotlib.ticker import FormatStrFormatter
+from sklearn.preprocessing import MinMaxScaler
 # insert at 1, 0 is the script path (or '' in REPL)
 # sys.path.insert(1,'./utils/' )
 from CournotFunction import *
@@ -16,13 +17,19 @@ import time
 global_oil_volume = read_data('CournotCompetition/Global Crude Petroleum Trade 1995-2021.csv')
 data = global_oil_volume.to_numpy()
 data=data[:, 1]
-data = np.partition(data, -28)[-28:] #first 28 countries contain 99% of the total oil exportation
+data = np.partition(data, -28)[-28:]
 n = np.size(data)
-# print(max(data))
-# print(min(data))
-# print(np.mean(data))
-# print(np.median(data))
-# print(n)
+# scaler = MinMaxScaler(feature_range=(0, 1))
+# data_2d = data.reshape(-1, 1)
+# scaled = scaler.fit_transform(data_2d)
+# data = scaled.flatten()
+print(max(data))
+print(min(data))
+print(np.mean(data))
+print(np.median(data))
+print(np.sum(data))
+print(79.05/np.sum(data))
+print(n)
 
 # print(global_oil_volume)
 # 68.22 is the average price of crude oil per barrel in 2021 according to WTI data
@@ -35,7 +42,7 @@ figuresize=(25, 6)
 loc_cap=11
 run_experiment = 1 # 1: run the experiment, 0: load the data
 subrange = 26
-gamma = 2.1
+c_alg = 2.1
 tot_rev=1
 
 # 不同的模型
@@ -54,15 +61,19 @@ style_dict = {
 }
 
 all_data={}
-# lam=[1.0,1.0]
-lam=[0.5,0.5]
+# gamma=[1.0,1.0]
+gamma=[0.5,0.5]
+c = 10 # cost of oil
+p = 68.22 # average price of oil in 2021
+z0 = 147.27 # highest oil price in 2008.07
+b = (z0 - p)/np.sum(data) # linear demand coefficient
 MAXITER=100
 eta=0.001
 mu_A_list = [0.25]#,0.50,0.75,1.0] #25,0.50,0.75,1
 
 all_mu_A_data = {}
 total_revenue_stats = []
-all_mu_A_data_path = 'CournotCompetition/data/all_mu_A_data.npy'
+all_mu_A_data_path = 'CournotCompetition/data/all_mu_data.npy'
 if run_experiment:
     for mu_A in mu_A_list:
         print('Runing at mu_A',mu_A)
@@ -79,6 +90,8 @@ if run_experiment:
             x0=(np.random.rand(n)*0.2-0.1)*data # initial point in the range [0,5]
             all_data[num_exper]={}
             all_data[num_exper]['x0']=x0
+            dic_data = []
+            dic_data.append(runRR(z0,data,c,b,c_alg, MAXITER,mu_A))
 
 
 #             # run all cases
@@ -88,6 +101,7 @@ if run_experiment:
 #             dic_data.append(ddgame.runSFB(x0,price_index=price_index,eta=eta,BATCH=BATCH,MAXITER=MAXITER,tot_rev=tot_rev))
 #             dic_data.append(ddgame.runAGD(x0,eta=eta,price_index=price_index,BATCH=BATCH,MAXITER=MAXITER,tot_rev=tot_rev))
 #             dic_data.append(ddgame.runOPGD(x0,price_index=price_index,eta=eta,BATCH=BATCH,MAXITER=MAXITER,tot_rev=tot_rev))
+
 #             for model, dic in zip(models, dic_data):
 #                 # 从字典中获取 x 数据
 #                 x = np.asarray(dic['x'])
