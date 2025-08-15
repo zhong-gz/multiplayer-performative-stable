@@ -56,4 +56,10 @@ def runRR(z0,data,c,b,c_alg, MAXITER,mu):
 
         eps = max(eps,(z[i+1] - z[i])/(np.linalg.norm(X_rr[:, i+1] - X_rr[:, i])+1e-3))
 
-    return X_rr[1:-1, :]
+    dic={}
+    dic['x']=X_rr[1:-1, :]
+    dic['quantity_total']= np.sum(q+X_rr[1:-1, :], axis=0)
+    dic['revenue_total']= np.sum((q+X_rr[1:-1, :]), axis=0) * (z - np.sum((q+X_rr[1:-1, :]), axis=0)) - c * np.sum((q+X_rr[1:-1, :]), axis=0)
+    dic['price']= (z[1:-1] - np.sum((q+X_rr[1:-1, :]), axis=0))
+
+    return dic
