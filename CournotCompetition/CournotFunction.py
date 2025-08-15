@@ -30,3 +30,30 @@ def read_data(path = 'CournotCompetition/Global Crude Petroleum Trade 1995-2021.
     # print("2021年出口额大于进口额的全球国家原油净出口量（桶）:")
     # print(global_oil_volume)
     return global_oil_volume
+
+def distribution_map(z0,X,mu = 0.25):
+    z = z0 + mu* np.log10(1+ sum(X)) + np.random.normal(0, np.sqrt(0.1))
+    return z
+
+def runRR(z0,data,c,b,c_alg, MAXITER,mu):
+    q = data
+    total_q = np.sum(q)
+    n = np.size(q)
+    gamma = 1
+    X_rr= np.empty((n, MAXITER+1))
+    X_rr[:, 0] = 0
+    z = np.empty(MAXITER+1)
+    z[0] = z0
+    eps = 0
+    for i in range(MAXITER+1):
+        gamma = max(0,eps * np.sqrt(n) * c_alg - b)
+        A_mat = np.full((n, n), b)
+        np.fill_diagonal(A_mat, A_mat.diagonal() + b + gamma)
+        b_vec = -b * q - b * total_q - c + z
+        X_rr[:,i+1] = np.linalg.solve(A_mat, b_vec)
+
+        z[i+1] = distribution_map(z0, X_rr[:,i+1], mu)
+
+        eps = max(eps,(z[i+1] - z[i])/(np.linalg.norm(X_rr[:, i+1] - X_rr[:, i])+1e-3))
+
+    return X_rr[1:-1, :]
