@@ -105,7 +105,7 @@ if run_experiment:
                 all_data[num_exper][f'{info_types[2]}_{model}'] = dic['price']
 
         avg_data = {}
-        var_data = {}  # 新增一个字典来存储方差
+        var_data = {}
         for model in models:
             for info_type in info_types:
                 key = f'{info_type}_{model}'
