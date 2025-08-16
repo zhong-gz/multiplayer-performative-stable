@@ -48,7 +48,7 @@ tot_rev=1
 fs=40
 lw=4
 lw2 = lw/2
-models = ['SIR$^2$','RR']#, 'RGD','SFB','AGM','OPGD']
+models = ['SIR$^2$','RR', 'RGD']#,'SFB','AGM','OPGD']
 info_types = ['quantity','revenue','price']
 # 定义不同模型对应的颜色
 style_dict = {
@@ -93,8 +93,8 @@ if run_experiment:
 
             dic_data = []
             dic_data.append(runSIRR(z0,data,c,b,c_alg, MAXITER,mu_A))
-            dic_data.append(runRR(z0,data,c,b,c_alg, MAXITER,mu_A))
-
+            dic_data.append(runRR(z0,data,c,b, MAXITER,mu_A))
+            dic_data.append(runRGD(z0,data,c,b, MAXITER,mu_A,eta,x0))
 
             for model, dic in zip(models, dic_data):
                 # 从字典中获取 x 数据
