@@ -111,3 +111,25 @@ def runRGD(z0,data,c,b, MAXITER,mu,eta,x0):
     dic['price']= (z[1:-1] - np.sum((q[:, np.newaxis]+X_rg[:, 1:-1]), axis=0))
 
     return dic
+
+def runSFB(z0,data,c,b, MAXITER,mu,eta,x0):
+    q = data
+    total_q = np.sum(q)
+    n = np.size(q)
+    gamma = 0.1
+    X_rg= np.empty((n, MAXITER+2))
+    X_rg[:, 0] = x0
+    z = np.empty(MAXITER+2)
+    z[0] = z0
+    for i in range(MAXITER+1):
+        grad = b * (q + X_rg[:, i]) + b* np.sum(q[:, np.newaxis]+X_rg[:, i], axis=0) + c - z[i]
+        X_rg[:, i+1] = X_rg[:, i] - (eta**(-3/4)) * grad
+        z[i+1] = distribution_map(z0, X_rg[:,i+1], mu)
+
+    dic={}
+    dic['x']=X_rg[1:-1, :]
+    dic['quantity_total']= np.sum(q[:, np.newaxis]+X_rg[:, 1:-1], axis=0)
+    dic['revenue_total']= np.sum((q[:, np.newaxis]+X_rg[:, 1:-1]), axis=0) * (z[1:-1] - np.sum((q[:, np.newaxis]+X_rg[:, 1:-1]), axis=0)) - c * np.sum((q[:, np.newaxis]+X_rg[:, 1:-1]), axis=0)
+    dic['price']= (z[1:-1] - np.sum((q[:, np.newaxis]+X_rg[:, 1:-1]), axis=0))
+
+    return dic
