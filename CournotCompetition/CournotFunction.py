@@ -35,21 +35,22 @@ def distribution_map(z0,X,mu = 0.25):
     z = z0 + mu* np.log10(1+ sum(X)) + np.random.normal(0, np.sqrt(0.1))
     return z
 
-def runRR(z0,data,c,b,c_alg, MAXITER,mu):
+def runSIRR(z0,data,c,b,c_alg, MAXITER,mu):
     q = data
     total_q = np.sum(q)
     n = np.size(q)
     gamma = 1
-    X_rr= np.empty((n, MAXITER+1))
+    X_rr= np.empty((n, MAXITER+2))
     X_rr[:, 0] = 0
-    z = np.empty(MAXITER+1)
+    z = np.empty(MAXITER+2)
     z[0] = z0
     eps = 0
     for i in range(MAXITER+1):
         gamma = max(0,eps * np.sqrt(n) * c_alg - b)
         A_mat = np.full((n, n), b)
         np.fill_diagonal(A_mat, A_mat.diagonal() + b + gamma)
-        b_vec = -b * q - b * total_q - c + z
+        b_vec = -b * q - b * total_q - c + z[i]
+        b_vec = b_vec.astype(np.float64)
         X_rr[:,i+1] = np.linalg.solve(A_mat, b_vec)
 
         z[i+1] = distribution_map(z0, X_rr[:,i+1], mu)
@@ -58,8 +59,33 @@ def runRR(z0,data,c,b,c_alg, MAXITER,mu):
 
     dic={}
     dic['x']=X_rr[1:-1, :]
-    dic['quantity_total']= np.sum(q+X_rr[1:-1, :], axis=0)
-    dic['revenue_total']= np.sum((q+X_rr[1:-1, :]), axis=0) * (z - np.sum((q+X_rr[1:-1, :]), axis=0)) - c * np.sum((q+X_rr[1:-1, :]), axis=0)
-    dic['price']= (z[1:-1] - np.sum((q+X_rr[1:-1, :]), axis=0))
+    dic['quantity_total']= np.sum(q[:, np.newaxis]+X_rr[:, 1:-1], axis=0)
+    dic['revenue_total']= np.sum((q[:, np.newaxis]+X_rr[:, 1:-1]), axis=0) * (z[1:-1] - np.sum((q[:, np.newaxis]+X_rr[:, 1:-1]), axis=0)) - c * np.sum((q[:, np.newaxis]+X_rr[:, 1:-1]), axis=0)
+    dic['price']= (z[1:-1] - np.sum((q[:, np.newaxis]+X_rr[:, 1:-1]), axis=0))
+
+    return dic
+
+def runRR(z0,data,c,b,c_alg, MAXITER,mu):
+    q = data
+    total_q = np.sum(q)
+    n = np.size(q)
+    gamma = 0.1
+    X_rr= np.empty((n, MAXITER+2))
+    X_rr[:, 0] = 0
+    z = np.empty(MAXITER+2)
+    z[0] = z0
+    for i in range(MAXITER+1):
+        A_mat = np.full((n, n), b)
+        np.fill_diagonal(A_mat, A_mat.diagonal() + b + gamma)
+        b_vec = -b * q - b * total_q - c + z[i]
+        b_vec = b_vec.astype(np.float64)
+        X_rr[:,i+1] = np.linalg.solve(A_mat, b_vec)
+        z[i+1] = distribution_map(z0, X_rr[:,i+1], mu)
+
+    dic={}
+    dic['x']=X_rr[1:-1, :]
+    dic['quantity_total']= np.sum(q[:, np.newaxis]+X_rr[:, 1:-1], axis=0)
+    dic['revenue_total']= np.sum((q[:, np.newaxis]+X_rr[:, 1:-1]), axis=0) * (z[1:-1] - np.sum((q[:, np.newaxis]+X_rr[:, 1:-1]), axis=0)) - c * np.sum((q[:, np.newaxis]+X_rr[:, 1:-1]), axis=0)
+    dic['price']= (z[1:-1] - np.sum((q[:, np.newaxis]+X_rr[:, 1:-1]), axis=0))
 
     return dic
