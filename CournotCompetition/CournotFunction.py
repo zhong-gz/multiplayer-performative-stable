@@ -32,14 +32,14 @@ def read_data(path = 'CournotCompetition/Global Crude Petroleum Trade 1995-2021.
     return global_oil_volume
 
 def distribution_map(z0,X,mu = 0.25,b=1e-9):
-    z = z0 + b*mu* np.arcsinh(1+ sum(X)) + np.random.normal(0, np.sqrt(0.1))
+    z = z0 + 0.1*mu* np.arcsinh(1+ sum(X)) + np.random.normal(0, np.sqrt(0.01))
     return z
 
 def runSIRR(z0,data,c,b,c_alg, MAXITER,mu):
     q = data
     total_q = np.sum(q)
     n = np.size(q)
-    gamma = 1
+    gamma = 0.1
     X_rr= np.empty((n, MAXITER+2))
     X_rr[:, 0] = 0
     z = np.empty(MAXITER+2)
@@ -94,13 +94,13 @@ def runRGD(z0,data,c,b, MAXITER,mu,eta,x0):
     q = data
     total_q = np.sum(q)
     n = np.size(q)
-    gamma = 0.1
+    gamma = 0
     X_rg= np.empty((n, MAXITER+2))
     X_rg[:, 0] = x0
     z = np.empty(MAXITER+2)
     z[0] = z0
     for i in range(MAXITER+1):
-        grad = b * (q + X_rg[:, i]) + b* np.sum(q[:, np.newaxis]+X_rg[:, i], axis=0) + c - z[i]
+        grad = b * (q + X_rg[:, i]) + b* np.sum(q[:, np.newaxis]+X_rg[:, i]) + c - z[i]
         X_rg[:, i+1] = X_rg[:, i] - eta * grad
         z[i+1] = distribution_map(z0, X_rg[:,i+1], mu,b)
 
@@ -116,13 +116,13 @@ def runSFB(z0,data,c,b, MAXITER,mu,eta,x0):
     q = data
     total_q = np.sum(q)
     n = np.size(q)
-    gamma = 0.1
+    gamma = 0
     X_rg= np.empty((n, MAXITER+2))
     X_rg[:, 0] = x0
     z = np.empty(MAXITER+2)
     z[0] = z0
     for i in range(MAXITER+1):
-        grad = b * (q + X_rg[:, i]) + b* np.sum(q[:, np.newaxis]+X_rg[:, i], axis=0) + c - z[i]
+        grad = b * (q + X_rg[:, i]) + b* np.sum(q[:, np.newaxis]+X_rg[:, i]) + c - z[i]
         X_rg[:, i+1] = X_rg[:, i] - (eta**(-3/4)) * grad
         z[i+1] = distribution_map(z0, X_rg[:,i+1], mu,b)
 
