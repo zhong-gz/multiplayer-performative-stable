@@ -31,8 +31,8 @@ def read_data(path = 'CournotCompetition/Global Crude Petroleum Trade 1995-2021.
     # print(global_oil_volume)
     return global_oil_volume
 
-def distribution_map(z0,X,mu = 0.25):
-    z = z0 + mu* np.arcsinh(1+ sum(X)) + np.random.normal(0, np.sqrt(0.1))
+def distribution_map(z0,X,mu = 0.25,b=1e-9):
+    z = z0 + b*mu* np.arcsinh(1+ sum(X)) + np.random.normal(0, np.sqrt(0.1))
     return z
 
 def runSIRR(z0,data,c,b,c_alg, MAXITER,mu):
@@ -53,15 +53,15 @@ def runSIRR(z0,data,c,b,c_alg, MAXITER,mu):
         b_vec = b_vec.astype(np.float64)
         X_rr[:,i+1] = np.linalg.solve(A_mat, b_vec)
 
-        z[i+1] = distribution_map(z0, X_rr[:,i+1], mu)
+        z[i+1] = distribution_map(z0, X_rr[:,i+1], mu,b)
 
         eps = max(eps,(z[i+1] - z[i])/(np.linalg.norm(X_rr[:, i+1] - X_rr[:, i])+1e-3))
 
     dic={}
-    dic['x']=X_rr[1:-1, :]
+    dic['x']=X_rr[:, 1:-1]
     dic['quantity_total']= np.sum(q[:, np.newaxis]+X_rr[:, 1:-1], axis=0)
-    dic['revenue_total']= np.sum((q[:, np.newaxis]+X_rr[:, 1:-1]), axis=0) * (z[1:-1] - np.sum((q[:, np.newaxis]+X_rr[:, 1:-1]), axis=0)) - c * np.sum((q[:, np.newaxis]+X_rr[:, 1:-1]), axis=0)
-    dic['price']= (z[1:-1] - np.sum((q[:, np.newaxis]+X_rr[:, 1:-1]), axis=0))
+    dic['revenue_total']=  np.sum(q[:, np.newaxis]+X_rr[:, 1:-1], axis=0) * (z[1:-1] - b*np.sum(q[:, np.newaxis]+X_rr[:, 1:-1], axis=0)) - c * np.sum(q[:, np.newaxis]+X_rr[:, 1:-1], axis=0)
+    dic['price']= (z[1:-1] - b*np.sum(q[:, np.newaxis]+X_rr[:, 1:-1], axis=0))
 
     return dic
 
@@ -69,7 +69,7 @@ def runRR(z0,data,c,b, MAXITER,mu):
     q = data
     total_q = np.sum(q)
     n = np.size(q)
-    gamma = 0.1
+    gamma = 0
     X_rr= np.empty((n, MAXITER+2))
     X_rr[:, 0] = 0
     z = np.empty(MAXITER+2)
@@ -80,13 +80,13 @@ def runRR(z0,data,c,b, MAXITER,mu):
         b_vec = -b * q - b * total_q - c + z[i]
         b_vec = b_vec.astype(np.float64)
         X_rr[:,i+1] = np.linalg.solve(A_mat, b_vec)
-        z[i+1] = distribution_map(z0, X_rr[:,i+1], mu)
+        z[i+1] = distribution_map(z0, X_rr[:,i+1], mu,b)
 
     dic={}
-    dic['x']=X_rr[1:-1, :]
+    dic['x']=X_rr[:, 1:-1]
     dic['quantity_total']= np.sum(q[:, np.newaxis]+X_rr[:, 1:-1], axis=0)
-    dic['revenue_total']= np.sum((q[:, np.newaxis]+X_rr[:, 1:-1]), axis=0) * (z[1:-1] - np.sum((q[:, np.newaxis]+X_rr[:, 1:-1]), axis=0)) - c * np.sum((q[:, np.newaxis]+X_rr[:, 1:-1]), axis=0)
-    dic['price']= (z[1:-1] - np.sum((q[:, np.newaxis]+X_rr[:, 1:-1]), axis=0))
+    dic['revenue_total']= np.sum((q[:, np.newaxis]+X_rr[:, 1:-1]), axis=0) * (z[1:-1] - b*np.sum((q[:, np.newaxis]+X_rr[:, 1:-1]), axis=0)) - c * np.sum((q[:, np.newaxis]+X_rr[:, 1:-1]), axis=0)
+    dic['price']= (z[1:-1] - b*np.sum((q[:, np.newaxis]+X_rr[:, 1:-1]), axis=0))
 
     return dic
 
@@ -102,13 +102,13 @@ def runRGD(z0,data,c,b, MAXITER,mu,eta,x0):
     for i in range(MAXITER+1):
         grad = b * (q + X_rg[:, i]) + b* np.sum(q[:, np.newaxis]+X_rg[:, i], axis=0) + c - z[i]
         X_rg[:, i+1] = X_rg[:, i] - eta * grad
-        z[i+1] = distribution_map(z0, X_rg[:,i+1], mu)
+        z[i+1] = distribution_map(z0, X_rg[:,i+1], mu,b)
 
     dic={}
-    dic['x']=X_rg[1:-1, :]
+    dic['x']=X_rg[:, 1:-1]
     dic['quantity_total']= np.sum(q[:, np.newaxis]+X_rg[:, 1:-1], axis=0)
-    dic['revenue_total']= np.sum((q[:, np.newaxis]+X_rg[:, 1:-1]), axis=0) * (z[1:-1] - np.sum((q[:, np.newaxis]+X_rg[:, 1:-1]), axis=0)) - c * np.sum((q[:, np.newaxis]+X_rg[:, 1:-1]), axis=0)
-    dic['price']= (z[1:-1] - np.sum((q[:, np.newaxis]+X_rg[:, 1:-1]), axis=0))
+    dic['revenue_total']= np.sum((q[:, np.newaxis]+X_rg[:, 1:-1]), axis=0) * (z[1:-1] - b*np.sum((q[:, np.newaxis]+X_rg[:, 1:-1]), axis=0)) - c * np.sum((q[:, np.newaxis]+X_rg[:, 1:-1]), axis=0)
+    dic['price']= (z[1:-1] - b*np.sum((q[:, np.newaxis]+X_rg[:, 1:-1]), axis=0))
 
     return dic
 
@@ -124,12 +124,12 @@ def runSFB(z0,data,c,b, MAXITER,mu,eta,x0):
     for i in range(MAXITER+1):
         grad = b * (q + X_rg[:, i]) + b* np.sum(q[:, np.newaxis]+X_rg[:, i], axis=0) + c - z[i]
         X_rg[:, i+1] = X_rg[:, i] - (eta**(-3/4)) * grad
-        z[i+1] = distribution_map(z0, X_rg[:,i+1], mu)
+        z[i+1] = distribution_map(z0, X_rg[:,i+1], mu,b)
 
     dic={}
-    dic['x']=X_rg[1:-1, :]
+    dic['x']=X_rg[:, 1:-1]
     dic['quantity_total']= np.sum(q[:, np.newaxis]+X_rg[:, 1:-1], axis=0)
-    dic['revenue_total']= np.sum((q[:, np.newaxis]+X_rg[:, 1:-1]), axis=0) * (z[1:-1] - np.sum((q[:, np.newaxis]+X_rg[:, 1:-1]), axis=0)) - c * np.sum((q[:, np.newaxis]+X_rg[:, 1:-1]), axis=0)
-    dic['price']= (z[1:-1] - np.sum((q[:, np.newaxis]+X_rg[:, 1:-1]), axis=0))
+    dic['revenue_total']= np.sum((q[:, np.newaxis]+X_rg[:, 1:-1]), axis=0) * (z[1:-1] - b*np.sum((q[:, np.newaxis]+X_rg[:, 1:-1]), axis=0)) - c * np.sum((q[:, np.newaxis]+X_rg[:, 1:-1]), axis=0)
+    dic['price']= (z[1:-1] - b*np.sum((q[:, np.newaxis]+X_rg[:, 1:-1]), axis=0))
 
     return dic
