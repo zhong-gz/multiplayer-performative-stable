@@ -9,7 +9,7 @@ from matplotlib.patches import Rectangle
 from matplotlib.ticker import ScalarFormatter
 # insert at 1, 0 is the script path (or '' in REPL)
 sys.path.insert(1,'./utils/' )
-from utilsrm import *
+from utils.utilsrm import *
 
 import time
 

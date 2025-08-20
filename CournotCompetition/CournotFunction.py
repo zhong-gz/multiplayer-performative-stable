@@ -32,7 +32,7 @@ def read_data(path = 'CournotCompetition/Global Crude Petroleum Trade 1995-2021.
     return global_oil_volume
 
 def distribution_map(z0,X,mu = 0.25,b=1e-9):
-    z = z0 + 0.1*mu* np.arcsinh(1+ sum(X)) + np.random.normal(0, np.sqrt(0.01))
+    z = z0 - 1*mu* np.arcsinh(1+ sum(X)) + np.random.normal(0, np.sqrt(0.1))
     return z
 
 def runSIRR(z0,data,c,b,c_alg, MAXITER,mu):
@@ -55,7 +55,7 @@ def runSIRR(z0,data,c,b,c_alg, MAXITER,mu):
 
         z[i+1] = distribution_map(z0, X_rr[:,i+1], mu,b)
 
-        if np.linalg.norm(X_rr[:, i+1] - X_rr[:, i]) > n*1e-3:
+        if np.linalg.norm(X_rr[:, i+1] - X_rr[:, i]) > n: # average adjustment larger than 1 barrel than we consider it as adjustment rather than noise
             eps = max(eps,np.abs(z[i+1] - z[i])/np.linalg.norm(X_rr[:, i+1] - X_rr[:, i]))
 
     dic={}
@@ -93,15 +93,13 @@ def runRR(z0,data,c,b, MAXITER,mu):
 
 def runRGD(z0,data,c,b, MAXITER,mu,eta,x0):
     q = data
-    total_q = np.sum(q)
     n = np.size(q)
-    gamma = 0
     X_rg= np.empty((n, MAXITER+2))
     X_rg[:, 0] = x0
     z = np.empty(MAXITER+2)
     z[0] = z0
     for i in range(MAXITER+1):
-        grad = b * (q + X_rg[:, i]) + b* np.sum(q[:, np.newaxis]+X_rg[:, i]) + c - z[i]
+        grad = b * (q + X_rg[:, i]) + b* np.sum(q+X_rg[:, i]) + c - z[i]
         X_rg[:, i+1] = X_rg[:, i] - eta * grad
         z[i+1] = distribution_map(z0, X_rg[:,i+1], mu,b)
 
@@ -115,16 +113,14 @@ def runRGD(z0,data,c,b, MAXITER,mu,eta,x0):
 
 def runSFB(z0,data,c,b, MAXITER,mu,eta,x0):
     q = data
-    total_q = np.sum(q)
     n = np.size(q)
-    gamma = 0
     X_rg= np.empty((n, MAXITER+2))
     X_rg[:, 0] = x0
     z = np.empty(MAXITER+2)
     z[0] = z0
     for i in range(MAXITER+1):
-        grad = b * (q + X_rg[:, i]) + b* np.sum(q[:, np.newaxis]+X_rg[:, i]) + c - z[i]
-        X_rg[:, i+1] = X_rg[:, i] - (eta**(-3/4)) * grad
+        grad = b * (q + X_rg[:, i]) + b* np.sum(q+X_rg[:, i]) + c - z[i]
+        X_rg[:, i+1] = X_rg[:, i] - (eta*(i+1)**(-3/4)) * grad
         z[i+1] = distribution_map(z0, X_rg[:,i+1], mu,b)
 
     dic={}

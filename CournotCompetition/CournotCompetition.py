@@ -48,12 +48,12 @@ tot_rev=1
 fs=40
 lw=4
 lw2 = lw/2
-models = ['SIR$^2$','RR']#,'RGD','SFB']#,'AGM','OPGD'] 'SIR$^2$',
+models = ['SIR$^2$','RR','RGD','SFB']#,'AGM','OPGD'] 'SIR$^2$',
 info_types = ['quantity','revenue','price']
 # 定义不同模型对应的颜色
 style_dict = {
     'SIR$^2$': {'color': '#FF7F50', 'linestyle': '-', 'linewidth': lw+1},
-    'RR': {'color': "#9b0000", 'linestyle': (0, (5, 5)), 'linewidth': lw},
+    'RR': {'color': "#9b0000", 'linestyle': (0, (2, 2)), 'linewidth': lw},
     'AGM': {'color': '#9467bd', 'linestyle': '--', 'linewidth': lw},
     'RGD': {'color': '#444444', 'linestyle': ':', 'linewidth': lw},
     'SFB': {'color': '#2ca02c', 'linestyle': '-.', 'linewidth': lw},
@@ -66,9 +66,8 @@ p = 68.22 # average price of oil in 2021
 z0 = 147.27 # highest oil price in 2008.07
 b = (z0 - p)/np.sum(data) # linear demand coefficient
 MAXITER=100
-eta=0.1
+eta=0.001
 mu_A_list = [0.25,0.50,0.75,1.0] #25,0.50,0.75,1
-
 all_mu_A_data = {}
 total_revenue_stats = []
 all_mu_A_data_path = 'CournotCompetition/data/all_mu_data.npy'
@@ -85,7 +84,8 @@ if run_experiment:
             np.random.seed(seed)
             params = {}
             print('    Runing at number',num_exper+1,'trail')
-            x0=(np.random.rand(n)-0.5)*data # initial point in the range [-0.5,0.5]
+            # x0 = np.random.normal(loc=0.0, scale=np.sqrt(data.mean()), size=n)
+            x0=(np.random.rand(n))*data.min()  # initial point in the range [-0.5,0.5] -0.5
             all_data[num_exper]={}
             all_data[num_exper]['x0']=x0
 
@@ -152,7 +152,7 @@ if np.allclose(all_y_data, 0):
 else:
     power = int(np.floor(np.log10(np.max(np.abs(all_y_data)))))
 scale_factor = 10 ** power
-y_min = min(all_y_data)/ scale_factor
+y_min = 0 #min(all_y_data)/ scale_factor -0.2
 y_max = max(all_y_data)/ scale_factor +0.2
 for i, mu_A in enumerate(mu_A_list):
     total_avg_data = all_mu_A_data[mu_A]['avg']
@@ -167,15 +167,20 @@ for i, mu_A in enumerate(mu_A_list):
         total_rev = (total_avg_data[key1])/ scale_factor
         total_rev_var = (total_var_data[key1] )
         ax.plot(total_rev, label=f'{model}',**style)
-        # ax.fill_between(range(len(total_avg_data[key1])), total_rev - (np.sqrt(total_rev_var)/scale_factor), total_rev + (np.sqrt(total_rev_var)/scale_factor), alpha=0.2, color=style_dict[model]['color'],edgecolor='none')
-        # ax_inset.plot(total_rev[:subrange], color=color, alpha=alpha, lw=lw)
-    model = 'SIR$^2$'
-    style = style_dict[model]
-    key1 = f'{info_types[1]}_{model}'
-    total_rev = (total_avg_data[key1])/ scale_factor
-    total_rev_var = (total_var_data[key1])/ scale_factor
-    ax.plot(total_rev,**style)
-    # ax.fill_between(range(len(total_rev)), total_rev - (np.sqrt(total_rev_var)/scale_factor), total_rev + (np.sqrt(total_rev_var)/scale_factor), alpha=0.2, color=style_dict[model]['color'],edgecolor='none')
+        ax.fill_between(range(len(total_avg_data[key1])), 
+                        np.float64(total_rev) - (np.sqrt(np.float64(total_rev_var))/scale_factor), 
+                        np.float64(total_rev) + (np.sqrt(np.float64(total_rev_var))/scale_factor), 
+                        alpha=0.2, color=style_dict[model]['color'],edgecolor='none')
+    # model = 'SIR$^2$'
+    # style = style_dict[model]
+    # key1 = f'{info_types[1]}_{model}'
+    # total_rev = (total_avg_data[key1])/ scale_factor
+    # total_rev_var = (total_var_data[key1])/ scale_factor
+    # ax.plot(total_rev,**style)
+    # ax.fill_between(range(len(total_avg_data[key1])), 
+    #                 np.float64(total_rev) - (np.sqrt(np.float64(total_rev_var))/scale_factor), 
+    #                 np.float64(total_rev) + (np.sqrt(np.float64(total_rev_var))/scale_factor), 
+    #                 alpha=0.2, color=style_dict[model]['color'],edgecolor='none')
     if i == 0:
         ax.set_ylabel(r'Total revenue', fontsize=fs)
     ax.set_title(f'$\mu_A = {mu_A}$', fontsize=fs)  
@@ -191,7 +196,7 @@ for i, mu_A in enumerate(mu_A_list):
     formatter.set_scientific(False)
     ax.yaxis.set_major_formatter(formatter)
     # ax_inset.yaxis.set_major_formatter(formatter)
-    ax.text(-0.1, 1.11, f'$\\times 10^{power}$', transform=ax.transAxes, fontsize=fs*0.7, verticalalignment='top')
+    ax.text(-0.1, 1.11, f'$\\times 10^{{{power}}}$', transform=ax.transAxes, fontsize=fs*0.7, verticalalignment='top')
 handles, labels = fig.axes[0].get_legend_handles_labels()
 fig.legend(handles, labels, loc='lower center', fontsize=fs, ncol=len(models))
 plt.tight_layout(rect=[0, 0.21, 1, 1])
@@ -212,7 +217,7 @@ if np.allclose(all_y_data, 0):
 else:
     power = int(np.floor(np.log10(np.max(np.abs(all_y_data)))))
 scale_factor = 10 ** power
-y_min = min(all_y_data)/ scale_factor
+y_min = 0 #min(all_y_data)/ scale_factor -0.2
 y_max = max(all_y_data)/ scale_factor +0.2
 for i, mu_A in enumerate(mu_A_list):
     total_avg_data = all_mu_A_data[mu_A]['avg']
@@ -222,20 +227,23 @@ for i, mu_A in enumerate(mu_A_list):
     for model in models:
         key1 = f'{info_types[0]}_{model}'
         style = style_dict[model]
-        # color = model_colors[model]
-        # alpha = company_styles[company]['alpha']
         total_quantity = (total_avg_data[key1])/ scale_factor
         total_quantity_var = (total_var_data[key1] )
         ax.plot(total_quantity, label=f'{model}',**style)
-        # ax.fill_between(range(len(total_avg_data[key1])), total_rev - (np.sqrt(total_rev_var)/scale_factor), total_rev + (np.sqrt(total_rev_var)/scale_factor), alpha=0.2, color=style_dict[model]['color'],edgecolor='none')
-        # ax_inset.plot(total_rev[:subrange], color=color, alpha=alpha, lw=lw)
+        ax.fill_between(range(len(total_avg_data[key1])), 
+                        np.float64(total_quantity) - (np.sqrt(np.float64(total_quantity_var))/scale_factor), 
+                        np.float64(total_quantity) + (np.sqrt(np.float64(total_quantity_var))/scale_factor), 
+                        alpha=0.2, color=style_dict[model]['color'],edgecolor='none')
     model = 'SIR$^2$'
     style = style_dict[model]
     key1 = f'{info_types[1]}_{model}'
     total_quantity = (total_avg_data[key1])/ scale_factor
     total_quantity_var = (total_var_data[key1])/ scale_factor
-    ax.plot(total_rev,**style)
-    # ax.fill_between(range(len(total_rev)), total_rev - (np.sqrt(total_rev_var)/scale_factor), total_rev + (np.sqrt(total_rev_var)/scale_factor), alpha=0.2, color=style_dict[model]['color'],edgecolor='none')
+    ax.plot(total_quantity,**style)
+    ax.fill_between(range(len(total_avg_data[key1])), 
+                np.float64(total_quantity) - (np.sqrt(np.float64(total_quantity_var))/scale_factor), 
+                np.float64(total_quantity) + (np.sqrt(np.float64(total_quantity_var))/scale_factor), 
+                alpha=0.2, color=style_dict[model]['color'],edgecolor='none')
     if i == 0:
         ax.set_ylabel(r'Total quantity', fontsize=fs)
     ax.set_title(f'$\mu_A = {mu_A}$', fontsize=fs)  
@@ -251,7 +259,7 @@ for i, mu_A in enumerate(mu_A_list):
     formatter.set_scientific(False)
     ax.yaxis.set_major_formatter(formatter)
     # ax_inset.yaxis.set_major_formatter(formatter)
-    ax.text(-0.1, 1.11, f'$\\times 10^{power}$', transform=ax.transAxes, fontsize=fs*0.7, verticalalignment='top')
+    ax.text(-0.1, 1.11, f'$\\times 10^{{{power}}}$', transform=ax.transAxes, fontsize=fs*0.7, verticalalignment='top')
 handles, labels = fig.axes[0].get_legend_handles_labels()
 fig.legend(handles, labels, loc='lower center', fontsize=fs, ncol=len(models))
 plt.tight_layout(rect=[0, 0.21, 1, 1])
@@ -272,7 +280,7 @@ if np.allclose(all_y_data, 0):
 else:
     power = int(np.floor(np.log10(np.max(np.abs(all_y_data)))))
 scale_factor = 10 ** power
-y_min = min(all_y_data)/ scale_factor
+y_min = 0 #min(all_y_data)/ scale_factor -0.2
 y_max = max(all_y_data)/ scale_factor +0.2
 for i, mu_A in enumerate(mu_A_list):
     total_avg_data = all_mu_A_data[mu_A]['avg']
@@ -282,20 +290,23 @@ for i, mu_A in enumerate(mu_A_list):
     for model in models:
         key1 = f'{info_types[2]}_{model}'
         style = style_dict[model]
-        # color = model_colors[model]
-        # alpha = company_styles[company]['alpha']
         total_price = (total_avg_data[key1])/ scale_factor
         total_price_var = (total_var_data[key1] )
         ax.plot(total_price, label=f'{model}',**style)
-        # ax.fill_between(range(len(total_avg_data[key1])), total_rev - (np.sqrt(total_rev_var)/scale_factor), total_rev + (np.sqrt(total_rev_var)/scale_factor), alpha=0.2, color=style_dict[model]['color'],edgecolor='none')
-        # ax_inset.plot(total_rev[:subrange], color=color, alpha=alpha, lw=lw)
+        ax.fill_between(range(len(total_avg_data[key1])), 
+                        np.float64(total_price) - (np.sqrt(np.float64(total_price_var))/scale_factor), 
+                        np.float64(total_price) + (np.sqrt(np.float64(total_price_var))/scale_factor), 
+                        alpha=0.2, color=style_dict[model]['color'],edgecolor='none')
     model = 'SIR$^2$'
     style = style_dict[model]
     key1 = f'{info_types[2]}_{model}'
     total_price = (total_avg_data[key1])/ scale_factor
     total_price_var = (total_var_data[key1])/ scale_factor
     ax.plot(total_price,**style)
-    # ax.fill_between(range(len(total_rev)), total_rev - (np.sqrt(total_rev_var)/scale_factor), total_rev + (np.sqrt(total_rev_var)/scale_factor), alpha=0.2, color=style_dict[model]['color'],edgecolor='none')
+    ax.fill_between(range(len(total_avg_data[key1])), 
+                np.float64(total_price) - (np.sqrt(np.float64(total_price_var))/scale_factor), 
+                np.float64(total_price) + (np.sqrt(np.float64(total_price_var))/scale_factor), 
+                alpha=0.2, color=style_dict[model]['color'],edgecolor='none')
     if i == 0:
         ax.set_ylabel(r'Oil price', fontsize=fs)
     ax.set_title(f'$\mu_A = {mu_A}$', fontsize=fs)  
@@ -317,3 +328,29 @@ fig.legend(handles, labels, loc='lower center', fontsize=fs, ncol=len(models))
 plt.tight_layout(rect=[0, 0.21, 1, 1])
 plt.savefig(f'CournotCompetition/figs/price_var.pdf', transparent=True, bbox_inches='tight')
 plt.close()
+
+# 利用 all_mu_A_data 计算总收益和标准差
+for mu_A, data in all_mu_A_data.items():
+    avg_data = data['avg']
+    var_data = data['var']
+    for model in models:
+        revenue_p1 = avg_data[f'revenue_{model}']
+        total_revenue = revenue_p1
+        # 取总收益序列的最后一位数字
+        final_revenue = total_revenue[-1]
+        var_p1 = var_data[f'revenue_{model}']
+        total_var = var_p1
+        final_var = total_var[-1]
+        stat_str = f'{final_revenue:0.0f} $\pm$ {np.sqrt(final_var):0.0f}'
+        total_revenue_stats.append({
+            'model': model,
+            'mu_A': f'$\mu_A$ = {mu_A}',
+            'total_revenue': stat_str
+        })
+
+# 创建 DataFrame 并保存为 Excel
+df = pd.DataFrame(total_revenue_stats)
+pivot_df = df.pivot(index='model', columns='mu_A', values='total_revenue')
+# 确保 model 顺序和列表一致
+pivot_df = pivot_df.reindex(models)
+pivot_df.to_excel('CournotCompetition/figs/total_revenue.xlsx')
