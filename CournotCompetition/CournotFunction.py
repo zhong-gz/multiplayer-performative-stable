@@ -100,7 +100,7 @@ def runRGD(z0,data,c,b, MAXITER,mu,eta,x0):
     z[0] = z0
     for i in range(MAXITER+1):
         grad = b * (q + X_rg[:, i]) + b* np.sum(q+X_rg[:, i]) + c - z[i]
-        X_rg[:, i+1] = X_rg[:, i] - eta * grad
+        X_rg[:, i+1] = X_rg[:, i] - eta * grad/b
         z[i+1] = distribution_map(z0, X_rg[:,i+1], mu,b)
 
     dic={}
@@ -120,7 +120,7 @@ def runSFB(z0,data,c,b, MAXITER,mu,eta,x0):
     z[0] = z0
     for i in range(MAXITER+1):
         grad = b * (q + X_rg[:, i]) + b* np.sum(q+X_rg[:, i]) + c - z[i]
-        X_rg[:, i+1] = X_rg[:, i] - (eta*(i+1)**(-3/4)) * grad
+        X_rg[:, i+1] = X_rg[:, i] - (eta*(i+1)**(-3/4)) * grad/b
         z[i+1] = distribution_map(z0, X_rg[:,i+1], mu,b)
 
     dic={}
