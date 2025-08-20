@@ -329,6 +329,69 @@ plt.tight_layout(rect=[0, 0.21, 1, 1])
 plt.savefig(f'CournotCompetition/figs/price_var.pdf', transparent=True, bbox_inches='tight')
 plt.close()
 
+# # Plotting quantity adjuestment
+# fig, axes = plt.subplots(1, 4, figsize=figuresize)
+# all_y_data = []
+# for i, mu_A in enumerate(mu_A_list):
+#     total_avg_data = all_mu_A_data[mu_A]['avg']
+#     for model in models:    
+#         key1 = f'{info_types[0]}_{model}'
+#         all_y_data.extend(total_avg_data[key1]-np.sum(data))
+# all_y_data = np.array(all_y_data)
+# if np.allclose(all_y_data, 0):
+#     power = 0
+# else:
+#     power = int(np.floor(np.log10(np.max(np.abs(all_y_data)))))
+# scale_factor = 10 ** power
+# y_min = min(all_y_data)/ scale_factor -0.2
+# y_max = max(all_y_data)/ scale_factor +0.2
+# for i, mu_A in enumerate(mu_A_list):
+#     total_avg_data = all_mu_A_data[mu_A]['avg']
+#     total_var_data = all_mu_A_data[mu_A]['var']
+#     # ax = fig.add_subplot(gs[0, i])
+#     ax = axes[i]
+#     for model in models:
+#         key1 = f'{info_types[0]}_{model}'
+#         style = style_dict[model]
+#         total_quantity = (total_avg_data[key1]-np.sum(data))/ scale_factor
+#         total_quantity_var = (total_var_data[key1])
+#         ax.plot(total_quantity, label=f'{model}',**style)
+#         ax.fill_between(range(len(total_avg_data[key1])), 
+#                         np.float64(total_quantity) - (np.sqrt(np.float64(total_quantity_var))/scale_factor), 
+#                         np.float64(total_quantity) + (np.sqrt(np.float64(total_quantity_var))/scale_factor), 
+#                         alpha=0.2, color=style_dict[model]['color'],edgecolor='none')
+#     model = 'SIR$^2$'
+#     style = style_dict[model]
+#     key1 = f'{info_types[0]}_{model}'
+#     total_quantity = (total_avg_data[key1]-np.sum(data))/ scale_factor
+#     total_quantity_var = (total_var_data[key1])/ scale_factor
+#     ax.plot(total_quantity,**style)
+#     ax.fill_between(range(len(total_avg_data[key1])), 
+#                 np.float64(total_quantity) - (np.sqrt(np.float64(total_quantity_var))/scale_factor), 
+#                 np.float64(total_quantity) + (np.sqrt(np.float64(total_quantity_var))/scale_factor), 
+#                 alpha=0.2, color=style_dict[model]['color'],edgecolor='none')
+#     if i == 0:
+#         ax.set_ylabel(r'Quantity adjuestment', fontsize=fs)
+#     ax.set_title(f'$\mu_A = {mu_A}$', fontsize=fs)  
+#     ax.set_xlabel(r'Iterations', fontsize=fs)
+#     ax.grid(True)
+#     ax.tick_params(labelsize=fs*0.5)
+#     ax.set_ylim(y_min, y_max)
+#     tick_positions = np.arange(0, len(total_avg_data['quantity_SIR$^2$'])+1, 25)
+#     ax.set_xticks(tick_positions)
+#     ax.set_xticklabels(tick_positions, fontsize=fs*0.7)
+#     tick_positions = np.arange(0, subrange+1, 5)
+#     formatter = ScalarFormatter()
+#     formatter.set_scientific(False)
+#     ax.yaxis.set_major_formatter(formatter)
+#     # ax_inset.yaxis.set_major_formatter(formatter)
+#     ax.text(-0.1, 1.11, f'$\\times 10^{{{power}}}$', transform=ax.transAxes, fontsize=fs*0.7, verticalalignment='top')
+# handles, labels = fig.axes[0].get_legend_handles_labels()
+# fig.legend(handles, labels, loc='lower center', fontsize=fs, ncol=len(models))
+# plt.tight_layout(rect=[0, 0.21, 1, 1])
+# plt.savefig(f'CournotCompetition/figs/quantity_adj_var.pdf', transparent=True, bbox_inches='tight')
+# plt.close()
+
 # 利用 all_mu_A_data 计算总收益和标准差
 for mu_A, data in all_mu_A_data.items():
     avg_data = data['avg']
