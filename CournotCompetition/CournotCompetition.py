@@ -217,7 +217,7 @@ if np.allclose(all_y_data, 0):
 else:
     power = int(np.floor(np.log10(np.max(np.abs(all_y_data)))))
 scale_factor = 10 ** power
-y_min = 0 #min(all_y_data)/ scale_factor -0.2
+y_min = min(all_y_data)/ scale_factor -0.2
 y_max = max(all_y_data)/ scale_factor +0.2
 for i, mu_A in enumerate(mu_A_list):
     total_avg_data = all_mu_A_data[mu_A]['avg']
@@ -236,7 +236,7 @@ for i, mu_A in enumerate(mu_A_list):
                         alpha=0.2, color=style_dict[model]['color'],edgecolor='none')
     model = 'SIR$^2$'
     style = style_dict[model]
-    key1 = f'{info_types[1]}_{model}'
+    key1 = f'{info_types[0]}_{model}'
     total_quantity = (total_avg_data[key1])/ scale_factor
     total_quantity_var = (total_var_data[key1])/ scale_factor
     ax.plot(total_quantity,**style)
