@@ -55,7 +55,8 @@ def runSIRR(z0,data,c,b,c_alg, MAXITER,mu):
 
         z[i+1] = distribution_map(z0, X_rr[:,i+1], mu,b)
 
-        eps = max(eps,(z[i+1] - z[i])/(np.linalg.norm(X_rr[:, i+1] - X_rr[:, i])+1e-3))
+        if np.linalg.norm(X_rr[:, i+1] - X_rr[:, i]) > n*1e-3:
+            eps = max(eps,np.abs(z[i+1] - z[i])/np.linalg.norm(X_rr[:, i+1] - X_rr[:, i]))
 
     dic={}
     dic['x']=X_rr[:, 1:-1]

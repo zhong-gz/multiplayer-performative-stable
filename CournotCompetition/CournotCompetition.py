@@ -39,7 +39,7 @@ np.random.seed(seed)
 num_experiments = 10 #10
 figuresize=(25, 6)
 loc_cap=11
-run_experiment = 0 # 1: run the experiment, 0: load the data
+run_experiment = 1 # 1: run the experiment, 0: load the data
 subrange = 26
 c_alg = 2.1
 tot_rev=1
@@ -138,7 +138,7 @@ if run_experiment:
 else:
     all_mu_A_data = np.load(all_mu_A_data_path, allow_pickle=True).item()
 
-## Plotting variance
+## Plotting revenue
 fig, axes = plt.subplots(1, 4, figsize=figuresize)
 all_y_data = []
 for i, mu_A in enumerate(mu_A_list):
@@ -152,9 +152,6 @@ if np.allclose(all_y_data, 0):
 else:
     power = int(np.floor(np.log10(np.max(np.abs(all_y_data)))))
 scale_factor = 10 ** power
-# print(f'Scale factor: {scale_factor}')
-# print(f'Power: {power}')
-
 y_min = min(all_y_data)/ scale_factor
 y_max = max(all_y_data)/ scale_factor +0.2
 for i, mu_A in enumerate(mu_A_list):
@@ -186,7 +183,7 @@ for i, mu_A in enumerate(mu_A_list):
     ax.grid(True)
     ax.tick_params(labelsize=fs*0.5)
     ax.set_ylim(y_min, y_max)
-    tick_positions = np.arange(0, len(total_avg_data['revenue_SIR$^2$'])+1, 250)
+    tick_positions = np.arange(0, len(total_avg_data['revenue_SIR$^2$'])+1, 25)
     ax.set_xticks(tick_positions)
     ax.set_xticklabels(tick_positions, fontsize=fs*0.7)
     tick_positions = np.arange(0, subrange+1, 5)
@@ -201,6 +198,7 @@ plt.tight_layout(rect=[0, 0.21, 1, 1])
 plt.savefig(f'CournotCompetition/figs/revenue_var.pdf', transparent=True, bbox_inches='tight')
 plt.close()
 
+# Plotting quantity
 fig, axes = plt.subplots(1, 4, figsize=figuresize)
 all_y_data = []
 for i, mu_A in enumerate(mu_A_list):
@@ -245,7 +243,7 @@ for i, mu_A in enumerate(mu_A_list):
     ax.grid(True)
     ax.tick_params(labelsize=fs*0.5)
     ax.set_ylim(y_min, y_max)
-    tick_positions = np.arange(0, len(total_avg_data['quantity_SIR$^2$'])+1, 250)
+    tick_positions = np.arange(0, len(total_avg_data['quantity_SIR$^2$'])+1, 25)
     ax.set_xticks(tick_positions)
     ax.set_xticklabels(tick_positions, fontsize=fs*0.7)
     tick_positions = np.arange(0, subrange+1, 5)
@@ -260,6 +258,7 @@ plt.tight_layout(rect=[0, 0.21, 1, 1])
 plt.savefig(f'CournotCompetition/figs/quantity_var.pdf', transparent=True, bbox_inches='tight')
 plt.close()
 
+# Plotting price
 fig, axes = plt.subplots(1, 4, figsize=figuresize)
 all_y_data = []
 for i, mu_A in enumerate(mu_A_list):
@@ -304,7 +303,7 @@ for i, mu_A in enumerate(mu_A_list):
     ax.grid(True)
     ax.tick_params(labelsize=fs*0.5)
     ax.set_ylim(y_min, y_max)
-    tick_positions = np.arange(0, len(total_avg_data['price_SIR$^2$'])+1, 250)
+    tick_positions = np.arange(0, len(total_avg_data['price_SIR$^2$'])+1, 25)
     ax.set_xticks(tick_positions)
     ax.set_xticklabels(tick_positions, fontsize=fs*0.7)
     tick_positions = np.arange(0, subrange+1, 5)
