@@ -440,7 +440,7 @@ class ddrideshare:
         # query environment
         u1 = np.random.normal(0,B,size=(self.d,))
         u2 = np.random.normal(0,B,size=(self.d,))
-        v = np.vstack((u1,u2))  
+        v = np.vstack((u1,u2))
         q1=self.query_env_player(x+v,0, self.z1_base, batch=self.batch_agd)
         q2=self.query_env_player(x+v,1, self.z2_base, batch=self.batch_agd)
         z1=z1_+self.A1@x[0]+self.Ac1@x[1]

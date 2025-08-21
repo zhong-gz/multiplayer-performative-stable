@@ -129,7 +129,7 @@ for sigma_A in sigma_A_values:
                 x_opgd.append(ddg.proj(x_opgd[-1]-eta*(6/(10+i))*ddg.getgrad_opgd(x_opgd[-1],th,A1hat=A1_opgd, A2hat=A2_opgd)))
                 A1_opgd, A2_opgd = ddg.update_estimate_opgd(x_opgd[-1], z1, z2,th,v_t = 0.1*eta*7/((10+i)**(3/4)), A1hat=A1_opgd, A2hat=A2_opgd)
 
-                # for repeated retraining
+                # for SIRR
                 z1_t_1,z2_t_1,theta_t_1 = ddg.distribution_map(x_rr[-1],th)
                 rr_model_1 = Ridge(alpha = alpha)
                 rr_model_1.fit(theta_t_1.T,z1_t_1,sample_weight=1/m)
