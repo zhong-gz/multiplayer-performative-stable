@@ -141,7 +141,7 @@ def runAGM(z0,data,c,b, MAXITER,mu,eta,x0):
     A = np.random.rand(1)*b
     for i in range(MAXITER+1):
         grad = b * (q + X_ag[:, i]) + b* np.sum(q+X_ag[:, i]) + c - z[i] - A *(q+ X_ag[:, i])
-        X_ag[:, i+1] = X_ag[:, i] - (eta * grad/b)#*0.1
+        X_ag[:, i+1] = X_ag[:, i] - (eta * grad/b)*0.4
         if i > 0:
             for j in range(10): #update A 10 times
                 A = update_estimate(A,X_ag[:,i],z0,n, mu,b,z[i])
@@ -159,14 +159,16 @@ def update_estimate(A,x,z0,n, mu,b,zt):
     '''
     least squares update
     '''
-    nu= 1e-9 #1e-18 1e-5
+    nu= 1e-7 #1e-18 1e-5
     # query environment
-    ut = np.random.normal(0,100,size=n)  #100  0.01
+    ut = np.random.normal(0,1e8,size=n)  #1e4
     q=distribution_map(z0, x+ut, mu,b)
     g = (q-zt-A*sum(ut))*sum(ut)
-
-    Astar = A+ nu*np.clip(g, -10, 10)
-
+    power = int(np.floor(np.log10(np.max(np.abs(g)))))
+    scale_factor = 10 ** power
+    g = g/scale_factor
+    
+    Astar = A+ nu*g
     return Astar
 
 def runOPGD(z0,data,c,b, MAXITER,mu,eta,x0):
@@ -190,19 +192,20 @@ def runOPGD(z0,data,c,b, MAXITER,mu,eta,x0):
     dic['quantity_total']= np.sum(q[:, np.newaxis]+X_ag[:, 1:-1], axis=0)
     dic['revenue_total']= np.sum((q[:, np.newaxis]+X_ag[:, 1:-1]), axis=0) * (z[1:-1] - b*np.sum((q[:, np.newaxis]+X_ag[:, 1:-1]), axis=0)) - c * np.sum((q[:, np.newaxis]+X_ag[:, 1:-1]), axis=0)
     dic['price']= (z[1:-1] - b*np.sum((q[:, np.newaxis]+X_ag[:, 1:-1]), axis=0))
-
     return dic
 
 def update_estimate_OPGD(A,z0,n, mu,b):
     '''
     least squares update
     '''
-    nu= 1e-19
+    nu= 1e-9
     # query environment
     ut = np.random.normal(0,1,size=n)
     y=distribution_map(z0, ut, mu,b)
     g = (A*sum(ut)-y)*sum(ut)
+    power = int(np.floor(np.log10(np.max(np.abs(g)))))
+    scale_factor = 10 ** power
+    g = g/scale_factor
 
-    Astar = A- nu*np.clip(g, -1e2, 1e2)
-
+    Astar = A- nu*g
     return Astar

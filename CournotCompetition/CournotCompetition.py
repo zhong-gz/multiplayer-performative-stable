@@ -84,7 +84,7 @@ if run_experiment:
             np.random.seed(seed)
             params = {}
             print('    Runing at number',num_exper+1,'trail')
-            x0=(np.random.rand(n)*0.5)*np.mean(data)  # initial point in the range [-0.5,0.5] -0.5
+            x0=(np.random.rand(n)*0.3)*np.mean(data)  # initial point in the range [-0.5,0.5] -0.5
             all_data[num_exper]={}
             all_data[num_exper]['x0']=x0
 
@@ -172,16 +172,16 @@ for i, mu_A in enumerate(mu_A_list):
                         np.float64(total_rev) - (np.sqrt(np.float64(total_rev_var))/scale_factor), 
                         np.float64(total_rev) + (np.sqrt(np.float64(total_rev_var))/scale_factor), 
                         alpha=0.2, color=style_dict[model]['color'],edgecolor='none')
-    # model = 'SIR$^2$'
-    # style = style_dict[model]
-    # key1 = f'{info_types[1]}_{model}'
-    # total_rev = (total_avg_data[key1])/ scale_factor
-    # total_rev_var = (total_var_data[key1])/ scale_factor
-    # ax.plot(total_rev,**style)
-    # ax.fill_between(range(len(total_avg_data[key1])), 
-    #                 np.float64(total_rev) - (np.sqrt(np.float64(total_rev_var))/scale_factor), 
-    #                 np.float64(total_rev) + (np.sqrt(np.float64(total_rev_var))/scale_factor), 
-    #                 alpha=0.2, color=style_dict[model]['color'],edgecolor='none')
+    model = 'SIR$^2$'
+    style = style_dict[model]
+    key1 = f'{info_types[1]}_{model}'
+    total_rev = (total_avg_data[key1])/ scale_factor
+    total_rev_var = (total_var_data[key1])/ scale_factor
+    ax.plot(total_rev,**style)
+    ax.fill_between(range(len(total_avg_data[key1])), 
+                    np.float64(total_rev) - (np.sqrt(np.float64(total_rev_var))/scale_factor), 
+                    np.float64(total_rev) + (np.sqrt(np.float64(total_rev_var))/scale_factor), 
+                    alpha=0.2, color=style_dict[model]['color'],edgecolor='none')
     if i == 0:
         ax.set_ylabel(r'Total revenue', fontsize=fs)
     ax.set_title(f'$\mu_A = {mu_A}$', fontsize=fs)  
@@ -335,7 +335,7 @@ fig, axes = plt.subplots(1, 4, figsize=figuresize)
 all_y_data = []
 for i, mu_A in enumerate(mu_A_list):
     total_avg_data = all_mu_A_data[mu_A]['avg']
-    for model in models:    
+    for model in models:
         key1 = f'{info_types[0]}_{model}'
         all_y_data.extend(total_avg_data[key1]-np.sum(data))
 all_y_data = np.array(all_y_data)
