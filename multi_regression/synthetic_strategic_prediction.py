@@ -160,8 +160,6 @@ for sigma_A in sigma_A_values:
                 x_rr.append(np.vstack((rr_model_1.coef_,rr_model_2.coef_)))
                 rr_model.append([rr_model_1,rr_model_2])
 
-
-
             x_sgd=np.asarray(x_sgd)
             x_agd=np.asarray(x_agd)
             x_rgd=np.asarray(x_rgd)
