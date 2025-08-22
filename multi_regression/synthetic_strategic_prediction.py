@@ -30,9 +30,12 @@ n=2
 m= 100 # both players dimension of z_i
 d=2 # size of each players action
 B = np.random.normal(0,sigma_theta,size=(d,1))
+k = 1
 sigma_A_values = [0.25, 0.5, 0.75, 1.0]
+sigma_A_values = [x * k for x in sigma_A_values]
+sum_A_AC = 1.25*k
 eta=0.1
-mu=2
+mu=1
 nu0=1
 models = ['SIR$^2$', 'RR','RGD','SFB','AGM','OPGD']
 lw = 4
@@ -49,12 +52,12 @@ style_dict = {
 
 all_data={}
 # lam=[1.0,1.0]
-lam=[0.5,0.5]
+lam=[0.1,0.1]
 MAXITER=100
 
 for sigma_A in sigma_A_values:
     print('running sigma_A:',sigma_A)
-    sigma_AC = 1.25-sigma_A
+    sigma_AC = sum_A_AC-sigma_A
     sigma_C = sigma_A/n
     filepath = 'multi_regression/figs_'+str(MAXITER)+'/'
     file_name_npy = filepath+'sig_A_'+str(sigma_A)+'_sigma_AC_'+str(sigma_AC)+'_m_'+str(m)+'_sigma_C_'+str(sigma_C)+'.npz'
@@ -103,7 +106,7 @@ for sigma_A in sigma_A_values:
             epsilon_1 = 0
             epsilon_2 = 0
             gamma = 2.1
-            alpha = 0
+            alpha = 0.1
             count = 0
 
             for i in range(MAXITER):
@@ -147,15 +150,15 @@ for sigma_A in sigma_A_values:
                 g1_t_1=-theta_t_1si@(z1_t_1si-theta_t_1si.T@x_sirr[-1][0])/m
                 g2_t_1=-theta_t_1si@(z2_t_1si-theta_t_1si.T@x_sirr[-1][1])/m
                 if (la.norm(x_sirr[-1][0]-x_sirr[-2][0]) > 1e-3 or la.norm(x_sirr[-1][1]-x_sirr[-2][1]) > 1e-3):
-                    epsilon_1 = max(epsilon_1,la.norm(g1_t-g1_t_1)/(la.norm(x_sirr[-1][0]-x_sirr[-2][0])+1e-3))
-                    epsilon_2 = max(epsilon_2,la.norm(g2_t-g2_t_1)/(la.norm(x_sirr[-1][1]-x_sirr[-2][1])+1e-3))
+                    epsilon_1 = max(epsilon_1,la.norm(g1_t-g1_t_1)/(la.norm(x_sirr[-1][0]-x_sirr[-2][0]+1e-3)))
+                    epsilon_2 = max(epsilon_2,la.norm(g2_t-g2_t_1)/(la.norm(x_sirr[-1][1]-x_sirr[-2][1]+1e-3)))
                     alpha = gamma*((epsilon_1**2+epsilon_2**2)**0.5)
 
                 # for RR
                 z1_t_1,z2_t_1,theta_t_1 = ddg.distribution_map(x_rr[-1],th)
-                rr_model_1 = Ridge(alpha = 1)
+                rr_model_1 = Ridge(alpha = 10)
                 rr_model_1.fit(theta_t_1.T,z1_t_1,sample_weight=1/m)
-                rr_model_2 = Ridge(alpha = 1)
+                rr_model_2 = Ridge(alpha = 10)
                 rr_model_2.fit(theta_t_1.T,z2_t_1,sample_weight=1/m)
                 x_rr.append(np.vstack((rr_model_1.coef_,rr_model_2.coef_)))
                 rr_model.append([rr_model_1,rr_model_2])
@@ -236,7 +239,7 @@ for k in range(2):
 
 
     for i, sigma_A in enumerate(sigma_A_values):
-        sigma_AC = 1.25 - sigma_A
+        sigma_AC = sum_A_AC - sigma_A
         sigma_C = sigma_A / n
         filepath = 'multi_regression/figs_' + str(MAXITER) + '/'
         file_name_npy = filepath + 'sig_A_' + str(sigma_A) + '_sigma_AC_' + str(sigma_AC) + '_m_' + str(m) + '_sigma_C_' + str(sigma_C) + '.npz'
