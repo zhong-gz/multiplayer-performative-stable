@@ -48,7 +48,7 @@ tot_rev=1
 fs=40
 lw=4
 lw2 = lw/2
-models = ['SIR$^2$','RR','RGD','SFB','AGM']#,'OPGD']
+models = ['SIR$^2$','RR','RGD','SFB','AGM','OPGD']
 info_types = ['quantity','revenue','price']
 # 定义不同模型对应的颜色
 style_dict = {
@@ -151,7 +151,7 @@ all_y_data = np.array(all_y_data)
 if np.allclose(all_y_data, 0):
     power = 0
 else:
-    power = int(np.floor(np.log10(np.max(np.abs(all_y_data)))))
+    power = int(np.floor(np.log10(np.max(all_y_data))))
 scale_factor = 10 ** power
 y_min = 0 #min(all_y_data)/ scale_factor -0.2
 y_max = max(all_y_data)/ scale_factor +0.2
@@ -202,6 +202,46 @@ handles, labels = fig.axes[0].get_legend_handles_labels()
 fig.legend(handles, labels, loc='lower center', fontsize=fs, ncol=len(models))
 plt.tight_layout(rect=[0, 0.21, 1, 1])
 plt.savefig(f'CournotCompetition/figs/revenue_var.pdf', transparent=True, bbox_inches='tight')
+plt.close()
+fig, axes = plt.subplots(1, 4, figsize=figuresize)
+for i, mu_A in enumerate(mu_A_list):
+    total_avg_data = all_mu_A_data[mu_A]['avg']
+    total_var_data = all_mu_A_data[mu_A]['var']
+    # ax = fig.add_subplot(gs[0, i])
+    ax = axes[i]
+    for model in models:
+        key1 = f'{info_types[1]}_{model}'
+        style = style_dict[model]
+        # color = model_colors[model]
+        # alpha = company_styles[company]['alpha']
+        total_rev = (total_avg_data[key1])/ scale_factor
+        total_rev_var = (total_var_data[key1] )
+        ax.plot(total_rev, label=f'{model}',**style)
+    model = 'SIR$^2$'
+    style = style_dict[model]
+    key1 = f'{info_types[1]}_{model}'
+    total_rev = (total_avg_data[key1])/ scale_factor
+    total_rev_var = (total_var_data[key1])/ scale_factor
+    ax.plot(total_rev,**style)
+    if i == 0:
+        ax.set_ylabel(r'Total revenue', fontsize=fs)
+    ax.set_title(f'$\mu_A = {mu_A}$', fontsize=fs)  
+    ax.set_xlabel(r'Iterations', fontsize=fs)
+    ax.grid(True)
+    ax.tick_params(labelsize=fs*0.5)
+    ax.set_ylim(y_min, y_max)
+    tick_positions = np.arange(0, len(total_avg_data['revenue_SIR$^2$'])+1, 25)
+    ax.set_xticks(tick_positions)
+    ax.set_xticklabels(tick_positions, fontsize=fs*0.7)
+    tick_positions = np.arange(0, subrange+1, 5)
+    formatter = ScalarFormatter()
+    formatter.set_scientific(False)
+    ax.yaxis.set_major_formatter(formatter)
+    ax.text(-0.1, 1.11, f'$\\times 10^{{{power}}}$', transform=ax.transAxes, fontsize=fs*0.7, verticalalignment='top')
+handles, labels = fig.axes[0].get_legend_handles_labels()
+fig.legend(handles, labels, loc='lower center', fontsize=fs, ncol=len(models))
+plt.tight_layout(rect=[0, 0.21, 1, 1])
+plt.savefig(f'CournotCompetition/figs/revenue.pdf', transparent=True, bbox_inches='tight')
 plt.close()
 
 # Plotting quantity

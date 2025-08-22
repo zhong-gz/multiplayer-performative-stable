@@ -141,7 +141,7 @@ def runAGM(z0,data,c,b, MAXITER,mu,eta,x0):
     A = np.random.rand(1)*b
     for i in range(MAXITER+1):
         grad = b * (q + X_ag[:, i]) + b* np.sum(q+X_ag[:, i]) + c - z[i] - A *(q+ X_ag[:, i])
-        X_ag[:, i+1] = X_ag[:, i] - (eta * grad/b)*0.4
+        X_ag[:, i+1] = X_ag[:, i] - (eta * grad/b)*0.1
         if i > 0:
             for j in range(10): #update A 10 times
                 A = update_estimate(A,X_ag[:,i],z0,n, mu,b,z[i])
@@ -156,12 +156,8 @@ def runAGM(z0,data,c,b, MAXITER,mu,eta,x0):
     return dic
 
 def update_estimate(A,x,z0,n, mu,b,zt):
-    '''
-    least squares update
-    '''
-    nu= 1e-7 #1e-18 1e-5
-    # query environment
-    ut = np.random.normal(0,1e8,size=n)  #1e4
+    nu= 1e-7 
+    ut = np.random.rand(n)*1e3
     q=distribution_map(z0, x+ut, mu,b)
     g = (q-zt-A*sum(ut))*sum(ut)
     power = int(np.floor(np.log10(np.max(np.abs(g)))))
@@ -181,7 +177,7 @@ def runOPGD(z0,data,c,b, MAXITER,mu,eta,x0):
     A = np.random.rand(1)*b
     for i in range(MAXITER+1):
         grad = b * (q + X_ag[:, i]) + b* np.sum(q+X_ag[:, i]) + c - z[i] - A *(q+ X_ag[:, i])
-        X_ag[:, i+1] = X_ag[:, i] - (eta * grad/b)#*0.1
+        X_ag[:, i+1] = X_ag[:, i] - (eta * grad/b)*0.1
         if i > 0:
             for j in range(10): #update A 10 times
                 A = update_estimate_OPGD(A,z0,n, mu,b)
@@ -195,12 +191,8 @@ def runOPGD(z0,data,c,b, MAXITER,mu,eta,x0):
     return dic
 
 def update_estimate_OPGD(A,z0,n, mu,b):
-    '''
-    least squares update
-    '''
-    nu= 1e-9
-    # query environment
-    ut = np.random.normal(0,1,size=n)
+    nu= 1e-7
+    ut = np.random.rand(n)*1e8
     y=distribution_map(z0, ut, mu,b)
     g = (A*sum(ut)-y)*sum(ut)
     power = int(np.floor(np.log10(np.max(np.abs(g)))))
