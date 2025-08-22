@@ -7,11 +7,11 @@ import scipy.linalg  as sla
 import seaborn as sns
 from sklearn.linear_model import Ridge
 import random
-import winsound
+# import winsound
 import sys, os
 # insert at 1, 0 is the script path (or '' in REPL)
 sys.path.insert(1,'./utils/' )
-from utils.utilssp_vector_map import *
+from utilssp_vector_map import *
 # %load_ext autoreload
 # %autoreload 2
 
@@ -34,12 +34,13 @@ sigma_A_values = [0.25, 0.5, 0.75, 1.0]
 eta=0.1
 mu=2
 nu0=1
-models = ['SIR$^2$', 'RGD','SFB','AGM','OPGD']
+models = ['SIR$^2$', 'RR','RGD','SFB','AGM','OPGD']
 lw = 4
 fs=40
 figuresize = (25, 5)
 style_dict = {
     'SIR$^2$': {'color': '#FF7F50', 'linestyle': '-', 'linewidth': lw+1},
+    'RR': {'color': "#9b0000", 'linestyle': (0, (2, 2)), 'linewidth': lw},
     'AGM': {'color': '#9467bd', 'linestyle': '--', 'linewidth': lw},
     'RGD': {'color': '#444444', 'linestyle': ':', 'linewidth': lw},
     'SFB': {'color': '#2ca02c', 'linestyle': '-.', 'linewidth': lw},
@@ -96,7 +97,9 @@ for sigma_A in sigma_A_values:
             x_sfb=[x0]
             x_opgd=[x0]
             x_rr =[np.zeros((2,d))]
+            x_sirr =[np.zeros((2,d))]
             rr_model = []
+            sirr_model = []
             epsilon_1 = 0
             epsilon_2 = 0
             gamma = 2.1
@@ -111,7 +114,7 @@ for sigma_A in sigma_A_values:
                 z2=ddg.D_w(1)
                 x_sgd.append(ddg.proj(x_sgd[-1]-eta*ddg.getgrad(x_sgd[-1],th)))
                 ## for AGM
-                x_agd.append(ddg.proj(x_agd[-1]-0.1*eta*ddg.getgrad_agd(x_agd[-1],th,A1hat=A_dic['A1_hats'][-1],Ac1hat=A_dic['Ac1_hats'][-1],
+                x_agd.append(ddg.proj(x_agd[-1]-eta*ddg.getgrad_agd(x_agd[-1],th,A1hat=A_dic['A1_hats'][-1],Ac1hat=A_dic['Ac1_hats'][-1],
                                                                     A2hat=A_dic['A2_hats'][-1], Ac2hat=A_dic['Ac2_hats'][-1], passvals=True)))
                 A1_hat,Ac1_hat,A2_hat,Ac2_hat = ddg.update_estimate(x_agd[-1], z1, z2,th,nu=nu,mu=mu, A1hat=A_dic['A1_hats'][-1],Ac1hat=A_dic['Ac1_hats'][-1],
                                                                     A2hat=A_dic['A2_hats'][-1], Ac2hat=A_dic['Ac2_hats'][-1], passvals=True,UNCORR=False)
@@ -130,23 +133,34 @@ for sigma_A in sigma_A_values:
                 A1_opgd, A2_opgd = ddg.update_estimate_opgd(x_opgd[-1], z1, z2,th,v_t = 0.1*eta*7/((10+i)**(3/4)), A1hat=A1_opgd, A2hat=A2_opgd)
 
                 # for SIRR
+                z1_t_1si,z2_t_1si,theta_t_1si = ddg.distribution_map(x_sirr[-1],th)
+                sirr_model_1 = Ridge(alpha = alpha)
+                sirr_model_1.fit(theta_t_1si.T,z1_t_1si,sample_weight=1/m)
+                sirr_model_2 = Ridge(alpha = alpha)
+                sirr_model_2.fit(theta_t_1si.T,z2_t_1si,sample_weight=1/m)
+                x_sirr.append(np.vstack((sirr_model_1.coef_,sirr_model_2.coef_)))
+                sirr_model.append([sirr_model_1,sirr_model_2])
+
+                z1_tsi,z2_tsi,theta_tsi = ddg.distribution_map(x_sirr[-1],th)
+                g1_t=-theta_tsi@(z1_tsi-theta_tsi.T@x_sirr[-1][0])/m
+                g2_t=-theta_tsi@(z2_tsi-theta_tsi.T@x_sirr[-1][1])/m
+                g1_t_1=-theta_t_1si@(z1_t_1si-theta_t_1si.T@x_sirr[-1][0])/m
+                g2_t_1=-theta_t_1si@(z2_t_1si-theta_t_1si.T@x_sirr[-1][1])/m
+                if (la.norm(x_sirr[-1][0]-x_sirr[-2][0]) > 1e-3 or la.norm(x_sirr[-1][1]-x_sirr[-2][1]) > 1e-3):
+                    epsilon_1 = max(epsilon_1,la.norm(g1_t-g1_t_1)/(la.norm(x_sirr[-1][0]-x_sirr[-2][0])+1e-3))
+                    epsilon_2 = max(epsilon_2,la.norm(g2_t-g2_t_1)/(la.norm(x_sirr[-1][1]-x_sirr[-2][1])+1e-3))
+                    alpha = gamma*((epsilon_1**2+epsilon_2**2)**0.5)
+
+                # for RR
                 z1_t_1,z2_t_1,theta_t_1 = ddg.distribution_map(x_rr[-1],th)
-                rr_model_1 = Ridge(alpha = alpha)
+                rr_model_1 = Ridge(alpha = 1)
                 rr_model_1.fit(theta_t_1.T,z1_t_1,sample_weight=1/m)
-                rr_model_2 = Ridge(alpha = alpha)
+                rr_model_2 = Ridge(alpha = 1)
                 rr_model_2.fit(theta_t_1.T,z2_t_1,sample_weight=1/m)
                 x_rr.append(np.vstack((rr_model_1.coef_,rr_model_2.coef_)))
                 rr_model.append([rr_model_1,rr_model_2])
 
-                z1_t,z2_t,theta_t = ddg.distribution_map(x_rr[-1],th)
-                g1_t=-theta_t@(z1_t-theta_t.T@x_rr[-1][0])/m
-                g2_t=-theta_t@(z2_t-theta_t.T@x_rr[-1][1])/m
-                g1_t_1=-theta_t_1@(z1_t_1-theta_t_1.T@x_rr[-1][0])/m
-                g2_t_1=-theta_t_1@(z2_t_1-theta_t_1.T@x_rr[-1][1])/m
-                if (la.norm(x_rr[-1][0]-x_rr[-2][0]) > 1e-3 or la.norm(x_rr[-1][1]-x_rr[-2][1]) > 1e-3):
-                    epsilon_1 = max(epsilon_1,la.norm(g1_t-g1_t_1)/(la.norm(x_rr[-1][0]-x_rr[-2][0])+1e-3))
-                    epsilon_2 = max(epsilon_2,la.norm(g2_t-g2_t_1)/(la.norm(x_rr[-1][1]-x_rr[-2][1])+1e-3))
-                    alpha = gamma*((epsilon_1**2+epsilon_2**2)**0.5)
+
 
             x_sgd=np.asarray(x_sgd)
             x_agd=np.asarray(x_agd)
@@ -154,6 +168,7 @@ for sigma_A in sigma_A_values:
             x_sfb=np.asarray(x_sfb)
             x_opgd=np.asarray(x_opgd)
             x_rr=np.asarray(x_rr)
+            x_sirr=np.asarray(x_sirr)
 
             error_sgd=[]
             error_agd=[]
@@ -161,11 +176,12 @@ for sigma_A in sigma_A_values:
             error_sfb=[]
             error_opgd=[]
             error_rr=[]
+            error_sirr=[]
 
             # estimate the loss
             th=1*np.random.normal(0,sigma_theta,size=(d,m))
             # th=1*np.random.uniform(size=(d,m))
-            for x,y,z,sfb,rr_m,opgd in zip(x_sgd,x_agd,x_rgd,x_sfb,rr_model,x_opgd):
+            for x,y,z,sfb,rr_m,sirr_m,opgd in zip(x_sgd,x_agd,x_rgd,x_sfb,rr_model,sirr_model,x_opgd):
                 z1,z2,th_x = ddg.distribution_map(x,th)
                 error_sgd.append((la.norm(z1-th_x.T@x[0])**2 + la.norm(z2-th_x.T@x[1])**2)/(2*m))
 
@@ -185,12 +201,17 @@ for sigma_A in sigma_A_values:
                 z1,z2,th_rr = ddg.distribution_map(rr,th)
                 error_rr.append((la.norm(z1-rr_m[0].predict(th_rr.T))**2 + la.norm(z2-rr_m[1].predict(th_rr.T))**2)/(2*m))
 
+                sirr = np.vstack((sirr_m[0].coef_,sirr_m[1].coef_))
+                z1,z2,th_sirr = ddg.distribution_map(sirr,th)
+                error_sirr.append((la.norm(z1-sirr_m[0].predict(th_sirr.T))**2 + la.norm(z2-sirr_m[1].predict(th_sirr.T))**2)/(2*m))
+
             err_agd=np.asarray(np.sqrt(error_agd))
             err_sgd=np.asarray(np.sqrt(error_sgd))
             err_rgd=np.asarray(np.sqrt(error_rgd))
             err_sfb=np.asarray(np.sqrt(error_sfb))
             err_opgd=np.asarray(np.sqrt(error_opgd))
             err_rr=np.asarray(np.sqrt(error_rr))
+            err_sirr=np.asarray(np.sqrt(error_sirr))
 
             all_data[seed]['error_agd']=err_agd
             all_data[seed]['error_sgd']=err_sgd
@@ -198,6 +219,7 @@ for sigma_A in sigma_A_values:
             all_data[seed]['error_sfb']=err_sfb
             all_data[seed]['error_opgd']=err_opgd
             all_data[seed]['error_rr']=err_rr
+            all_data[seed]['error_sirr']=err_sirr
 
         np.savez(file_name_npy, all_data=all_data)
         print(f"Data saved to {file_name_npy}")
@@ -228,6 +250,7 @@ for k in range(2):
         errs_sfb = []
         errs_opgd = []
         errs_rr = []
+        errs_sirr = []
 
         for seed in seeds:
             errs_agd.append(all_data[seed]['error_agd'])
@@ -236,6 +259,7 @@ for k in range(2):
             errs_sfb.append(all_data[seed]['error_sfb'])
             errs_opgd.append(all_data[seed]['error_opgd'])
             errs_rr.append(all_data[seed]['error_rr'])
+            errs_sirr.append(all_data[seed]['error_sirr'])
 
         errs_agd = np.asarray(errs_agd)
         errs_sgd = np.asarray(errs_sgd)
@@ -243,6 +267,7 @@ for k in range(2):
         errs_sfb = np.asarray(errs_sfb)
         errs_opgd = np.asarray(errs_opgd)
         errs_rr = np.asarray(errs_rr)
+        errs_sirr = np.asarray(errs_sirr)
 
         errs_agd_mean = np.mean(errs_agd, axis=0)
         errs_sgd_mean = np.mean(errs_sgd, axis=0)
@@ -250,6 +275,7 @@ for k in range(2):
         errs_sfb_mean = np.mean(errs_sfb, axis=0)
         errs_opgd_mean = np.mean(errs_opgd, axis=0)
         errs_rr_mean = np.mean(errs_rr, axis=0)
+        errs_sirr_mean = np.mean(errs_sirr, axis=0)
 
         errs_agd_var = np.var(errs_agd, axis=0)
         errs_sgd_var = np.var(errs_sgd, axis=0)
@@ -257,9 +283,12 @@ for k in range(2):
         errs_sfb_var = np.var(errs_sfb, axis=0)
         errs_opgd_var = np.var(errs_opgd, axis=0)
         errs_rr_var = np.var(errs_rr, axis=0)
+        errs_sirr_var = np.var(errs_sirr, axis=0)
 
-        stat_str = f'{errs_rr_mean[-1]:0.4f} $\pm$ {np.sqrt(errs_rr_var[-1]):0.4f}'
+        stat_str = f'{errs_sirr_mean[-1]:0.4f} $\pm$ {np.sqrt(errs_sirr_var[-1]):0.4f}'
         all_stats.append({'model': 'SIR$^2$','sigma_A': f'$\sigma_A$ = {sigma_A}','result': stat_str})
+        stat_str = f'{errs_rr_mean[-1]:0.4f} $\pm$ {np.sqrt(errs_rr_var[-1]):0.4f}'
+        all_stats.append({'model': 'RR','sigma_A': f'$\sigma_A$ = {sigma_A}','result': stat_str})
         stat_str = f'{errs_rgd_mean[-1]:0.4f} $\pm$ {np.sqrt(errs_rgd_var[-1]):0.4f}'
         all_stats.append({'model': 'RGD','sigma_A': f'$\sigma_A$ = {sigma_A}','result': stat_str})
         stat_str = f'{errs_sfb_mean[-1]:0.4f} $\pm$ {np.sqrt(errs_sfb_var[-1]):0.4f}'
@@ -276,23 +305,25 @@ for k in range(2):
             axes[i].fill_between(iterations, errs_sfb_mean - np.sqrt(errs_sfb_var), errs_sfb_mean + np.sqrt(errs_sfb_var), alpha=0.2, color=style_dict['SFB']['color'],edgecolor='none')
             axes[i].fill_between(iterations, errs_agd_mean - np.sqrt(errs_agd_var), errs_agd_mean + np.sqrt(errs_agd_var), alpha=0.2, color=style_dict['AGM']['color'],edgecolor='none')
             axes[i].fill_between(iterations, errs_opgd_mean - np.sqrt(errs_opgd_var), errs_opgd_mean + np.sqrt(errs_opgd_var), alpha=0.2, color=style_dict['OPGD']['color'],edgecolor='none')
-            axes[i].fill_between(iterations, errs_rr_mean - np.sqrt(errs_rr_var), errs_rr_mean + np.sqrt(errs_rr_var), alpha=0.2, color=style_dict['SIR$^2$']['color'],edgecolor='none')
+            axes[i].fill_between(iterations, errs_rr_mean - np.sqrt(errs_rr_var), errs_rr_mean + np.sqrt(errs_rr_var), alpha=0.2, color=style_dict['RR']['color'],edgecolor='none')
+            axes[i].fill_between(iterations, errs_sirr_mean - np.sqrt(errs_sirr_var), errs_sirr_mean + np.sqrt(errs_sirr_var), alpha=0.2, color=style_dict['SIR$^2$']['color'],edgecolor='none')
         l1, = axes[i].plot(errs_rgd_mean, label='RGD',**style_dict['RGD'])
         l3, = axes[i].plot(errs_sfb_mean, label='SFB',**style_dict['SFB'])
         l2, = axes[i].plot(errs_agd_mean, label='AGM',**style_dict['AGM'])
         l4, = axes[i].plot(errs_opgd_mean, label='OPGD',**style_dict['OPGD'])
-        l5, = axes[i].plot(errs_rr_mean, label='SIR$^2$',**style_dict['SIR$^2$'])
+        l5, = axes[i].plot(errs_rr_mean, label='RR',**style_dict['RR'])
+        l6, = axes[i].plot(errs_sirr_mean, label='SIR$^2$',**style_dict['SIR$^2$'])
         if i == 0:
             axes[i].set_ylabel('RMSE', fontsize=fs)
-            handles.extend([l5, l1, l3, l2,l4])
-            labels.extend(['SIR$^2$', 'RGD', 'SFB', 'AGM', 'OPGD'])
+            handles.extend([l6,l5, l1, l3, l2,l4])
+            labels.extend(['SIR$^2$', 'RR','RGD', 'SFB', 'AGM', 'OPGD'])
 
         axes[i].set_title(f'$\sigma_{{a_i}}^2 = {sigma_A}$', fontsize=fs)
         axes[i].set_xlabel('Iterations', fontsize=fs)
         axes[i].tick_params(labelsize=fs*0.7)
         axes[i].grid(True)
         axes[i].set_yscale('log')
-        all_y_data.extend([errs_rr_mean, errs_rgd_mean, errs_agd_mean, errs_sfb_mean, errs_opgd_mean])
+        all_y_data.extend([errs_sirr_mean,errs_rr_mean, errs_rgd_mean, errs_agd_mean, errs_sfb_mean, errs_opgd_mean])
     # 找出所有 y 数据的最小值和最大值
     all_y_data = np.concatenate(all_y_data)
     y_min = np.min(all_y_data)
@@ -302,7 +333,7 @@ for k in range(2):
     for ax in axes:
         ax.set_ylim(y_min, y_max)
 
-    fig.legend(handles, labels, loc='lower center', ncol=5, fontsize=fs-2) #,bbox_to_anchor=(0.5, -0.02)
+    fig.legend(handles, labels, loc='lower center', ncol=6, fontsize=fs-2) #,bbox_to_anchor=(0.5, -0.02)
     plt.tight_layout(rect=[0, 0.2, 1, 1])  # 底部留出 10% 的空间
 
     # 保存图片

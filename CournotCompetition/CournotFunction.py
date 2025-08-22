@@ -177,7 +177,7 @@ def runOPGD(z0,data,c,b, MAXITER,mu,eta,x0):
     A = np.random.rand(1)*b
     for i in range(MAXITER+1):
         grad = b * (q + X_ag[:, i]) + b* np.sum(q+X_ag[:, i]) + c - z[i] - A *(q+ X_ag[:, i])
-        X_ag[:, i+1] = X_ag[:, i] - (eta * grad/b)*0.1
+        X_ag[:, i+1] = X_ag[:, i] - (eta *(6/(10+i))* grad/b)
         if i > 0:
             for j in range(10): #update A 10 times
                 A = update_estimate_OPGD(A,z0,n, mu,b)
@@ -192,7 +192,7 @@ def runOPGD(z0,data,c,b, MAXITER,mu,eta,x0):
 
 def update_estimate_OPGD(A,z0,n, mu,b):
     nu= 1e-7
-    ut = np.random.rand(n)*1e8
+    ut = np.random.rand(n)*1e9
     y=distribution_map(z0, ut, mu,b)
     g = (A*sum(ut)-y)*sum(ut)
     power = int(np.floor(np.log10(np.max(np.abs(g)))))

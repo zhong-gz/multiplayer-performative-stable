@@ -9,8 +9,8 @@ from matplotlib.patches import Rectangle
 from matplotlib.ticker import ScalarFormatter
 from matplotlib.ticker import FormatStrFormatter
 # insert at 1, 0 is the script path (or '' in REPL)
-# sys.path.insert(1,'./utils/' )
-from utils.utilsrm import *
+sys.path.insert(1,'./utils/' )
+from utilsrm import *
 import time
 
 start_time = time.time()
@@ -35,12 +35,13 @@ tot_rev=1
 fs=40
 lw=4
 lw2 = lw/2
-models = ['SIR$^2$', 'RGD','SFB','AGM','OPGD']
+models = ['SIR$^2$', 'RR','RGD','SFB','AGM','OPGD']
 companies = ['Lyft', 'Uber']
 info_types = ['price','rev', 'demand']
 # 定义不同模型对应的颜色
 style_dict = {
     'SIR$^2$': {'color': '#FF7F50', 'linestyle': '-', 'linewidth': lw+1},
+    'RR': {'color': "#9b0000", 'linestyle': (0, (2, 2)), 'linewidth': lw},
     'AGM': {'color': '#9467bd', 'linestyle': '--', 'linewidth': lw},
     'RGD': {'color': '#444444', 'linestyle': ':', 'linewidth': lw},
     'SFB': {'color': '#2ca02c', 'linestyle': '-.', 'linewidth': lw},
@@ -89,7 +90,8 @@ if run_experiment:
 
                 # run all cases
                 dic_data = []
-                dic_data.append(ddgame.runRR(gamma = gamma,price_index=price_index,BATCH=BATCH,MAXITER=MAXITER,tot_rev=tot_rev))
+                dic_data.append(ddgame.runSIRR(gamma = gamma,price_index=price_index,BATCH=BATCH,MAXITER=MAXITER,tot_rev=tot_rev))
+                dic_data.append(ddgame.runRR(price_index=price_index,BATCH=BATCH,MAXITER=MAXITER,tot_rev=tot_rev))
                 dic_data.append(ddgame.runRGD(x0,eta=eta,price_index=price_index,BATCH=BATCH,MAXITER=MAXITER,tot_rev=tot_rev))
                 dic_data.append(ddgame.runSFB(x0,price_index=price_index,eta=eta,BATCH=BATCH,MAXITER=MAXITER,tot_rev=tot_rev))
                 dic_data.append(ddgame.runAGD(x0,eta=eta,price_index=price_index,BATCH=BATCH,MAXITER=MAXITER,tot_rev=tot_rev))

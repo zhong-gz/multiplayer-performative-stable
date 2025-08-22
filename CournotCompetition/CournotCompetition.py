@@ -48,7 +48,7 @@ tot_rev=1
 fs=40
 lw=4
 lw2 = lw/2
-models = ['SIR$^2$','RR','RGD','SFB','AGM','OPGD']
+models = ['SIR$^2$','RR','RGD','SFB','AGM']#,'OPGD']
 info_types = ['quantity','revenue','price']
 # 定义不同模型对应的颜色
 style_dict = {

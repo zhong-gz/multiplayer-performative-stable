@@ -247,8 +247,63 @@ class ddrideshare:
 
     def demand(self,x,player,q_,locs=None,batch=1):
         return self.query_env_player(x,player, q_,locs=locs,batch=batch)   
+    
+    def runRR(self,price_index=0,BATCH=10,MAXITER=1000, verbose=False, perform_rr=[True,True], RETURN=True, MYOPIC=False, tot_rev=1):
+        '''
+        Runs for repeated retraining
+        '''
+        self.batch_rr=BATCH
+        self.maxiter_rr=MAXITER
+        self.perform_comp_rr=perform_rr
+        self.price_index_rr=price_index
+        # print("RR  Price we are running at : ", self.prices_[self.price_index_rr])
+        q_lyft_=self.ql_[:,:,self.price_index_rr].T
+        q_uber_=self.qu_[:,:,self.price_index_rr].T
+        self.tot_rev=tot_rev
 
-    def runRR(self,gamma = 2.1,price_index=0,BATCH=10,MAXITER=1000, verbose=False, perform_rr=[True,True], RETURN=True, MYOPIC=False, tot_rev=1):
+        self.x_rr= [np.zeros((2,self.d))]
+        alpha = 0.1
+
+        for i in range(self.maxiter_rr+1):
+            z_lyft_t_1=self.query_env_player(self.x_rr[-1],0,q_lyft_,locs=None,batch=self.batch_rr)
+            z_uber_t_1=self.query_env_player(self.x_rr[-1],1,q_uber_,locs=None,batch=self.batch_rr)
+
+            x_lyft = np.minimum(0.5*z_lyft_t_1/alpha,5)
+            x_uber = np.minimum(0.5*z_uber_t_1/alpha,5)
+            self.x_rr.append(np.vstack((x_lyft,x_uber)))
+            
+            if i == 0 :
+                self.rev_rr_p1=[self.revenue(self.x_rr[-1],0,q_lyft_,price_index=self.price_index_rr)]
+                self.rev_rr_p2=[self.revenue(self.x_rr[-1],1,q_uber_,price_index=self.price_index_rr)]
+                self.rev_rr_p1_loc=[self.revenue_loc(self.x_rr[-1],0,q_lyft_,price_index=self.price_index_rr)]
+                self.rev_rr_p2_loc=[self.revenue_loc(self.x_rr[-1],1,q_uber_,price_index=self.price_index_rr)]
+                self.demand_rr_p1=[self.demand(self.x_rr[-1],0,q_lyft_)]
+                self.demand_rr_p2=[self.demand(self.x_rr[-1],1,q_uber_)]
+                self.loss_rr_p1=[self.loss(self.x_rr[-1],0,q_lyft_)]
+                self.loss_rr_p2=[self.loss(self.x_rr[-1],1,q_uber_)]
+            else:
+                self.rev_rr_p1.append(self.revenue(self.x_rr[-1],0,q_lyft_,price_index=self.price_index_rr))
+                self.rev_rr_p2.append(self.revenue(self.x_rr[-1],1,q_uber_,price_index=self.price_index_rr))
+                self.rev_rr_p1_loc.append(self.revenue_loc(self.x_rr[-1],0,q_lyft_,price_index=self.price_index_rr))
+                self.rev_rr_p2_loc.append(self.revenue_loc(self.x_rr[-1],1,q_uber_,price_index=self.price_index_rr))
+                self.demand_rr_p1.append(self.demand(self.x_rr[-1],0,q_lyft_))
+                self.demand_rr_p2.append(self.demand(self.x_rr[-1],1,q_uber_))
+                self.loss_rr_p1.append(self.loss(self.x_rr[-1],0,q_lyft_))
+                self.loss_rr_p2.append(self.loss(self.x_rr[-1],1,q_uber_))
+        if RETURN:
+            dic={}
+            dic['x']=self.x_rr
+            dic['loss_p1']=np.asarray(self.loss_rr_p1)
+            dic['loss_p2']=np.asarray(self.loss_rr_p2)
+            dic['revenue_total_p1']=np.asarray(self.rev_rr_p1)
+            dic['revenue_total_p2']=np.asarray(self.rev_rr_p2)
+            dic['revenue_by_loc_p1']=np.asarray(self.rev_rr_p1_loc)
+            dic['revenue_by_loc_p2']=np.asarray(self.rev_rr_p2_loc)
+            dic['demand_p1']=np.asarray(self.demand_rr_p1)
+            dic['demand_p2']=np.asarray(self.demand_rr_p2)
+            return dic
+
+    def runSIRR(self,gamma = 2.1,price_index=0,BATCH=10,MAXITER=1000, verbose=False, perform_rr=[True,True], RETURN=True, MYOPIC=False, tot_rev=1):
         '''
         Runs for repeated retraining
         '''
