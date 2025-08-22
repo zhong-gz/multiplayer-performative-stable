@@ -24,19 +24,19 @@ np.random.seed(seed)
 seeds= range(42,52)
 run_experiment = 1 # 1: run the experiment, 0: load the data
 sigma_theta= 0.1 ###
-sigma_w=0.0001
-nu=1e-3
+sigma_w=0.01
 n=2
 m= 100 # both players dimension of z_i
-d=2 # size of each players action
+d= 10 # size of each players action
 B = np.random.normal(0,sigma_theta,size=(d,1))
-k = 1
+k = 10
 sigma_A_values = [0.25, 0.5, 0.75, 1.0]
 sigma_A_values = [x * k for x in sigma_A_values]
 sum_A_AC = 1.25*k
-eta=0.1
+eta=0.01
 mu=1
 nu0=1
+alpha_rr = 0
 models = ['SIR$^2$', 'RR','RGD','SFB','AGM','OPGD']
 lw = 4
 fs=40
@@ -51,7 +51,6 @@ style_dict = {
 }
 
 all_data={}
-# lam=[1.0,1.0]
 lam=[0.1,0.1]
 MAXITER=100
 
@@ -72,8 +71,7 @@ for sigma_A in sigma_A_values:
 
     if run_experiment == 1:
         ddg=ddstrategic_prediction(MAXITER=MAXITER, sigma_theta=sigma_theta,sigma_w=sigma_w,
-                            B=B,nu=nu, lam=lam,n=n, m=m, d=d, params=params,
-                                mu_w1=0, mu_w2=0, mu_theta=0)
+                            B=B,lam=lam,n=n, m=m, d=d, params=params,mu_w1=0, mu_w2=0, mu_theta=0)
 
         for seed in seeds:
             np.random.seed(seed)
@@ -106,20 +104,19 @@ for sigma_A in sigma_A_values:
             epsilon_1 = 0
             epsilon_2 = 0
             gamma = 2.1
-            alpha = 0.1
+            alpha = 0
             count = 0
 
             for i in range(MAXITER):
-                nu=2*nu0/(len(x_agd)+2*3*d)
-                # th=1*np.random.uniform(size=(d,m))
+                nu= 2*nu0/(len(x_agd)+2*3*d)
                 th=np.random.normal(0,sigma_theta,size=(d,m))
                 z1=ddg.D_w(0)
                 z2=ddg.D_w(1)
                 x_sgd.append(ddg.proj(x_sgd[-1]-eta*ddg.getgrad(x_sgd[-1],th)))
                 ## for AGM
-                x_agd.append(ddg.proj(x_agd[-1]-eta*ddg.getgrad_agd(x_agd[-1],th,A1hat=A_dic['A1_hats'][-1],Ac1hat=A_dic['Ac1_hats'][-1],
+                x_agd.append(ddg.proj(x_agd[-1]- eta*ddg.getgrad_agd(x_agd[-1],th,A1hat=A_dic['A1_hats'][-1],Ac1hat=A_dic['Ac1_hats'][-1],
                                                                     A2hat=A_dic['A2_hats'][-1], Ac2hat=A_dic['Ac2_hats'][-1], passvals=True)))
-                A1_hat,Ac1_hat,A2_hat,Ac2_hat = ddg.update_estimate(x_agd[-1], z1, z2,th,nu=nu,mu=mu, A1hat=A_dic['A1_hats'][-1],Ac1hat=A_dic['Ac1_hats'][-1],
+                A1_hat,Ac1_hat,A2_hat,Ac2_hat = ddg.update_estimate(x_agd[-1], z1, z2,th,nu = nu, mu=mu, A1hat=A_dic['A1_hats'][-1],Ac1hat=A_dic['Ac1_hats'][-1],
                                                                     A2hat=A_dic['A2_hats'][-1], Ac2hat=A_dic['Ac2_hats'][-1], passvals=True,UNCORR=False)
                 A_dic['A1_hats'].append(A1_hat)
                 A_dic['Ac1_hats'].append(Ac1_hat)
@@ -127,12 +124,12 @@ for sigma_A in sigma_A_values:
                 A_dic['Ac2_hats'].append(Ac2_hat)
                 ## for rgd
                 z1,z2,theta_rgd = ddg.distribution_map(x_rgd[-1],th)
-                x_rgd.append(ddg.proj(x_rgd[-1]-eta*ddg.getgrad_rgd(x_rgd[-1],z1,z2, theta_rgd)))
+                x_rgd.append(ddg.proj(x_rgd[-1]-0.1*eta*ddg.getgrad_rgd(x_rgd[-1],z1,z2, theta_rgd)))
                 ## for sfb
                 z1,z2,theta_sfb = ddg.distribution_map(x_sfb[-1],th)
                 x_sfb.append(ddg.proj(x_sfb[-1]-(eta*(i+1)**(-3/4))*ddg.getgrad_rgd(x_sfb[-1],z1,z2, theta_sfb)))
                 ## for OPGD
-                x_opgd.append(ddg.proj(x_opgd[-1]-eta*(6/(10+i))*ddg.getgrad_opgd(x_opgd[-1],th,A1hat=A1_opgd, A2hat=A2_opgd)))
+                x_opgd.append(ddg.proj(x_opgd[-1]-10*eta*(6/(10+i))*ddg.getgrad_opgd(x_opgd[-1],th,A1hat=A1_opgd, A2hat=A2_opgd)))
                 A1_opgd, A2_opgd = ddg.update_estimate_opgd(x_opgd[-1], z1, z2,th,v_t = 0.1*eta*7/((10+i)**(3/4)), A1hat=A1_opgd, A2hat=A2_opgd)
 
                 # for SIRR
@@ -149,16 +146,16 @@ for sigma_A in sigma_A_values:
                 g2_t=-theta_tsi@(z2_tsi-theta_tsi.T@x_sirr[-1][1])/m
                 g1_t_1=-theta_t_1si@(z1_t_1si-theta_t_1si.T@x_sirr[-1][0])/m
                 g2_t_1=-theta_t_1si@(z2_t_1si-theta_t_1si.T@x_sirr[-1][1])/m
-                if (la.norm(x_sirr[-1][0]-x_sirr[-2][0]) > 1e-3 or la.norm(x_sirr[-1][1]-x_sirr[-2][1]) > 1e-3):
+                if (la.norm(x_sirr[-1][0]-x_sirr[-2][0]) > 1e-3*d or la.norm(x_sirr[-1][1]-x_sirr[-2][1]) > 1e-3*d):
                     epsilon_1 = max(epsilon_1,la.norm(g1_t-g1_t_1)/(la.norm(x_sirr[-1][0]-x_sirr[-2][0]+1e-3)))
                     epsilon_2 = max(epsilon_2,la.norm(g2_t-g2_t_1)/(la.norm(x_sirr[-1][1]-x_sirr[-2][1]+1e-3)))
                     alpha = gamma*((epsilon_1**2+epsilon_2**2)**0.5)
 
                 # for RR
                 z1_t_1,z2_t_1,theta_t_1 = ddg.distribution_map(x_rr[-1],th)
-                rr_model_1 = Ridge(alpha = 10)
+                rr_model_1 = Ridge(alpha = alpha_rr)
                 rr_model_1.fit(theta_t_1.T,z1_t_1,sample_weight=1/m)
-                rr_model_2 = Ridge(alpha = 10)
+                rr_model_2 = Ridge(alpha = alpha_rr)
                 rr_model_2.fit(theta_t_1.T,z2_t_1,sample_weight=1/m)
                 x_rr.append(np.vstack((rr_model_1.coef_,rr_model_2.coef_)))
                 rr_model.append([rr_model_1,rr_model_2])
@@ -353,7 +350,7 @@ df = pd.DataFrame(all_stats)
 pivot_df = df.pivot(index='model', columns='sigma_A', values='result')
 # 确保 model 顺序和列表一致
 pivot_df = pivot_df.reindex(models)
-pivot_df.to_excel('multi_regression/figs_100/regression_result.xlsx')
+pivot_df.to_excel('multi_regression/figs_' + str(MAXITER) + '/regression_result.xlsx')
 
 end_time = time.time()  # 记录结束时间
 execution_time = end_time - start_time  # 计算耗时（秒）
