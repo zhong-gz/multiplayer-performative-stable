@@ -39,7 +39,7 @@ np.random.seed(seed)
 num_experiments = 10 #10
 figuresize=(25, 6)
 loc_cap=11
-run_experiment = 1 # 1: run the experiment, 0: load the data
+run_experiment = 0 # 1: run the experiment, 0: load the data
 subrange = 26
 c_alg = 2.1
 tot_rev=1
@@ -48,7 +48,7 @@ tot_rev=1
 fs=40
 lw=4
 lw2 = lw/2
-models = ['SIR$^2$','RR','RGD','SFB','AGM']#,'OPGD']
+models = ['SIR$^2$','RR','RGD','SFB','AGM','OPGD']
 info_types = ['quantity','revenue','price']
 # 定义不同模型对应的颜色
 style_dict = {
@@ -199,7 +199,7 @@ for i, mu_A in enumerate(mu_A_list):
     formatter.set_scientific(False)
     ax.yaxis.set_major_formatter(formatter)
     # ax_inset.yaxis.set_major_formatter(formatter)
-    ax.text(-0.1, 1.11, f'$\\times 10^{{{power}}}$', transform=ax.transAxes, fontsize=fs*0.7, verticalalignment='top')
+    ax.text(-0.05, 1.11, f'$\\times 10^{{{power}}}$', transform=ax.transAxes, fontsize=fs*0.7, verticalalignment='top')
 handles, labels = fig.axes[0].get_legend_handles_labels()
 fig.legend(handles, labels, loc='lower center', fontsize=fs, ncol=len(models))
 plt.tight_layout(rect=[0, 0.21, 1, 1])
@@ -239,7 +239,7 @@ for i, mu_A in enumerate(mu_A_list):
     formatter = ScalarFormatter()
     formatter.set_scientific(False)
     ax.yaxis.set_major_formatter(formatter)
-    ax.text(-0.1, 1.11, f'$\\times 10^{{{power}}}$', transform=ax.transAxes, fontsize=fs*0.7, verticalalignment='top')
+    ax.text(-0.05, 1.11, f'$\\times 10^{{{power}}}$', transform=ax.transAxes, fontsize=fs*0.7, verticalalignment='top')
 handles, labels = fig.axes[0].get_legend_handles_labels()
 fig.legend(handles, labels, loc='lower center', fontsize=fs, ncol=len(models))
 plt.tight_layout(rect=[0, 0.21, 1, 1])
@@ -273,20 +273,20 @@ for i, mu_A in enumerate(mu_A_list):
         total_quantity = (total_avg_data[key1])/ scale_factor
         total_quantity_var = (total_var_data[key1] )
         ax.plot(total_quantity, label=f'{model}',**style)
-        ax.fill_between(range(len(total_avg_data[key1])), 
-                        np.float64(total_quantity) - (np.sqrt(np.float64(total_quantity_var))/scale_factor), 
-                        np.float64(total_quantity) + (np.sqrt(np.float64(total_quantity_var))/scale_factor), 
-                        alpha=0.2, color=style_dict[model]['color'],edgecolor='none')
+        # ax.fill_between(range(len(total_avg_data[key1])), 
+        #                 np.float64(total_quantity) - (np.sqrt(np.float64(total_quantity_var))/scale_factor), 
+        #                 np.float64(total_quantity) + (np.sqrt(np.float64(total_quantity_var))/scale_factor), 
+        #                 alpha=0.2, color=style_dict[model]['color'],edgecolor='none')
     model = 'SIR$^2$'
     style = style_dict[model]
     key1 = f'{info_types[0]}_{model}'
     total_quantity = (total_avg_data[key1])/ scale_factor
     total_quantity_var = (total_var_data[key1])/ scale_factor
     ax.plot(total_quantity,**style)
-    ax.fill_between(range(len(total_avg_data[key1])), 
-                np.float64(total_quantity) - (np.sqrt(np.float64(total_quantity_var))/scale_factor), 
-                np.float64(total_quantity) + (np.sqrt(np.float64(total_quantity_var))/scale_factor), 
-                alpha=0.2, color=style_dict[model]['color'],edgecolor='none')
+    # ax.fill_between(range(len(total_avg_data[key1])), 
+    #             np.float64(total_quantity) - (np.sqrt(np.float64(total_quantity_var))/scale_factor), 
+    #             np.float64(total_quantity) + (np.sqrt(np.float64(total_quantity_var))/scale_factor), 
+    #             alpha=0.2, color=style_dict[model]['color'],edgecolor='none')
     if i == 0:
         ax.set_ylabel(r'Total quantity', fontsize=fs)
     ax.set_title(f'$\mu = {mu_A}$', fontsize=fs)  
@@ -302,7 +302,7 @@ for i, mu_A in enumerate(mu_A_list):
     formatter.set_scientific(False)
     ax.yaxis.set_major_formatter(formatter)
     # ax_inset.yaxis.set_major_formatter(formatter)
-    ax.text(-0.1, 1.11, f'$\\times 10^{{{power}}}$', transform=ax.transAxes, fontsize=fs*0.7, verticalalignment='top')
+    ax.text(-0.05, 1.11, f'$\\times 10^{{{power}}}$', transform=ax.transAxes, fontsize=fs*0.7, verticalalignment='top')
 handles, labels = fig.axes[0].get_legend_handles_labels()
 fig.legend(handles, labels, loc='lower center', fontsize=fs, ncol=len(models))
 plt.tight_layout(rect=[0, 0.21, 1, 1])
@@ -336,22 +336,22 @@ for i, mu_A in enumerate(mu_A_list):
         total_price = (total_avg_data[key1])/ scale_factor
         total_price_var = (total_var_data[key1] )
         ax.plot(total_price, label=f'{model}',**style)
-        ax.fill_between(range(len(total_avg_data[key1])), 
-                        np.float64(total_price) - (np.sqrt(np.float64(total_price_var))/scale_factor), 
-                        np.float64(total_price) + (np.sqrt(np.float64(total_price_var))/scale_factor), 
-                        alpha=0.2, color=style_dict[model]['color'],edgecolor='none')
+        # ax.fill_between(range(len(total_avg_data[key1])), 
+        #                 np.float64(total_price) - (np.sqrt(np.float64(total_price_var))/scale_factor), 
+        #                 np.float64(total_price) + (np.sqrt(np.float64(total_price_var))/scale_factor), 
+        #                 alpha=0.2, color=style_dict[model]['color'],edgecolor='none')
     model = 'SIR$^2$'
     style = style_dict[model]
     key1 = f'{info_types[2]}_{model}'
     total_price = (total_avg_data[key1])/ scale_factor
     total_price_var = (total_var_data[key1])/ scale_factor
     ax.plot(total_price,**style)
-    ax.fill_between(range(len(total_avg_data[key1])), 
-                np.float64(total_price) - (np.sqrt(np.float64(total_price_var))/scale_factor), 
-                np.float64(total_price) + (np.sqrt(np.float64(total_price_var))/scale_factor), 
-                alpha=0.2, color=style_dict[model]['color'],edgecolor='none')
+    # ax.fill_between(range(len(total_avg_data[key1])), 
+    #             np.float64(total_price) - (np.sqrt(np.float64(total_price_var))/scale_factor), 
+    #             np.float64(total_price) + (np.sqrt(np.float64(total_price_var))/scale_factor), 
+    #             alpha=0.2, color=style_dict[model]['color'],edgecolor='none')
     if i == 0:
-        ax.set_ylabel(r'Oil price', fontsize=fs)
+        ax.set_ylabel(r'Price', fontsize=fs)
     ax.set_title(f'$\mu = {mu_A}$', fontsize=fs)  
     ax.set_xlabel(r'Iterations', fontsize=fs)
     ax.grid(True)
@@ -365,7 +365,7 @@ for i, mu_A in enumerate(mu_A_list):
     formatter.set_scientific(False)
     ax.yaxis.set_major_formatter(formatter)
     # ax_inset.yaxis.set_major_formatter(formatter)
-    ax.text(-0.1, 1.11, f'$\\times 10^{power}$', transform=ax.transAxes, fontsize=fs*0.7, verticalalignment='top')
+    ax.text(-0.05, 1.11, f'$\\times 10^{power}$', transform=ax.transAxes, fontsize=fs*0.7, verticalalignment='top')
 handles, labels = fig.axes[0].get_legend_handles_labels()
 fig.legend(handles, labels, loc='lower center', fontsize=fs, ncol=len(models))
 plt.tight_layout(rect=[0, 0.21, 1, 1])
@@ -399,22 +399,22 @@ for i, mu_A in enumerate(mu_A_list):
         total_quantity = (total_avg_data[key1]-np.sum(data))/ scale_factor
         total_quantity_var = (total_var_data[key1])
         ax.plot(total_quantity, label=f'{model}',**style)
-        ax.fill_between(range(len(total_avg_data[key1])), 
-                        np.float64(total_quantity) - (np.sqrt(np.float64(total_quantity_var))/scale_factor), 
-                        np.float64(total_quantity) + (np.sqrt(np.float64(total_quantity_var))/scale_factor), 
-                        alpha=0.2, color=style_dict[model]['color'],edgecolor='none')
+        # ax.fill_between(range(len(total_avg_data[key1])), 
+        #                 np.float64(total_quantity) - (np.sqrt(np.float64(total_quantity_var))/scale_factor), 
+        #                 np.float64(total_quantity) + (np.sqrt(np.float64(total_quantity_var))/scale_factor), 
+        #                 alpha=0.2, color=style_dict[model]['color'],edgecolor='none')
     model = 'SIR$^2$'
     style = style_dict[model]
     key1 = f'{info_types[0]}_{model}'
     total_quantity = (total_avg_data[key1]-np.sum(data))/ scale_factor
     total_quantity_var = (total_var_data[key1])/ scale_factor
     ax.plot(total_quantity,**style)
-    ax.fill_between(range(len(total_avg_data[key1])), 
-                np.float64(total_quantity) - (np.sqrt(np.float64(total_quantity_var))/scale_factor), 
-                np.float64(total_quantity) + (np.sqrt(np.float64(total_quantity_var))/scale_factor), 
-                alpha=0.2, color=style_dict[model]['color'],edgecolor='none')
+    # ax.fill_between(range(len(total_avg_data[key1])), 
+    #             np.float64(total_quantity) - (np.sqrt(np.float64(total_quantity_var))/scale_factor), 
+    #             np.float64(total_quantity) + (np.sqrt(np.float64(total_quantity_var))/scale_factor), 
+    #             alpha=0.2, color=style_dict[model]['color'],edgecolor='none')
     if i == 0:
-        ax.set_ylabel(r'Quantity adjuestment', fontsize=fs)
+        ax.set_ylabel(r'Quantity adjuestment', fontsize=fs-16)
     ax.set_title(f'$\mu = {mu_A}$', fontsize=fs)  
     ax.set_xlabel(r'Iterations', fontsize=fs)
     ax.grid(True)
@@ -428,7 +428,7 @@ for i, mu_A in enumerate(mu_A_list):
     formatter.set_scientific(False)
     ax.yaxis.set_major_formatter(formatter)
     # ax_inset.yaxis.set_major_formatter(formatter)
-    ax.text(-0.1, 1.11, f'$\\times 10^{{{power}}}$', transform=ax.transAxes, fontsize=fs*0.7, verticalalignment='top')
+    ax.text(0, 1.11, f'$\\times 10^{{{power}}}$', transform=ax.transAxes, fontsize=fs*0.7, verticalalignment='top')
 handles, labels = fig.axes[0].get_legend_handles_labels()
 fig.legend(handles, labels, loc='lower center', fontsize=fs, ncol=len(models))
 plt.tight_layout(rect=[0, 0.21, 1, 1])
