@@ -39,7 +39,7 @@ np.random.seed(seed)
 num_experiments = 10 #10
 figuresize=(25, 6)
 loc_cap=11
-run_experiment = 0 # 1: run the experiment, 0: load the data
+run_experiment = 1 # 1: run the experiment, 0: load the data
 subrange = 26
 c_alg = 2.1
 tot_rev=1

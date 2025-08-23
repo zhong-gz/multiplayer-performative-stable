@@ -32,7 +32,7 @@ def read_data(path = 'CournotCompetition/Global Crude Petroleum Trade 1995-2021.
     return global_oil_volume
 
 def distribution_map(z0,X,mu = 0.25,b=1e-9):
-    z = z0 - mu* np.arcsinh(1+ sum(X)) + np.random.normal(0, np.sqrt(0.0001))
+    z = z0 - mu* np.arcsinh(sum(X)) + np.random.normal(0, np.sqrt(0.0001))
     return z
 
 def runSIRR(z0,data,c,b,c_alg, MAXITER,mu):
