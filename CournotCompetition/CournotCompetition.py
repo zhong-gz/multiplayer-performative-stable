@@ -186,7 +186,7 @@ for i, mu_A in enumerate(mu_A_list):
                     alpha=0.2, color=style_dict[model]['color'],edgecolor='none')
     if i == 0:
         ax.set_ylabel(r'Total revenue', fontsize=fs)
-    ax.set_title(f'$\mu_A = {mu_A}$', fontsize=fs)  
+    ax.set_title(f'$\mu = {mu_A}$', fontsize=fs)  
     ax.set_xlabel(r'Iterations', fontsize=fs)
     ax.grid(True)
     ax.tick_params(labelsize=fs*0.5)
@@ -227,7 +227,7 @@ for i, mu_A in enumerate(mu_A_list):
     ax.plot(total_rev,**style)
     if i == 0:
         ax.set_ylabel(r'Total revenue', fontsize=fs)
-    ax.set_title(f'$\mu_A = {mu_A}$', fontsize=fs)  
+    ax.set_title(f'$\mu = {mu_A}$', fontsize=fs)  
     ax.set_xlabel(r'Iterations', fontsize=fs)
     ax.grid(True)
     ax.tick_params(labelsize=fs*0.5)
@@ -289,7 +289,7 @@ for i, mu_A in enumerate(mu_A_list):
                 alpha=0.2, color=style_dict[model]['color'],edgecolor='none')
     if i == 0:
         ax.set_ylabel(r'Total quantity', fontsize=fs)
-    ax.set_title(f'$\mu_A = {mu_A}$', fontsize=fs)  
+    ax.set_title(f'$\mu = {mu_A}$', fontsize=fs)  
     ax.set_xlabel(r'Iterations', fontsize=fs)
     ax.grid(True)
     ax.tick_params(labelsize=fs*0.5)
@@ -352,7 +352,7 @@ for i, mu_A in enumerate(mu_A_list):
                 alpha=0.2, color=style_dict[model]['color'],edgecolor='none')
     if i == 0:
         ax.set_ylabel(r'Oil price', fontsize=fs)
-    ax.set_title(f'$\mu_A = {mu_A}$', fontsize=fs)  
+    ax.set_title(f'$\mu = {mu_A}$', fontsize=fs)  
     ax.set_xlabel(r'Iterations', fontsize=fs)
     ax.grid(True)
     ax.tick_params(labelsize=fs*0.5)
@@ -415,7 +415,7 @@ for i, mu_A in enumerate(mu_A_list):
                 alpha=0.2, color=style_dict[model]['color'],edgecolor='none')
     if i == 0:
         ax.set_ylabel(r'Quantity adjuestment', fontsize=fs)
-    ax.set_title(f'$\mu_A = {mu_A}$', fontsize=fs)  
+    ax.set_title(f'$\mu = {mu_A}$', fontsize=fs)  
     ax.set_xlabel(r'Iterations', fontsize=fs)
     ax.grid(True)
     ax.tick_params(labelsize=fs*0.5)
@@ -450,7 +450,7 @@ for mu_A, data in all_mu_A_data.items():
         stat_str = f'{final_revenue:0.0f} $\pm$ {np.sqrt(final_var):0.0f}'
         total_revenue_stats.append({
             'model': model,
-            'mu_A': f'$\mu_A$ = {mu_A}',
+            'mu_A': f'$\mu$ = {mu_A}',
             'total_revenue': stat_str
         })
 
