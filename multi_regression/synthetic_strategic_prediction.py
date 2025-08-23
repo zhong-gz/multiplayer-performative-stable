@@ -108,11 +108,11 @@ for sigma_A in sigma_A_values:
             count = 0
 
             for i in range(MAXITER):
-                nu= 2*nu0/(len(x_agd)+2*3*d)
+                nu= 0.01 #nu0/(i+d)
                 th=np.random.normal(0,sigma_theta,size=(d,m))
                 z1=ddg.D_w(0)
                 z2=ddg.D_w(1)
-                x_sgd.append(ddg.proj(x_sgd[-1]-eta*ddg.getgrad(x_sgd[-1],th)))
+                x_sgd.append(ddg.proj(x_sgd[-1]- eta*ddg.getgrad(x_sgd[-1],th)))
                 ## for AGM
                 x_agd.append(ddg.proj(x_agd[-1]- eta*ddg.getgrad_agd(x_agd[-1],th,A1hat=A_dic['A1_hats'][-1],Ac1hat=A_dic['Ac1_hats'][-1],
                                                                     A2hat=A_dic['A2_hats'][-1], Ac2hat=A_dic['Ac2_hats'][-1], passvals=True)))
@@ -324,7 +324,7 @@ for k in range(2):
         all_y_data.extend([errs_sirr_mean,errs_rr_mean, errs_rgd_mean, errs_agd_mean, errs_sfb_mean, errs_opgd_mean])
     # 找出所有 y 数据的最小值和最大值
     all_y_data = np.concatenate(all_y_data)
-    y_min = np.min(all_y_data)
+    y_min = np.min(all_y_data)- 0.2*np.abs(np.min(all_y_data))
     y_max = np.max(all_y_data)
 
     # 统一所有子图的 y 轴范围
