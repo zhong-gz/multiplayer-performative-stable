@@ -23,7 +23,7 @@ num_experiments = 10
 figuresize=(25, 6)
 loc_cap=11
 eta=0.001
-run_experiment = 1 # 1: run the experiment, 0: load the data
+run_experiment = 0 # 1: run the experiment, 0: load the data
 mu_A_list = [0.25,0.50,0.75,1.0] #25,0.50,0.75,1
 subrange = 26
 gamma = 2.1
@@ -218,7 +218,7 @@ plt.savefig(f'ride_share/figs/{info_type}_var.pdf', transparent=True, bbox_inche
 plt.close()
 
 # all_mu_A_data[mu_A]['p_data'][p]['avg/var'][key]
-big_figsize = (26, 40)
+big_figsize = (32, 40)
 info_type = 'price'
 # fig, axes = plt.subplots(10, 4, figsize=big_figsize)
 fig, axes = plt.subplots(11, 4, figsize=big_figsize, gridspec_kw={'height_ratios': [1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1]})
