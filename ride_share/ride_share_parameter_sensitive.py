@@ -9,7 +9,7 @@ from matplotlib.patches import Rectangle
 from matplotlib.ticker import ScalarFormatter
 # insert at 1, 0 is the script path (or '' in REPL)
 sys.path.insert(1,'./utils/' )
-from utils.utilsrm import *
+from utilsrm import *
 
 import time
 
@@ -22,7 +22,7 @@ np.random.seed(seed)
 num_experiments = 10
 figuresize=(25, 6)
 loc_cap=11
-run_experiment = 1 # 1: run the experiment, 0: load the data
+run_experiment = 0 # 1: run the experiment, 0: load the data
 mu_A_list = [0.25,0.50,0.75,1.0] #25,0.50,0.75,1
 gamma_list = [2.1,4,6,8,10]
 BATCH=10
@@ -147,7 +147,7 @@ for i, mu_A in enumerate(mu_A_list):
         key = f'rev_{gamma}'
         total_rev = total_avg_data[key]/ scale_factor
         style = style_dict[gamma]
-        ax.plot(total_rev, label=f'$\gamma$ = {gamma}', **style) #, color=color
+        ax.plot(total_rev, label=f'c = {gamma}', **style) #, color=color
         if i == 0:
             ax.set_ylabel(r'Total Revenue', fontsize=fs)
     axes[i].set_xlabel('Iterations', fontsize=fs)
