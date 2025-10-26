@@ -336,10 +336,38 @@ class ddrideshare:
             g2_t = 0.5*z_uber_t
             g1_t_1 = 0.5*z_lyft_t_1
             g2_t_1 = 0.5*z_uber_t_1
+
+            # num_samples = 50  # 采样次数，可调整
+            # grad_samples = []  # 存储梯度样本
+            
+            # for _ in range(num_samples):
+            #     # 采样新的z值
+            #     z_lyft_sample = self.query_env_player(self.x_rr[-1], 0, q_lyft_, locs=None, batch=self.batch_rr)
+            #     z_uber_sample = self.query_env_player(self.x_rr[-1], 1, q_uber_, locs=None, batch=self.batch_rr)
+                
+            #     # 计算参与者1的梯度 (根据损失函数ℓ_i(x_i,z_i) = -z_i^T x_i + α/2||x_i||^2)
+            #     grad_lyft = -z_lyft_sample + alpha * self.x_rr[-1][0]
+                
+            #     # 计算参与者2的梯度
+            #     grad_uber = -z_uber_sample + alpha * self.x_rr[-1][1]
+                
+            #     # 拼接完整梯度向量
+            #     full_grad = np.concatenate([grad_lyft.flatten(), grad_uber.flatten()])
+            #     grad_samples.append(full_grad)
+            
+            # # 计算协方差矩阵
+            # grad_matrix = np.array(grad_samples)  # 形状: (num_samples, gradient_dim)
+            # cov_matrix = np.cov(grad_matrix, rowvar=False)
+            
+            # # 计算最大特征值 (σ_μ)
+            # eigenvalues = np.linalg.eigvalsh(cov_matrix)
+            # sigma_mu = eigenvalues[-1]  # 最大特征值
+
             if (la.norm(self.x_rr[-1][0]-self.x_rr[-2][0]) > 1e-3 or la.norm(self.x_rr[-1][1]-self.x_rr[-2][1]) > 1e-3):
                 epsilon_1 = max(epsilon_1,la.norm(g1_t-g1_t_1)/(la.norm(self.x_rr[-1][0]-self.x_rr[-2][0])+1e-3))
                 epsilon_2 = max(epsilon_2,la.norm(g2_t-g2_t_1)/(la.norm(self.x_rr[-1][1]-self.x_rr[-2][1])+1e-3))
-                alpha = gamma*((epsilon_1**2+epsilon_2**2)**0.5) 
+                sqrt_epsilon = epsilon_1**2+epsilon_2**2
+                alpha = gamma*(sqrt_epsilon**0.5) 
             
             if i == 0 :
                 self.rev_rr_p1=[self.revenue(self.x_rr[-1],0,q_lyft_,price_index=self.price_index_rr)]

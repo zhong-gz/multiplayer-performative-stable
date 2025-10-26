@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 from numpy import linalg as la
 import argparse
 import scipy.linalg  as sla
+from scipy.linalg import eigh
 import seaborn as sns
 from sklearn.linear_model import Ridge
 import random
@@ -134,12 +135,27 @@ for sigma_A in sigma_A_values:
 
                 # for SIRR
                 z1_t_1si,z2_t_1si,theta_t_1si = ddg.distribution_map(x_sirr[-1],th)
+
                 sirr_model_1 = Ridge(alpha = alpha)
                 sirr_model_1.fit(theta_t_1si.T,z1_t_1si,sample_weight=1/m)
                 sirr_model_2 = Ridge(alpha = alpha)
                 sirr_model_2.fit(theta_t_1si.T,z2_t_1si,sample_weight=1/m)
                 x_sirr.append(np.vstack((sirr_model_1.coef_,sirr_model_2.coef_)))
                 sirr_model.append([sirr_model_1,sirr_model_2])
+
+                num_samples = 50  # 采样次数
+                grad_samples = []  # 存储梯度样本
+
+                for _ in range(num_samples):
+                    z1_sample, z2_sample, theta_sample = ddg.distribution_map(x_sirr[-1], th)
+                    g1 = -theta_sample @ (z1_sample - theta_sample.T @ x_sirr[-1][0]) / m
+                    g2 = -theta_sample @ (z2_sample - theta_sample.T @ x_sirr[-1][1]) / m
+                    full_grad = np.concatenate([g1.flatten(), g2.flatten()])
+                    grad_samples.append(full_grad)
+                grad_matrix = np.array(grad_samples)  # 形状: (num_samples, gradient_dim)
+                cov_matrix = np.cov(grad_matrix, rowvar=False)
+                eigenvalues = np.linalg.eigvalsh(cov_matrix)
+                sigma_mu = eigenvalues[-1]  # 最大特征值
 
                 z1_tsi,z2_tsi,theta_tsi = ddg.distribution_map(x_sirr[-1],th)
                 g1_t=-theta_tsi@(z1_tsi-theta_tsi.T@x_sirr[-1][0])/m
@@ -149,7 +165,8 @@ for sigma_A in sigma_A_values:
                 if (la.norm(x_sirr[-1][0]-x_sirr[-2][0]) > 1e-3*d or la.norm(x_sirr[-1][1]-x_sirr[-2][1]) > 1e-3*d):
                     epsilon_1 = max(epsilon_1,la.norm(g1_t-g1_t_1)/(la.norm(x_sirr[-1][0]-x_sirr[-2][0]+1e-3)))
                     epsilon_2 = max(epsilon_2,la.norm(g2_t-g2_t_1)/(la.norm(x_sirr[-1][1]-x_sirr[-2][1]+1e-3)))
-                    alpha = gamma*((epsilon_1**2+epsilon_2**2)**0.5)
+                    sqrt_epsilon = epsilon_1**2+epsilon_2**2
+                    alpha = gamma*sqrt_epsilon**0.5
 
                 # for RR
                 z1_t_1,z2_t_1,theta_t_1 = ddg.distribution_map(x_rr[-1],th)

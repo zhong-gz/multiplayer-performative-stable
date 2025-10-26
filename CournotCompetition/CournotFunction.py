@@ -45,12 +45,46 @@ def runSIRR(z0,data,c,b,c_alg, MAXITER,mu):
     z = np.empty(MAXITER+2)
     z[0] = z0
     eps = 0
+
+    sigma_values = []
+    
     for i in range(MAXITER+1):
         gamma = max(0,eps * np.sqrt(n) * c_alg - b)
         A_mat = np.full((n, n), b)
         np.fill_diagonal(A_mat, A_mat.diagonal() + b + gamma)
         b_vec = -b * q - b * total_q - c + z[i]
         b_vec = b_vec.astype(np.float64)
+
+        # grad_samples = []
+        # num_samples = 100  # 采样次数
+        
+        # for _ in range(num_samples):
+        #     # 采样新的z值
+        #     z_sample = distribution_map(z0, X_rr[:, i], mu, b)
+            
+        #     # 计算梯度向量
+        #     total_x = np.sum(X_rr[:, i])
+        #     total_q = np.sum(q)
+        #     grad_vector = []
+        #     for j in range(n):
+        #         sum_others = b * (total_q - q[j] + total_x - X_rr[j, i])
+        #         grad_j = 2*b*X_rr[j, i] + 2*b*q[j] + sum_others + c - z_sample
+        #         grad_vector.append(grad_j)
+        #     grad_samples.append(np.array(grad_vector))
+        
+        # # 计算协方差和σ_μ
+        # grad_matrix = np.array(grad_samples)
+        # cov_matrix = np.cov(grad_matrix, rowvar=False)
+        # eigenvalues = np.linalg.eigvalsh(cov_matrix)
+        # sigma_mu = eigenvalues[-1]
+        # sigma_values.append(sigma_mu)
+
+        # grad = b * (q + X_rr[:, i]) + b* np.sum(q+X_rr[:, i]) + c - z[i]
+        # cov_matrix = np.cov(grad, rowvar=False)  # n x n 协方差矩阵
+        # eigenvalues = np.linalg.eigvalsh(cov_matrix)
+        # sigma_mu = eigenvalues[-1]  # 最大特征值
+        # sigma_values.append(sigma_mu)
+
         X_rr[:,i+1] = np.linalg.solve(A_mat, b_vec)
 
         z[i+1] = distribution_map(z0, X_rr[:,i+1], mu,b)
