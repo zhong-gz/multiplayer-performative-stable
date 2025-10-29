@@ -9,7 +9,7 @@ import pickle
 from numpy import linalg as la
 from tqdm import tqdm, trange
 from scipy.special import expit
-
+import time
 
 ### Utility Functions
 
@@ -322,7 +322,11 @@ class ddrideshare:
         epsilon_2 = 0
         count = 0
 
+        iteration_times = []  # 记录每次迭代的时间
+
         for i in range(self.maxiter_rr+1):
+            iteration_start = time.time()  # 记录迭代开始时间
+
             z_lyft_t_1=self.query_env_player(self.x_rr[-1],0,q_lyft_,locs=None,batch=self.batch_rr)
             z_uber_t_1=self.query_env_player(self.x_rr[-1],1,q_uber_,locs=None,batch=self.batch_rr)
 
@@ -387,6 +391,9 @@ class ddrideshare:
                 self.demand_rr_p2.append(self.demand(self.x_rr[-1],1,q_uber_))
                 self.loss_rr_p1.append(self.loss(self.x_rr[-1],0,q_lyft_))
                 self.loss_rr_p2.append(self.loss(self.x_rr[-1],1,q_uber_))
+            
+            iteration_time = time.time() - iteration_start
+            iteration_times.append(iteration_time)
         if RETURN:
             dic={}
             dic['x']=self.x_rr
@@ -398,6 +405,7 @@ class ddrideshare:
             dic['revenue_by_loc_p2']=np.asarray(self.rev_rr_p2_loc)
             dic['demand_p1']=np.asarray(self.demand_rr_p1)
             dic['demand_p2']=np.asarray(self.demand_rr_p2)
+            dic['iteration_times']=iteration_times
             return dic
         
     def runSGD(self,x0,price_index=0,eta=0.001,BATCH=10,MAXITER=1000, verbose=False, perform_sgd=[True,True], RETURN=True, MYOPIC=False, tot_rev=1):
@@ -627,8 +635,12 @@ class ddrideshare:
         self.demand_agd_p2=[self.demand(self.x_agd[-1],1,self.z2_base)]
         self.loss_agd_p1=[self.loss(self.x_agd[-1],0,self.z1_base)]
         self.loss_agd_p2=[self.loss(self.x_agd[-1],1,self.z2_base)]
+
+        iteration_times = []  # 记录每次迭代的时间
         
         for i in range(self.maxiter_agd):
+            iteration_start = time.time()  # 记录迭代开始时间
+
             z1=self.D_z(self.z1_base, batch=self.batch_agd)
             z2=self.D_z(self.z2_base,batch=self.batch_agd)
             a = 2
@@ -648,6 +660,9 @@ class ddrideshare:
             self.demand_agd_p2.append(self.demand(self.x_agd[-1],1,self.z2_base))
             self.loss_agd_p1.append(self.loss(self.x_agd[-1],0,self.z1_base))
             self.loss_agd_p2.append(self.loss(self.x_agd[-1],1,self.z2_base))
+
+            iteration_time = time.time() - iteration_start
+            iteration_times.append(iteration_time)
         if RETURN:
             dic={}
             dic['x']=self.x_agd
@@ -663,6 +678,7 @@ class ddrideshare:
             dic['revenue_by_loc_p2']=np.asarray(self.rev_agd_p2_loc)
             dic['demand_p1']=np.asarray(self.demand_agd_p1)
             dic['demand_p2']=np.asarray(self.demand_agd_p2)
+            dic['iteration_times']=iteration_times
             return dic
         
     def runOPGD(self,x0,price_index=0,eta=0.001,BATCH=10,MAXITER=1000, verbose=False, perform_opgd=[True,True], RETURN=True, INNERITER=1, B=1, UNCORR=False,tot_rev=1):
@@ -691,8 +707,11 @@ class ddrideshare:
         self.demand_opgd_p2=[self.demand(self.x_opgd[-1],1,self.z2_base)]
         self.loss_opgd_p1=[self.loss(self.x_opgd[-1],0,self.z1_base)]
         self.loss_opgd_p2=[self.loss(self.x_opgd[-1],1,self.z2_base)]
+        iteration_times = []  # 记录每次迭代的时间
 
         for i in range(self.maxiter_opgd):
+            iteration_start = time.time()  # 记录迭代开始时间
+
             z1=self.D_z(self.z1_base, batch=self.batch_opgd)
             z2=self.D_z(self.z2_base,batch=self.batch_opgd)
             self.x_opgd.append(self.proj(self.x_opgd[-1]-self.stepsize_opgd*(6/(10+i))*self.getgrad_opgd(self.x_opgd[-1], z1, z2)))
@@ -708,6 +727,9 @@ class ddrideshare:
             self.demand_opgd_p2.append(self.demand(self.x_opgd[-1],1,self.z2_base))
             self.loss_opgd_p1.append(self.loss(self.x_opgd[-1],0,self.z1_base))
             self.loss_opgd_p2.append(self.loss(self.x_opgd[-1],1,self.z2_base))
+
+            iteration_time = time.time() - iteration_start
+            iteration_times.append(iteration_time)
         if RETURN:
             dic={}
             dic['x']=self.x_opgd
@@ -721,6 +743,7 @@ class ddrideshare:
             dic['revenue_by_loc_p2']=np.asarray(self.rev_opgd_p2_loc)
             dic['demand_p1']=np.asarray(self.demand_opgd_p1)
             dic['demand_p2']=np.asarray(self.demand_opgd_p2)
+            dic['iteration_times']=iteration_times
             return dic
         
     def update_estimate_opgd(self,x, z1_, z2_, v_t = 1):
@@ -780,8 +803,9 @@ class ddrideshare:
         self.demand_rgd_p2=[self.demand(self.x_rgd[-1],1,q_uber_)]
         self.loss_rgd_p1=[self.loss(self.x_rgd[-1],0,q_lyft_)]
         self.loss_rgd_p2=[self.loss(self.x_rgd[-1],1,q_uber_)]
-        
+        iteration_times = []  # 记录每次迭代的时间
         for i in range(self.maxiter_rgd):
+            iteration_start = time.time()  # 记录迭代开始时间
             z1_=self.query_env_player(self.x_rgd[-1], 0,q_lyft_)
             z2_=self.query_env_player(self.x_rgd[-1], 1,q_uber_)
             self.x_rgd.append(self.proj(self.x_rgd[-1]-self.stepsize_rgd*self.gradRGD(self.x_rgd[-1],z1_,z2_)))
@@ -794,6 +818,9 @@ class ddrideshare:
             self.demand_rgd_p2.append(self.demand(self.x_rgd[-1],1,q_uber_))
             self.loss_rgd_p1.append(self.loss(self.x_rgd[-1],0,q_lyft_))
             self.loss_rgd_p2.append(self.loss(self.x_rgd[-1],1,q_uber_))
+
+            iteration_time = time.time() - iteration_start
+            iteration_times.append(iteration_time)
             
         if RETURN:
             dic={}
@@ -806,6 +833,7 @@ class ddrideshare:
             dic['revenue_by_loc_p2']=np.asarray(self.rev_rgd_p2_loc)
             dic['demand_p1']=np.asarray(self.demand_rgd_p1)
             dic['demand_p2']=np.asarray(self.demand_rgd_p2)
+            dic['iteration_times']=iteration_times
             return dic
         
     def runSFB(self,x0,price_index=0,eta=0.001,BATCH=10,MAXITER=1000, verbose=False, RETURN=True,tot_rev=1):
@@ -836,7 +864,9 @@ class ddrideshare:
         self.loss_rgd_p1=[self.loss(self.x_rgd[-1],0,q_lyft_)]
         self.loss_rgd_p2=[self.loss(self.x_rgd[-1],1,q_uber_)]
         
+        iteration_times = []  # 记录每次迭代的时间
         for i in range(self.maxiter_rgd):
+            iteration_start = time.time()  # 记录迭代开始时间
             z1_=self.query_env_player(self.x_rgd[-1], 0,q_lyft_)
             z2_=self.query_env_player(self.x_rgd[-1], 1,q_uber_)
             self.x_rgd.append(self.proj(self.x_rgd[-1]-(self.stepsize_rgd*(i+1)**(-3/4))*self.gradRGD(self.x_rgd[-1],z1_,z2_)))
@@ -850,6 +880,8 @@ class ddrideshare:
             self.loss_rgd_p1.append(self.loss(self.x_rgd[-1],0,q_lyft_))
             self.loss_rgd_p2.append(self.loss(self.x_rgd[-1],1,q_uber_))
             
+            iteration_time = time.time() - iteration_start
+            iteration_times.append(iteration_time)
         if RETURN:
             dic={}
             dic['x']=self.x_rgd
@@ -861,6 +893,7 @@ class ddrideshare:
             dic['revenue_by_loc_p2']=np.asarray(self.rev_rgd_p2_loc)
             dic['demand_p1']=np.asarray(self.demand_rgd_p1)
             dic['demand_p2']=np.asarray(self.demand_rgd_p2)
+            dic['iteration_times']=iteration_times
             return dic
     
     def get_dataframe_for_plot(self,rev_ig_p1, rev_ig_p2, demand_ig_p1, demand_ig_p2, rev_ig_p1_loc, rev_ig_p2_loc,

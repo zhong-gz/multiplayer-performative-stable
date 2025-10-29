@@ -13,7 +13,7 @@ sys.path.insert(1,'./utils/' )
 from utilsrm import *
 import time
 
-start_time = time.time()
+start_time_total = time.time()
 
 ## Initialize the game class and set the random seed and initial point
 # seed 
@@ -27,8 +27,8 @@ run_experiment = 1 # 1: run the experiment, 0: load the data
 mu_A_list = [0.25,0.50,0.75,1.0] #25,0.50,0.75,1
 subrange = 26
 gamma = 2.1
-BATCH=10
-MAXITER=1000
+BATCH=10 
+MAXITER=1000 #1000
 tot_rev=1
 
 # 不同的模型
@@ -56,6 +56,10 @@ company_styles = {
 all_mu_A_data = {}
 total_revenue_stats = []
 all_mu_A_data_path = 'ride_share/data/all_mu_A_data.npy'
+
+all_mu_A_time = {}  # 存储运行时间
+time_data_path = 'ride_share/data/all_mu_A_time.npy'
+
 if run_experiment:
     for mu_A in mu_A_list:
         print('Runing at mu_A',mu_A)
@@ -63,6 +67,10 @@ if run_experiment:
         total_avg_data = {}
         total_var_data = {}
         all_p_data = {}
+
+        # 初始化时间记录结构
+        time_data = {model: [] for model in models}  # 每个模型的时间列表
+
         for p in [0,1,2,3,4]:  #,1,2,3,4
             print('  Runing at price_index',p)
             price_index = p
@@ -88,14 +96,44 @@ if run_experiment:
                 ddgame=ddrideshare(loc_lst_index,price_lst_index,seed=2,lam=[0.0,0.0], base=False, params=params,maxx=10)
                 ddgame.setup_distribution()
 
-                # run all cases
+                # # run all cases
+                # dic_data = []
+                # dic_data.append(ddgame.runSIRR(gamma = gamma,price_index=price_index,BATCH=BATCH,MAXITER=MAXITER,tot_rev=tot_rev))
+                # dic_data.append(ddgame.runRR(price_index=price_index,BATCH=BATCH,MAXITER=MAXITER,tot_rev=tot_rev))
+                # dic_data.append(ddgame.runRGD(x0,eta=eta,price_index=price_index,BATCH=BATCH,MAXITER=MAXITER,tot_rev=tot_rev))
+                # dic_data.append(ddgame.runSFB(x0,price_index=price_index,eta=eta,BATCH=BATCH,MAXITER=MAXITER,tot_rev=tot_rev))
+                # dic_data.append(ddgame.runAGD(x0,eta=eta,price_index=price_index,BATCH=BATCH,MAXITER=MAXITER,tot_rev=tot_rev))
+                # dic_data.append(ddgame.runOPGD(x0,price_index=price_index,eta=eta,BATCH=BATCH,MAXITER=MAXITER,tot_rev=tot_rev))
+
+                # 运行所有案例
                 dic_data = []
-                dic_data.append(ddgame.runSIRR(gamma = gamma,price_index=price_index,BATCH=BATCH,MAXITER=MAXITER,tot_rev=tot_rev))
-                dic_data.append(ddgame.runRR(price_index=price_index,BATCH=BATCH,MAXITER=MAXITER,tot_rev=tot_rev))
-                dic_data.append(ddgame.runRGD(x0,eta=eta,price_index=price_index,BATCH=BATCH,MAXITER=MAXITER,tot_rev=tot_rev))
-                dic_data.append(ddgame.runSFB(x0,price_index=price_index,eta=eta,BATCH=BATCH,MAXITER=MAXITER,tot_rev=tot_rev))
-                dic_data.append(ddgame.runAGD(x0,eta=eta,price_index=price_index,BATCH=BATCH,MAXITER=MAXITER,tot_rev=tot_rev))
-                dic_data.append(ddgame.runOPGD(x0,price_index=price_index,eta=eta,BATCH=BATCH,MAXITER=MAXITER,tot_rev=tot_rev))
+                iteration_time_data = {model: [] for model in models}  # 记录每个算法的每次迭代时间
+                
+                # 定义算法运行器
+                algorithms = [
+                    (ddgame.runSIRR, {'gamma': gamma, 'price_index': price_index, 'BATCH': BATCH, 'MAXITER': MAXITER, 'tot_rev': tot_rev}),
+                    (ddgame.runRR, {'price_index': price_index, 'BATCH': BATCH, 'MAXITER': MAXITER, 'tot_rev': tot_rev}),
+                    (ddgame.runRGD, {'x0': x0, 'eta': eta, 'price_index': price_index, 'BATCH': BATCH, 'MAXITER': MAXITER, 'tot_rev': tot_rev}),
+                    (ddgame.runSFB, {'x0': x0, 'price_index': price_index, 'eta': eta, 'BATCH': BATCH, 'MAXITER': MAXITER, 'tot_rev': tot_rev}),
+                    (ddgame.runAGD, {'x0': x0, 'eta': eta, 'price_index': price_index, 'BATCH': BATCH, 'MAXITER': MAXITER, 'tot_rev': tot_rev}),
+                    (ddgame.runOPGD, {'x0': x0, 'price_index': price_index, 'eta': eta, 'BATCH': BATCH, 'MAXITER': MAXITER, 'tot_rev': tot_rev})
+                ]
+                
+                for (method, kwargs), model in zip(algorithms, models):
+                    # 运行算法
+                    result = method(**kwargs)
+                    dic_data.append(result)
+                    
+                    # 提取迭代时间数据
+                    if 'iteration_times' in result:
+                        iteration_time_data[model] = result['iteration_times']
+                
+                # 保存时间数据到all_data
+                for model, times in iteration_time_data.items():
+                    all_data[num_exper][f'iteration_times_{model}'] = times
+                    # 计算累计时间
+                    cumulative_times = np.cumsum(times)
+                    all_data[num_exper][f'cumulative_times_{model}'] = cumulative_times
 
                 for model, dic in zip(models, dic_data):
                     # 从字典中获取 x 数据
@@ -116,6 +154,9 @@ if run_experiment:
 
             avg_data = {}
             var_data = {}  # 新增一个字典来存储方差
+            time_data = {}  # 存储时间数据
+            cumulative_time_data = {}  # 存储累计时间数据
+
             for model in models:
                 for company in companies:
                     for info_type in info_types:
@@ -125,10 +166,23 @@ if run_experiment:
                         avg_data[key] = np.mean(all_values_arr, axis=0)
                         var_data[key] = np.var(all_values_arr, axis=0)  # 计算方差
 
+                # 处理时间数据
+                time_key = f'iteration_times_{model}'
+                cumulative_time_key = f'cumulative_times_{model}'
+                
+                if time_key in all_data[0]:  # 检查是否有时间数据
+                    all_times = [all_data[num_exper][time_key] for num_exper in range(num_experiments)]
+                    all_cumulative_times = [all_data[num_exper][cumulative_time_key] for num_exper in range(num_experiments)]
+                    
+                    time_data[model] = all_times
+                    cumulative_time_data[model] = all_cumulative_times
+
             # 为当前p值创建一个结果字典，包含avg_data和var_data
             p_result = {
                 'avg': avg_data,
-                'var': var_data
+                'var': var_data,
+                'time': time_data,
+                'cumulative_times': cumulative_time_data  # 添加累计时间数据
             }
             
             # 将当前p值的结果存入主字典
@@ -147,10 +201,16 @@ if run_experiment:
                     total_var_data[key] = value.copy()
 
         all_mu_A_data[mu_A] = {'avg': total_avg_data, 'var': total_var_data,'p_data': all_p_data}  
+
+        # 存储时间数据
+        all_mu_A_time[mu_A] = time_data
+
         # 嵌套结构：all_mu_A_data[mu_A]['p_data'][p]['avg/var']}
+    np.save(time_data_path, all_mu_A_time)
     np.save(all_mu_A_data_path, all_mu_A_data)
 else:
     all_mu_A_data = np.load(all_mu_A_data_path, allow_pickle=True).item()
+    all_mu_A_time = np.load(time_data_path, allow_pickle=True).item()
 
 ## Plotting variance
 info_type = 'total_revenue'
@@ -512,7 +572,142 @@ pivot_df = df.pivot(index='model', columns='mu_A', values='total_revenue')
 pivot_df = pivot_df.reindex(models)
 pivot_df.to_excel('ride_share/figs/total_revenue.xlsx')
 
+def plot_time_vs_total_revenue(mu_A_list, figuresize=(25, 6)):
+    """绘制运行时间与总收益的对比图"""
+    fig, axes = plt.subplots(1, len(mu_A_list), figsize=figuresize)
+    if len(mu_A_list) == 1:
+        axes = [axes]
+    
+    handles = []
+    labels = []
+
+    all_y_data = []
+    for i, mu_A in enumerate(mu_A_list):
+        total_avg_data = all_mu_A_data[mu_A]['avg']
+        for model in models:    
+            key1 = f'{info_types[1]}_{model}_{companies[0]}'
+            key2 = f'{info_types[1]}_{model}_{companies[1]}'
+            all_y_data.extend(total_avg_data[key1] + total_avg_data[key2])
+    all_y_data = np.array(all_y_data)
+    if np.allclose(all_y_data, 0):
+        power = 0
+    else:
+        power = int(np.floor(np.log10(np.max(np.abs(all_y_data)))))
+    scale_factor = 10 ** power
+
+    y_min = 0 #min(all_y_data)/ scale_factor
+    y_max = max(all_y_data)/ scale_factor +0.1
+    
+    for i, mu_A in enumerate(mu_A_list):
+        # 获取当前mu_A的数据
+        mu_data = all_mu_A_data[mu_A]
+        time_data = all_mu_A_time[mu_A]  # 从正确的位置获取时间数据
+        
+        # 收集所有模型的时间-性能数据
+        time_performance_data = {model: {'times': [], 'performance': []} for model in models}
+        
+        for model in models:
+            if model in time_data and time_data[model]:
+                # 获取时间数据
+                all_times = time_data[model]
+                
+                # 计算平均累计时间
+                if all_times and len(all_times[0]) > 0:
+                    # 找到最小长度
+                    min_length = min(len(times) for times in all_times)
+                    
+                    # 截取相同长度的序列并计算平均累计时间
+                    truncated_times = [np.cumsum(times[:min_length]) for times in all_times]
+                    avg_times = np.mean(truncated_times, axis=0)
+                    
+                    # 获取性能数据（总收益）
+                    key1 = f'rev_{model}_{companies[0]}'
+                    key2 = f'rev_{model}_{companies[1]}'
+                    if key1 in mu_data['avg'] and key2 in mu_data['avg']:
+                        performance = (mu_data['avg'][key1] + mu_data['avg'][key2]) / scale_factor
+
+                        # 确保时间序列和性能序列长度一致
+                        min_len = min(len(avg_times), len(performance))
+                        avg_times = avg_times[:min_len]
+                        performance = performance[:min_len]
+                        
+                        time_performance_data[model]['times'] = avg_times
+                        time_performance_data[model]['performance'] = performance
+        
+        # 找到最快方法的最终时间
+        min_final_time = float('inf')
+        fastest_model = None
+        
+        for model in models:
+            # 修复条件判断：检查数组是否存在且有元素
+            if (model in time_performance_data and 
+                'times' in time_performance_data[model] and 
+                len(time_performance_data[model]['times']) > 0):
+                final_time = time_performance_data[model]['times'][-1]
+                if final_time < min_final_time:
+                    min_final_time = final_time
+                    fastest_model = model
+        
+        # 对齐起点：将每个方法的时间序列减去其第一个时间点
+        for model in models:
+            if len(time_performance_data[model]['times']) > 0:
+                # 获取第一个时间点（即第一次迭代的运行时间）
+                first_time = time_performance_data[model]['times'][0]
+                # 将整个时间序列减去第一个时间点，使起点对齐在0
+                time_performance_data[model]['times'] = time_performance_data[model]['times'] - first_time
+
+        # 绘制曲线
+        for model in models:
+            # 修复条件判断：检查数组是否存在且有元素
+            if (model in time_performance_data and 
+                'times' in time_performance_data[model] and 
+                'performance' in time_performance_data[model] and 
+                len(time_performance_data[model]['times']) > 0 and 
+                len(time_performance_data[model]['performance']) > 0):
+                
+                # 获取样式
+                style = style_dict[model]
+                
+                # 绘制主曲线
+                line, = axes[i].plot(time_performance_data[model]['times'], 
+                                   time_performance_data[model]['performance'], 
+                                   label=model, **style)
+                
+                if i == 0:
+                    handles.append(line)
+                    labels.append(model)
+        
+        axes[i].set_title(f'$\mu_A = {mu_A}$', fontsize=fs)
+        axes[i].set_xlabel('Running Time', fontsize=fs)
+        if i == 0:
+            axes[i].set_ylabel('Total Revenue', fontsize=fs)
+        axes[i].tick_params(labelsize=fs*0.7)
+        axes[i].grid(True)
+        axes[i].set_ylim(y_min, y_max)
+        axes[i].text(-0.1, 1.11, f'$\\times 10^{power}$', transform=axes[i].transAxes, fontsize=fs*0.7, verticalalignment='top')
+        # 设置x轴范围，如果有最快模型的话
+        if fastest_model:
+            axes[i].set_xlim(0, 0.04)
+    
+    # 添加图例
+    if handles:
+        fig.legend(handles, labels, loc='lower center', ncol=len(models), 
+                   fontsize=fs-2) #, bbox_to_anchor=(0.5, -0.05))
+    
+    # plt.tight_layout(rect=[0, 0.05, 1, 0.95])
+    plt.tight_layout(rect=[0, 0.21, 1, 1])
+    
+    # 保存图片
+    save_path = 'ride_share/figs/time_vs_total_revenue_ride_share.pdf'
+    plt.savefig(save_path, bbox_inches='tight')
+    print(f"Time vs Total Revenue figure saved to {save_path}")
+    
+    return fig, axes
+
+# 调用修复后的函数
+plot_time_vs_total_revenue(mu_A_list)
+
 end_time = time.time()  # 记录结束时间
-execution_time = end_time - start_time  # 计算耗时（秒）
+execution_time = end_time - start_time_total  # 计算耗时（秒）
 
 print(f"The time of this code need to run: {execution_time:.4f} seconds")

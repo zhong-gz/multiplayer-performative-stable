@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+import time
 
 def read_data(path = 'CournotCompetition/Global Crude Petroleum Trade 1995-2021.csv'):
     df = pd.read_csv(path)
@@ -47,8 +48,10 @@ def runSIRR(z0,data,c,b,c_alg, MAXITER,mu):
     eps = 0
 
     sigma_values = []
+    iteration_times = []
     
     for i in range(MAXITER+1):
+        start_time = time.time()
         gamma = max(0,eps * np.sqrt(n) * c_alg - b)
         A_mat = np.full((n, n), b)
         np.fill_diagonal(A_mat, A_mat.diagonal() + b + gamma)
@@ -92,11 +95,16 @@ def runSIRR(z0,data,c,b,c_alg, MAXITER,mu):
         if np.linalg.norm(X_rr[:, i+1] - X_rr[:, i]) > n*1e3: # average adjustment larger than 1e3 barrel than we consider it as adjustment rather than noise
             eps = max(eps,np.abs(z[i+1] - z[i])/np.linalg.norm(X_rr[:, i+1] - X_rr[:, i]))
 
+        end_time = time.time()
+        iteration_times.append(end_time - start_time)
+
     dic={}
     dic['x']=X_rr[:, 1:-1]
     dic['quantity_total']= np.sum(q[:, np.newaxis]+X_rr[:, 1:-1], axis=0)
     dic['revenue_total']=  np.sum(q[:, np.newaxis]+X_rr[:, 1:-1], axis=0) * (z[1:-1] - b*np.sum(q[:, np.newaxis]+X_rr[:, 1:-1], axis=0)) - c * np.sum(q[:, np.newaxis]+X_rr[:, 1:-1], axis=0)
     dic['price']= (z[1:-1] - b*np.sum(q[:, np.newaxis]+X_rr[:, 1:-1], axis=0))
+    dic['sigma_values']= sigma_values
+    dic['iteration_times']= iteration_times
 
     return dic
 
@@ -109,19 +117,25 @@ def runRR(z0,data,c,b, MAXITER,mu):
     X_rr[:, 0] = 0
     z = np.empty(MAXITER+2)
     z[0] = z0
+    eps = 0
+    iteration_times = []
     for i in range(MAXITER+1):
+        start_time = time.time()
         A_mat = np.full((n, n), b)
         np.fill_diagonal(A_mat, A_mat.diagonal() + b + gamma)
         b_vec = -b * q - b * total_q - c + z[i]
         b_vec = b_vec.astype(np.float64)
         X_rr[:,i+1] = np.linalg.solve(A_mat, b_vec)
         z[i+1] = distribution_map(z0, X_rr[:,i+1], mu,b)
+        end_time = time.time()
+        iteration_times.append(end_time - start_time)
 
     dic={}
     dic['x']=X_rr[:, 1:-1]
     dic['quantity_total']= np.sum(q[:, np.newaxis]+X_rr[:, 1:-1], axis=0)
     dic['revenue_total']= np.sum((q[:, np.newaxis]+X_rr[:, 1:-1]), axis=0) * (z[1:-1] - b*np.sum((q[:, np.newaxis]+X_rr[:, 1:-1]), axis=0)) - c * np.sum((q[:, np.newaxis]+X_rr[:, 1:-1]), axis=0)
     dic['price']= (z[1:-1] - b*np.sum((q[:, np.newaxis]+X_rr[:, 1:-1]), axis=0))
+    dic['iteration_times']= iteration_times
 
     return dic
 
@@ -132,17 +146,20 @@ def runRGD(z0,data,c,b, MAXITER,mu,eta,x0):
     X_rg[:, 0] = x0
     z = np.empty(MAXITER+2)
     z[0] = z0
+    iteration_times = []
     for i in range(MAXITER+1):
+        start_time = time.time()
         grad = b * (q + X_rg[:, i]) + b* np.sum(q+X_rg[:, i]) + c - z[i]
         X_rg[:, i+1] = X_rg[:, i] - eta * grad/b
         z[i+1] = distribution_map(z0, X_rg[:,i+1], mu,b)
-
+        end_time = time.time()
+        iteration_times.append(end_time - start_time)
     dic={}
     dic['x']=X_rg[:, 1:-1]
     dic['quantity_total']= np.sum(q[:, np.newaxis]+X_rg[:, 1:-1], axis=0)
     dic['revenue_total']= np.sum((q[:, np.newaxis]+X_rg[:, 1:-1]), axis=0) * (z[1:-1] - b*np.sum((q[:, np.newaxis]+X_rg[:, 1:-1]), axis=0)) - c * np.sum((q[:, np.newaxis]+X_rg[:, 1:-1]), axis=0)
     dic['price']= (z[1:-1] - b*np.sum((q[:, np.newaxis]+X_rg[:, 1:-1]), axis=0))
-
+    dic['iteration_times']= iteration_times
     return dic
 
 def runSFB(z0,data,c,b, MAXITER,mu,eta,x0):
@@ -152,17 +169,21 @@ def runSFB(z0,data,c,b, MAXITER,mu,eta,x0):
     X_rg[:, 0] = x0
     z = np.empty(MAXITER+2)
     z[0] = z0
+    iteration_times = []
     for i in range(MAXITER+1):
+        start_time = time.time()
         grad = b * (q + X_rg[:, i]) + b* np.sum(q+X_rg[:, i]) + c - z[i]
         X_rg[:, i+1] = X_rg[:, i] - 5*(eta*(i+1)**(-3/4)) * grad/b
         z[i+1] = distribution_map(z0, X_rg[:,i+1], mu,b)
+        end_time = time.time()
+        iteration_times.append(end_time - start_time)
 
     dic={}
     dic['x']=X_rg[:, 1:-1]
     dic['quantity_total']= np.sum(q[:, np.newaxis]+X_rg[:, 1:-1], axis=0)
     dic['revenue_total']= np.sum((q[:, np.newaxis]+X_rg[:, 1:-1]), axis=0) * (z[1:-1] - b*np.sum((q[:, np.newaxis]+X_rg[:, 1:-1]), axis=0)) - c * np.sum((q[:, np.newaxis]+X_rg[:, 1:-1]), axis=0)
     dic['price']= (z[1:-1] - b*np.sum((q[:, np.newaxis]+X_rg[:, 1:-1]), axis=0))
-
+    dic['iteration_times']= iteration_times
     return dic
 
 def runAGM(z0,data,c,b, MAXITER,mu,eta,x0):
@@ -173,20 +194,24 @@ def runAGM(z0,data,c,b, MAXITER,mu,eta,x0):
     z = np.empty(MAXITER+2)
     z[0] = z0
     A = np.random.rand(1)*b
+    iteration_times = []
     for i in range(MAXITER+1):
+        start_time = time.time()
         grad = b * (q + X_ag[:, i]) + b* np.sum(q+X_ag[:, i]) + c - z[i] - A *(q+ X_ag[:, i])
         X_ag[:, i+1] = X_ag[:, i] - (eta * grad/b)*0.1
         if i > 0:
             for j in range(10): #update A 10 times
                 A = update_estimate(A,X_ag[:,i],z0,n, mu,b,z[i])
+        
         z[i+1] = distribution_map(z0, X_ag[:,i+1], mu,b)
-
+        end_time = time.time()
+        iteration_times.append(end_time - start_time)
     dic={}
     dic['x']=X_ag[:, 1:-1]
     dic['quantity_total']= np.sum(q[:, np.newaxis]+X_ag[:, 1:-1], axis=0)
     dic['revenue_total']= np.sum((q[:, np.newaxis]+X_ag[:, 1:-1]), axis=0) * (z[1:-1] - b*np.sum((q[:, np.newaxis]+X_ag[:, 1:-1]), axis=0)) - c * np.sum((q[:, np.newaxis]+X_ag[:, 1:-1]), axis=0)
     dic['price']= (z[1:-1] - b*np.sum((q[:, np.newaxis]+X_ag[:, 1:-1]), axis=0))
-
+    dic['iteration_times']= iteration_times
     return dic
 
 def update_estimate(A,x,z0,n, mu,b,zt):
@@ -209,19 +234,23 @@ def runOPGD(z0,data,c,b, MAXITER,mu,eta,x0):
     z = np.empty(MAXITER+2)
     z[0] = z0
     A = np.random.rand(1)*b
+    iteration_times = []
     for i in range(MAXITER+1):
+        start_time = time.time()
         grad = b * (q + X_ag[:, i]) + b* np.sum(q+X_ag[:, i]) + c - z[i] - A *(q+ X_ag[:, i])
         X_ag[:, i+1] = X_ag[:, i] - (eta *(6/(10+i))* grad/b)
         if i > 0:
             for j in range(10): #update A 10 times
                 A = update_estimate_OPGD(A,z0,n, mu,b)
         z[i+1] = distribution_map(z0, X_ag[:,i+1], mu,b)
-
+        end_time = time.time()
+        iteration_times.append(end_time - start_time)
     dic={}
     dic['x']=X_ag[:, 1:-1]
     dic['quantity_total']= np.sum(q[:, np.newaxis]+X_ag[:, 1:-1], axis=0)
     dic['revenue_total']= np.sum((q[:, np.newaxis]+X_ag[:, 1:-1]), axis=0) * (z[1:-1] - b*np.sum((q[:, np.newaxis]+X_ag[:, 1:-1]), axis=0)) - c * np.sum((q[:, np.newaxis]+X_ag[:, 1:-1]), axis=0)
     dic['price']= (z[1:-1] - b*np.sum((q[:, np.newaxis]+X_ag[:, 1:-1]), axis=0))
+    dic['iteration_times']= iteration_times
     return dic
 
 def update_estimate_OPGD(A,z0,n, mu,b):

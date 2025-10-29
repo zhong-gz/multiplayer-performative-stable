@@ -18,7 +18,166 @@ from utilssp_vector_map import *
 
 import time
 
-start_time = time.time()
+def plot_time_comparison(sigma_A_values, figuresize=(25, 5)):
+    """绘制运行时间对比图（以最快方法为横轴基准）"""
+    fig, axes = plt.subplots(1, len(sigma_A_values), figsize=figuresize)
+    if len(sigma_A_values) == 1:
+        axes = [axes]
+    
+    handles = []
+    labels = []
+    
+    for i, sigma_A in enumerate(sigma_A_values):
+        sigma_AC = sum_A_AC - sigma_A
+        sigma_C = sigma_A / n
+        filepath = 'multi_regression/figs_' + str(MAXITER) + '/'
+        file_name_npy = filepath + 'sig_A_' + str(sigma_A) + '_sigma_AC_' + str(sigma_AC) + '_m_' + str(m) + '_sigma_C_' + str(sigma_C) + '.npz'
+        
+        try:
+            all_data = np.load(file_name_npy, allow_pickle=True)['all_data'].item()
+        except:
+            print(f"file {file_name_npy} not found, skipping...")
+            continue
+            
+        # 收集所有种子的时间和误差数据
+        time_data = {model: [] for model in ['agd', 'rgd', 'sfb', 'opgd', 'rr', 'sirr']}
+        error_data = {model: [] for model in ['agd', 'rgd', 'sfb', 'opgd', 'rr', 'sirr']}
+        
+        for seed in seeds:
+            for model in time_data.keys():
+                if f'time_{model}' in all_data[seed] and f'error_{model}' in all_data[seed]:
+                    # 获取累计时间序列（已经是累计时间）
+                    cumulative_times = all_data[seed][f'time_{model}']
+                    # 确保时间序列长度与误差序列一致
+                    errors = all_data[seed][f'error_{model}']
+                    
+                    # 在时间序列前添加0（第0次迭代的时间为0）
+                    # 确保所有方法的时间序列都从0开始
+                    if len(cumulative_times) == len(errors) - 1:
+                        # 时间序列比误差序列少1个点，需要添加0
+                        cumulative_times = np.concatenate(([0], cumulative_times))
+                    elif len(cumulative_times) == len(errors):
+                        # 时间序列和误差序列长度相同，不需要添加
+                        pass
+                    else:
+                        # 长度不匹配，使用最短长度
+                        min_len = min(len(cumulative_times), len(errors))
+                        cumulative_times = cumulative_times[:min_len]
+                        errors = errors[:min_len]
+                    
+                    time_data[model].append(cumulative_times)
+                    error_data[model].append(errors)
+        
+        # 计算均值和方差
+        time_means = {}
+        error_means = {}
+        time_vars = {}
+        error_vars = {}
+        
+        # 找到最快方法的最终时间
+        min_final_time = float('inf')
+        fastest_model = None
+        # 在绘图之前添加：收集所有y轴数据
+        all_y_data = []
+
+        # 在计算每个模型的均值和方差后，收集y轴数据
+        for model in time_means.keys():
+            if model in error_means and len(error_means[model]) > 0:
+                all_y_data.extend(error_means[model])
+
+        # 计算y轴的最小值和最大值，并留出一些边距
+        if all_y_data:
+            y_min = np.min(all_y_data) * 0.8  # 留出20%的边距
+            y_max = np.max(all_y_data) * 1.2  # 留出20%的边距
+            
+            # 确保y_min不为0（对数坐标需要正数）
+            if y_min <= 0:
+                y_min = np.min(all_y_data[all_y_data > 0]) * 0.5 if np.any(all_y_data > 0) else 0.1
+            
+            # 为每个子图设置统一的y轴范围
+            for ax in axes:
+                ax.set_ylim(y_min, y_max)
+
+        
+        for model in time_data.keys():
+            if time_data[model] and len(time_data[model][0]) > 0:
+                # 找到所有序列的最小长度
+                min_length = min(len(t) for t in time_data[model])
+                min_length = min(min_length, min(len(e) for e in error_data[model]))
+                
+                # 截取相同长度的序列
+                time_truncated = [t[:min_length] for t in time_data[model]]
+                error_truncated = [e[:min_length] for e in error_data[model]]
+                
+                # 计算均值和方差
+                time_means[model] = np.mean(time_truncated, axis=0)
+                error_means[model] = np.mean(error_truncated, axis=0)
+                time_vars[model] = np.var(time_truncated, axis=0)
+                error_vars[model] = np.var(error_truncated, axis=0)
+                
+                # 检查是否为最快方法
+                final_time = time_means[model][-1]
+                if final_time < min_final_time:
+                    min_final_time = final_time
+                    fastest_model = model
+        
+        # 对齐起点：将每个方法的时间序列减去其第一个时间点
+        time_means_aligned = {}
+        for model in time_means.keys():
+            if len(time_means[model]) > 0:
+                # 获取第一个时间点（即第一次迭代的运行时间）
+                first_time = time_means[model][0]
+                # 将整个时间序列减去第一个时间点，使起点对齐在0
+                time_means_aligned[model] = time_means[model] - first_time
+        
+        # 绘制曲线
+        models_plot = ['sirr', 'rr', 'rgd', 'sfb', 'agd', 'opgd']
+        model_names = ['SIR$^2$', 'RR', 'RGD', 'SFB', 'AGM', 'OPGD']
+        
+        for j, model in enumerate(models_plot):
+            if model in time_means_aligned and len(time_means_aligned[model]) > 0:
+                # 获取样式
+                style = style_dict[model_names[j]]
+                
+                # 绘制主曲线（使用对齐后的时间）
+                line, = axes[i].plot(time_means_aligned[model], error_means[model], 
+                                   label=model_names[j], **style)
+            
+                
+                # 修正图例收集逻辑
+                if i == 0:  # 只在第一个子图收集图例
+                    if model_names[j] not in labels:  # 避免重复
+                        handles.append(line)
+                        labels.append(model_names[j])
+        
+        axes[i].set_title(f'$\sigma_{{a_i}}^2 = {sigma_A}$', fontsize=fs)
+        axes[i].set_xlabel('Running Time', fontsize=fs)
+        if i == 0:
+            axes[i].set_ylabel('RMSE', fontsize=fs)
+        axes[i].tick_params(labelsize=fs*0.7)
+        axes[i].grid(True)
+        axes[i].set_yscale('log')
+        
+        # 设置横轴范围为0到最快方法的最终时间
+        axes[i].set_xlim(0, 0.003) #min_final_time if fastest_model else None)
+    
+    # 添加图例
+    fig.legend(handles, labels, loc='lower center', ncol=len(models_plot), 
+               fontsize=fs-2, bbox_to_anchor=(0.5, -0.02))
+
+    plt.tight_layout(rect=[0, 0.2, 1, 1])
+
+    # fig.legend(handles, labels, loc='lower center', ncol=6, fontsize=fs-2) #,bbox_to_anchor=(0.5, -0.02)
+    # plt.tight_layout(rect=[0, 0.2, 1, 1])
+    
+    # 保存图片
+    save_path = os.path.join(filepath, 'time_comparison_fair_multi_regression.pdf')
+    plt.savefig(save_path, bbox_inches='tight')
+    print(f"time comparison figure saved to {save_path}")
+
+    return fig, axes
+
+start_time_total = time.time()
 
 seed = 42
 np.random.seed(seed)
@@ -53,7 +212,7 @@ style_dict = {
 
 all_data={}
 lam=[0.1,0.1]
-MAXITER=100
+MAXITER= 100 #100 for RMSE comparison , 200 for time comparison
 
 for sigma_A in sigma_A_values:
     print('running sigma_A:',sigma_A)
@@ -108,6 +267,22 @@ for sigma_A in sigma_A_values:
             alpha = 0
             count = 0
 
+            # 在种子循环内，为每个算法添加时间记录
+            all_data[seed]['time_agd'] = []
+            all_data[seed]['time_rgd'] = []
+            all_data[seed]['time_sfb'] = []
+            all_data[seed]['time_opgd'] = []
+            all_data[seed]['time_rr'] = []
+            all_data[seed]['time_sirr'] = []
+
+            # 初始化时间累计变量
+            time_accum_agd = 0
+            time_accum_rgd = 0
+            time_accum_sfb = 0
+            time_accum_opgd = 0
+            time_accum_rr = 0
+            time_accum_sirr = 0
+
             for i in range(MAXITER):
                 nu= 0.1 # nu is the learning rate for AGM
                 th=np.random.normal(0,sigma_theta,size=(d,m))
@@ -115,6 +290,7 @@ for sigma_A in sigma_A_values:
                 z2=ddg.D_w(1)
                 x_sgd.append(ddg.proj(x_sgd[-1]- eta*ddg.getgrad(x_sgd[-1],th)))
                 ## for AGM
+                start_time = time.time()
                 x_agd.append(ddg.proj(x_agd[-1]- 0.1*eta*ddg.getgrad_agd(x_agd[-1],th,A1hat=A_dic['A1_hats'][-1],Ac1hat=A_dic['Ac1_hats'][-1],
                                                                     A2hat=A_dic['A2_hats'][-1], Ac2hat=A_dic['Ac2_hats'][-1], passvals=True)))
                 A1_hat,Ac1_hat,A2_hat,Ac2_hat = ddg.update_estimate(x_agd[-1], z1, z2,th,nu = nu, mu=mu, A1hat=A_dic['A1_hats'][-1],Ac1hat=A_dic['Ac1_hats'][-1],
@@ -123,39 +299,50 @@ for sigma_A in sigma_A_values:
                 A_dic['Ac1_hats'].append(Ac1_hat)
                 A_dic['A2_hats'].append(A2_hat)
                 A_dic['Ac2_hats'].append(Ac2_hat)
+                time_accum_agd += time.time() - start_time
+                all_data[seed]['time_agd'].append(time_accum_agd)
                 ## for rgd
+                start_time = time.time()
                 z1,z2,theta_rgd = ddg.distribution_map(x_rgd[-1],th)
                 x_rgd.append(ddg.proj(x_rgd[-1]-0.1*eta*ddg.getgrad_rgd(x_rgd[-1],z1,z2, theta_rgd)))
+                time_accum_rgd += time.time() - start_time
+                all_data[seed]['time_rgd'].append(time_accum_rgd)
                 ## for sfb
+                start_time = time.time()
                 z1,z2,theta_sfb = ddg.distribution_map(x_sfb[-1],th)
                 x_sfb.append(ddg.proj(x_sfb[-1]-(eta*(i+1)**(-3/4))*ddg.getgrad_rgd(x_sfb[-1],z1,z2, theta_sfb)))
+                time_accum_sfb += time.time() - start_time
+                all_data[seed]['time_sfb'].append(time_accum_sfb)
                 ## for OPGD
+                start_time = time.time()
                 x_opgd.append(ddg.proj(x_opgd[-1]-100*eta*(6/(10+i))*ddg.getgrad_opgd(x_opgd[-1],th,A1hat=A1_opgd, A2hat=A2_opgd)))
                 A1_opgd, A2_opgd = ddg.update_estimate_opgd(x_opgd[-1], z1, z2,th,v_t = 0.1*eta*7/((10+i)**(3/4)), A1hat=A1_opgd, A2hat=A2_opgd)
-
+                A_opgd_dic['A1_opgds'].append(A1_opgd)
+                time_accum_opgd += time.time() - start_time
+                all_data[seed]['time_opgd'].append(time_accum_opgd)
                 # for SIRR
+                start_time = time.time()
                 z1_t_1si,z2_t_1si,theta_t_1si = ddg.distribution_map(x_sirr[-1],th)
-
                 sirr_model_1 = Ridge(alpha = alpha)
                 sirr_model_1.fit(theta_t_1si.T,z1_t_1si,sample_weight=1/m)
                 sirr_model_2 = Ridge(alpha = alpha)
                 sirr_model_2.fit(theta_t_1si.T,z2_t_1si,sample_weight=1/m)
                 x_sirr.append(np.vstack((sirr_model_1.coef_,sirr_model_2.coef_)))
                 sirr_model.append([sirr_model_1,sirr_model_2])
+                
+                # num_samples = 50  # 采样次数
+                # grad_samples = []  # 存储梯度样本
 
-                num_samples = 50  # 采样次数
-                grad_samples = []  # 存储梯度样本
-
-                for _ in range(num_samples):
-                    z1_sample, z2_sample, theta_sample = ddg.distribution_map(x_sirr[-1], th)
-                    g1 = -theta_sample @ (z1_sample - theta_sample.T @ x_sirr[-1][0]) / m
-                    g2 = -theta_sample @ (z2_sample - theta_sample.T @ x_sirr[-1][1]) / m
-                    full_grad = np.concatenate([g1.flatten(), g2.flatten()])
-                    grad_samples.append(full_grad)
-                grad_matrix = np.array(grad_samples)  # 形状: (num_samples, gradient_dim)
-                cov_matrix = np.cov(grad_matrix, rowvar=False)
-                eigenvalues = np.linalg.eigvalsh(cov_matrix)
-                sigma_mu = eigenvalues[-1]  # 最大特征值
+                # for _ in range(num_samples):
+                #     z1_sample, z2_sample, theta_sample = ddg.distribution_map(x_sirr[-1], th)
+                #     g1 = -theta_sample @ (z1_sample - theta_sample.T @ x_sirr[-1][0]) / m
+                #     g2 = -theta_sample @ (z2_sample - theta_sample.T @ x_sirr[-1][1]) / m
+                #     full_grad = np.concatenate([g1.flatten(), g2.flatten()])
+                #     grad_samples.append(full_grad)
+                # grad_matrix = np.array(grad_samples)  # 形状: (num_samples, gradient_dim)
+                # cov_matrix = np.cov(grad_matrix, rowvar=False)
+                # eigenvalues = np.linalg.eigvalsh(cov_matrix)
+                # sigma_mu = eigenvalues[-1]  # 最大特征值
 
                 z1_tsi,z2_tsi,theta_tsi = ddg.distribution_map(x_sirr[-1],th)
                 g1_t=-theta_tsi@(z1_tsi-theta_tsi.T@x_sirr[-1][0])/m
@@ -167,8 +354,11 @@ for sigma_A in sigma_A_values:
                     epsilon_2 = max(epsilon_2,la.norm(g2_t-g2_t_1)/(la.norm(x_sirr[-1][1]-x_sirr[-2][1]+1e-3)))
                     sqrt_epsilon = epsilon_1**2+epsilon_2**2
                     alpha = gamma*sqrt_epsilon**0.5
+                time_accum_sirr += time.time() - start_time
+                all_data[seed]['time_sirr'].append(time_accum_sirr)
 
                 # for RR
+                start_time = time.time()
                 z1_t_1,z2_t_1,theta_t_1 = ddg.distribution_map(x_rr[-1],th)
                 rr_model_1 = Ridge(alpha = alpha_rr)
                 rr_model_1.fit(theta_t_1.T,z1_t_1,sample_weight=1/m)
@@ -176,6 +366,8 @@ for sigma_A in sigma_A_values:
                 rr_model_2.fit(theta_t_1.T,z2_t_1,sample_weight=1/m)
                 x_rr.append(np.vstack((rr_model_1.coef_,rr_model_2.coef_)))
                 rr_model.append([rr_model_1,rr_model_2])
+                time_accum_rr += time.time() - start_time
+                all_data[seed]['time_rr'].append(time_accum_rr)
 
             x_sgd=np.asarray(x_sgd)
             x_agd=np.asarray(x_agd)
@@ -369,7 +561,12 @@ pivot_df = df.pivot(index='model', columns='sigma_A', values='result')
 pivot_df = pivot_df.reindex(models)
 pivot_df.to_excel('multi_regression/figs_' + str(MAXITER) + '/regression_result.xlsx')
 
+# 在主函数中调用（放在现有绘图代码之后）
+print("time comparison plot generation")
+plot_time_comparison(sigma_A_values, figuresize=(25, 5))
+
 end_time = time.time()  # 记录结束时间
-execution_time = end_time - start_time  # 计算耗时（秒）
+execution_time = end_time - start_time_total  # 计算耗时（秒）
 
 print(f"The time of this code need to run: {execution_time:.4f} 秒")
+
