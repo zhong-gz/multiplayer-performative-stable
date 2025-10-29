@@ -104,7 +104,7 @@ def runSIRR(z0,data,c,b,c_alg, MAXITER,mu):
     dic['revenue_total']=  np.sum(q[:, np.newaxis]+X_rr[:, 1:-1], axis=0) * (z[1:-1] - b*np.sum(q[:, np.newaxis]+X_rr[:, 1:-1], axis=0)) - c * np.sum(q[:, np.newaxis]+X_rr[:, 1:-1], axis=0)
     dic['price']= (z[1:-1] - b*np.sum(q[:, np.newaxis]+X_rr[:, 1:-1], axis=0))
     dic['sigma_values']= sigma_values
-    dic['iteration_times']= iteration_times
+    dic['iteration_times']= iteration_times[1:]
 
     return dic
 
@@ -135,7 +135,7 @@ def runRR(z0,data,c,b, MAXITER,mu):
     dic['quantity_total']= np.sum(q[:, np.newaxis]+X_rr[:, 1:-1], axis=0)
     dic['revenue_total']= np.sum((q[:, np.newaxis]+X_rr[:, 1:-1]), axis=0) * (z[1:-1] - b*np.sum((q[:, np.newaxis]+X_rr[:, 1:-1]), axis=0)) - c * np.sum((q[:, np.newaxis]+X_rr[:, 1:-1]), axis=0)
     dic['price']= (z[1:-1] - b*np.sum((q[:, np.newaxis]+X_rr[:, 1:-1]), axis=0))
-    dic['iteration_times']= iteration_times
+    dic['iteration_times']= iteration_times[1:]
 
     return dic
 
@@ -159,7 +159,7 @@ def runRGD(z0,data,c,b, MAXITER,mu,eta,x0):
     dic['quantity_total']= np.sum(q[:, np.newaxis]+X_rg[:, 1:-1], axis=0)
     dic['revenue_total']= np.sum((q[:, np.newaxis]+X_rg[:, 1:-1]), axis=0) * (z[1:-1] - b*np.sum((q[:, np.newaxis]+X_rg[:, 1:-1]), axis=0)) - c * np.sum((q[:, np.newaxis]+X_rg[:, 1:-1]), axis=0)
     dic['price']= (z[1:-1] - b*np.sum((q[:, np.newaxis]+X_rg[:, 1:-1]), axis=0))
-    dic['iteration_times']= iteration_times
+    dic['iteration_times']= iteration_times[1:]
     return dic
 
 def runSFB(z0,data,c,b, MAXITER,mu,eta,x0):
@@ -183,7 +183,7 @@ def runSFB(z0,data,c,b, MAXITER,mu,eta,x0):
     dic['quantity_total']= np.sum(q[:, np.newaxis]+X_rg[:, 1:-1], axis=0)
     dic['revenue_total']= np.sum((q[:, np.newaxis]+X_rg[:, 1:-1]), axis=0) * (z[1:-1] - b*np.sum((q[:, np.newaxis]+X_rg[:, 1:-1]), axis=0)) - c * np.sum((q[:, np.newaxis]+X_rg[:, 1:-1]), axis=0)
     dic['price']= (z[1:-1] - b*np.sum((q[:, np.newaxis]+X_rg[:, 1:-1]), axis=0))
-    dic['iteration_times']= iteration_times
+    dic['iteration_times']= iteration_times[1:]
     return dic
 
 def runAGM(z0,data,c,b, MAXITER,mu,eta,x0):
@@ -211,7 +211,7 @@ def runAGM(z0,data,c,b, MAXITER,mu,eta,x0):
     dic['quantity_total']= np.sum(q[:, np.newaxis]+X_ag[:, 1:-1], axis=0)
     dic['revenue_total']= np.sum((q[:, np.newaxis]+X_ag[:, 1:-1]), axis=0) * (z[1:-1] - b*np.sum((q[:, np.newaxis]+X_ag[:, 1:-1]), axis=0)) - c * np.sum((q[:, np.newaxis]+X_ag[:, 1:-1]), axis=0)
     dic['price']= (z[1:-1] - b*np.sum((q[:, np.newaxis]+X_ag[:, 1:-1]), axis=0))
-    dic['iteration_times']= iteration_times
+    dic['iteration_times']= iteration_times[1:]
     return dic
 
 def update_estimate(A,x,z0,n, mu,b,zt):
@@ -250,7 +250,7 @@ def runOPGD(z0,data,c,b, MAXITER,mu,eta,x0):
     dic['quantity_total']= np.sum(q[:, np.newaxis]+X_ag[:, 1:-1], axis=0)
     dic['revenue_total']= np.sum((q[:, np.newaxis]+X_ag[:, 1:-1]), axis=0) * (z[1:-1] - b*np.sum((q[:, np.newaxis]+X_ag[:, 1:-1]), axis=0)) - c * np.sum((q[:, np.newaxis]+X_ag[:, 1:-1]), axis=0)
     dic['price']= (z[1:-1] - b*np.sum((q[:, np.newaxis]+X_ag[:, 1:-1]), axis=0))
-    dic['iteration_times']= iteration_times
+    dic['iteration_times']= iteration_times[1:]
     return dic
 
 def update_estimate_OPGD(A,z0,n, mu,b):

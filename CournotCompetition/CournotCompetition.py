@@ -13,23 +13,13 @@ from sklearn.preprocessing import MinMaxScaler
 # sys.path.insert(1,'./utils/' )
 from CournotFunction import *
 import time
+import matplotlib.ticker as mticker
 
 global_oil_volume = read_data('CournotCompetition/Global Crude Petroleum Trade 1995-2021.csv')
 data = global_oil_volume.to_numpy()
 data=data[:, 1]
 data = np.partition(data, -28)[-28:]
 n = np.size(data)
-# scaler = MinMaxScaler(feature_range=(0, 1))
-# data_2d = data.reshape(-1, 1)
-# scaled = scaler.fit_transform(data_2d)
-# data = scaled.flatten()
-# print(max(data))
-# print(min(data))
-# print(np.mean(data))
-# print(np.median(data))
-# print(np.sum(data))
-# print(79.05/np.sum(data))
-# print(n)
 
 # 68.22 is the average price of crude oil per barrel in 2021 according to WTI data
 
@@ -65,7 +55,7 @@ c = 10 # cost of oil
 p = 68.22 # average price of oil in 2021
 z0 = 147.27 # highest oil price in 2008.07
 b =(z0 - p)/np.sum(data) # linear demand coefficient
-MAXITER=100
+MAXITER=100 #1000 for time comparison, 100 for revenue comparison
 eta=0.001
 k = 1
 mu_A_list = [0.25,0.50,0.75,1.0] #25,0.50,0.75,1
@@ -104,6 +94,7 @@ if run_experiment:
                 all_data[num_exper][f'{info_types[0]}_{model}'] = dic['quantity_total']
                 all_data[num_exper][f'{info_types[1]}_{model}'] = dic['revenue_total']
                 all_data[num_exper][f'{info_types[2]}_{model}'] = dic['price']
+                all_data[num_exper][f'iteration_times_{model}'] = dic['iteration_times']
 
         avg_data = {}
         var_data = {}
@@ -114,6 +105,11 @@ if run_experiment:
                 all_values_arr = np.asarray(all_values)
                 avg_data[key] = np.mean(all_values_arr, axis=0)
                 var_data[key] = np.var(all_values_arr, axis=0)  # 计算方差
+            # 添加时间数据的平均
+            time_key = f'iteration_times_{model}'
+            all_time_values = [all_data[num_exper][time_key] for num_exper in range(num_experiments)]
+            all_time_values_arr = np.asarray(all_time_values)
+            avg_data[time_key] = np.mean(all_time_values_arr, axis=0)
 
         # 为当前p值创建一个结果字典，包含avg_data和var_data
         p_result = {
@@ -433,6 +429,67 @@ handles, labels = fig.axes[0].get_legend_handles_labels()
 fig.legend(handles, labels, loc='lower center', fontsize=fs, ncol=len(models))
 plt.tight_layout(rect=[0, 0.21, 1, 1])
 plt.savefig(f'CournotCompetition/figs/quantity_adj_var.pdf', transparent=True, bbox_inches='tight')
+plt.close()
+
+# 在绘图部分之后添加时间-性能对比图
+# Plotting time-performance comparison
+fig, axes = plt.subplots(1, 4, figsize=figuresize)
+all_y_data = []
+for i, mu_A in enumerate(mu_A_list):
+    total_avg_data = all_mu_A_data[mu_A]['avg']
+    for model in models:    
+        key1 = f'{info_types[1]}_{model}'
+        all_y_data.extend(total_avg_data[key1])
+all_y_data = np.array(all_y_data)
+if np.allclose(all_y_data, 0):
+    power = 0
+else:
+    power = int(np.floor(np.log10(np.max(all_y_data))))
+scale_factor = 10 ** power
+y_min = 0
+y_max = max(all_y_data)/ scale_factor +0.2
+
+for i, mu_A in enumerate(mu_A_list):
+    total_avg_data = all_mu_A_data[mu_A]['avg']
+    ax = axes[i]
+    
+    for model in models:
+        style = style_dict[model]
+        
+        # 获取收益数据
+        revenue_key = f'{info_types[1]}_{model}'
+        revenues = total_avg_data[revenue_key] / scale_factor
+        
+        # 获取时间数据并计算累计时间
+        time_key = f'iteration_times_{model}'
+        iteration_times = total_avg_data[time_key]
+        cumulative_times = np.cumsum(iteration_times)
+        
+        # 绘制时间-性能曲线
+        ax.plot(cumulative_times, revenues, label=f'{model}', **style)
+    
+    ax.set_title(f'$\mu = {mu_A}$', fontsize=fs)  
+    ax.set_xlabel('Running Time', fontsize=fs)
+    if i == 0:
+        ax.set_ylabel(r'Total revenue', fontsize=fs)
+    ax.grid(True)
+    ax.tick_params(labelsize=fs*0.5)
+    ax.set_ylim(y_min, y_max)
+    ax.set_xlim(0,0.03)
+    ax.set_xticks([0, 0.01, 0.02, 0.03])
+    
+    # # 设置x轴格式
+    # formatter = ScalarFormatter()
+    # formatter.set_scientific(False)
+    # ax.xaxis.set_major_formatter(formatter)
+    # ax.yaxis.set_major_formatter(formatter)
+    
+    ax.text(-0.05, 1.11, f'$\\times 10^{{{power}}}$', transform=ax.transAxes, fontsize=fs*0.7, verticalalignment='top')
+
+handles, labels = fig.axes[0].get_legend_handles_labels()
+fig.legend(handles, labels, loc='lower center', fontsize=fs, ncol=len(models))
+plt.tight_layout(rect=[0, 0.21, 1, 1])
+plt.savefig(f'CournotCompetition/figs/time_performance_comparison.pdf', transparent=True, bbox_inches='tight')
 plt.close()
 
 # 利用 all_mu_A_data 计算总收益和标准差
