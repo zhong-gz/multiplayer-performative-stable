@@ -158,8 +158,9 @@ def plot_time_comparison(sigma_A_values, figuresize, n, m, d, MAXITER, result_fo
         axes[i].grid(True)
         axes[i].set_yscale('log')
         
-        # 设置横轴范围为0到最快方法的最终时间
-        axes[i].set_xlim(0, 0.003) #min_final_time if fastest_model else None)
+        # 设置x轴上限为SIRR方法的7次迭代时长
+        sirr_7_iter_time = time_means_aligned['sirr'][6] if 'sirr' in time_means_aligned and len(time_means_aligned['sirr']) > 6 else 0.003
+        axes[i].set_xlim(0, sirr_7_iter_time)
     
     # 添加图例
     fig.legend(handles, labels, loc='lower center', ncol=len(models_plot), 
@@ -189,9 +190,9 @@ sigma_theta= 0.1 ###
 sigma_w=0.01
 
 # Define parameter ranges for n, m, and d
-n_values = [4, 6]  # Modify to add more values: [2, 4, 6]
-m_values = [100,200]  # Modify to add more values: [50, 100, 200]
-d_values = [10, 20]  # Modify to add more values: [5, 10, 20]
+n_values = [10, 100, 1000]  # Modify to add more values: [2, 4, 6]
+m_values = [100, 1000, 10000]  # Modify to add more values: [50, 100, 200]
+d_values = [10, 100, 1000]  # Modify to add more values: [5, 10, 20]
 
 k = 10
 sigma_A_values = [0.25, 0.5, 0.75, 1.0]
@@ -215,7 +216,6 @@ style_dict = {
 }
 
 all_data_global={}
-lam=[0.1,0.1]
 MAXITER= 100 #100 for RMSE comparison , 200 for time comparison
 
 # Iterate over all combinations of n, m, and d
@@ -232,6 +232,9 @@ for n, m, d in product(n_values, m_values, d_values):
     # Initialize B matrix for this setting
     B = np.random.normal(0,sigma_theta,size=(d,1))
     
+    # Initialize lam for n players
+    lam = [0.1] * n
+    
     # Initialize all_data for this parameter combination
     all_data = {}
     
@@ -243,13 +246,13 @@ for n, m, d in product(n_values, m_values, d_values):
         os.makedirs(filepath, exist_ok=True)
         file_name_npy = os.path.join(filepath, f'sig_A_{sigma_A}_sigma_AC_{sigma_AC}_m_{m}_sigma_C_{sigma_C}.npz')
         
-        A1= np.random.normal(0,np.sqrt(sigma_A),size=(1,d))
-        Ac1= np.random.normal(0,np.sqrt(sigma_AC),size=(1,d))
-        A2= np.random.normal(0,np.sqrt(sigma_A),size=(1,d))
-        Ac2= np.random.normal(0,np.sqrt(sigma_AC),size=(1,d))
-        C1= np.random.normal(0,np.sqrt(sigma_C),size=(d,d))
-        C2= np.random.normal(0,np.sqrt(sigma_C),size=(d,d))
-        params={'A1':A1,'A2':A2,'Ac1':Ac1,'Ac2':Ac2,'C1':C1,'C2':C2}
+        # Create matrices for all n players
+        A_list = [np.random.normal(0, np.sqrt(sigma_A), size=(1, d)) for _ in range(n)]
+        Ac_list = [np.random.normal(0, np.sqrt(sigma_AC), size=(1, d)) for _ in range(n)]
+        C_list = [np.random.normal(0, np.sqrt(sigma_C), size=(d, d)) for _ in range(n)]
+        
+        # Create params dict with list format for compatibility
+        params = {'A': A_list, 'Ac': Ac_list, 'C': C_list}
 
         if run_experiment == 1:
             ddg=ddstrategic_prediction(MAXITER=MAXITER, sigma_theta=sigma_theta,sigma_w=sigma_w,
@@ -319,6 +322,7 @@ for n, m, d in product(n_values, m_values, d_values):
                     
                     time_accum_agd += time.time() - start_time
                     all_data[seed]['time_agd'].append(time_accum_agd)
+
                     ## for rgd
                     start_time = time.time()
                     z_list,theta_rgd = ddg.distribution_map(x_rgd[-1],th)
@@ -338,32 +342,21 @@ for n, m, d in product(n_values, m_values, d_values):
                     A_opgd_list = ddg.update_estimate_opgd(x_opgd[-1], z_list_opgd, theta_opgd, v_t=0.1*eta*7/((10+i)**(3/4)), Ahats_opgd=A_opgd_list)
                     time_accum_opgd += time.time() - start_time
                     all_data[seed]['time_opgd'].append(time_accum_opgd)
+
                     # for SIRR
                     start_time = time.time()
                     z_list_si,theta_t_1si = ddg.distribution_map(x_sirr[-1],th)
                     sirr_models_t_1 = []
                     x_sirr_t = []
+                    # 当维度>=数据量时加入正则项以避免矩阵病态
+                    alpha_sirr = max(alpha, 1e-6) if d >= m else alpha
                     for i_player in range(n):
-                        sirr_model_i = Ridge(alpha = alpha)
+                        sirr_model_i = Ridge(alpha = alpha_sirr)
                         sirr_model_i.fit(theta_t_1si.T,z_list_si[i_player],sample_weight=1/m)
                         sirr_models_t_1.append(sirr_model_i)
                         x_sirr_t.append(sirr_model_i.coef_)
                     x_sirr.append(np.vstack(x_sirr_t))
                     sirr_model.append(sirr_models_t_1)
-                
-                # num_samples = 50  # 采样次数
-                # grad_samples = []  # 存储梯度样本
-
-                # for _ in range(num_samples):
-                #     z1_sample, z2_sample, theta_sample = ddg.distribution_map(x_sirr[-1], th)
-                #     g1 = -theta_sample @ (z1_sample - theta_sample.T @ x_sirr[-1][0]) / m
-                #     g2 = -theta_sample @ (z2_sample - theta_sample.T @ x_sirr[-1][1]) / m
-                #     full_grad = np.concatenate([g1.flatten(), g2.flatten()])
-                #     grad_samples.append(full_grad)
-                # grad_matrix = np.array(grad_samples)  # 形状: (num_samples, gradient_dim)
-                # cov_matrix = np.cov(grad_matrix, rowvar=False)
-                # eigenvalues = np.linalg.eigvalsh(cov_matrix)
-                # sigma_mu = eigenvalues[-1]  # 最大特征值
 
                     z_list_tsi,theta_tsi = ddg.distribution_map(x_sirr[-1],th)
                     grad_diffs = []
@@ -386,8 +379,10 @@ for n, m, d in product(n_values, m_values, d_values):
                     z_list_rr,theta_t_1 = ddg.distribution_map(x_rr[-1],th)
                     rr_models_t_1 = []
                     x_rr_t = []
+                    # 当维度>=数据量时加入正则项以避免矩阵病态
+                    alpha_rr_current = 1e-6 if (d >= m and alpha_rr == 0) else alpha_rr
                     for i_player in range(n):
-                        rr_model_i = Ridge(alpha = alpha_rr)
+                        rr_model_i = Ridge(alpha = alpha_rr_current)
                         rr_model_i.fit(theta_t_1.T,z_list_rr[i_player],sample_weight=1/m)
                         rr_models_t_1.append(rr_model_i)
                         x_rr_t.append(rr_model_i.coef_)
@@ -415,28 +410,35 @@ for n, m, d in product(n_values, m_values, d_values):
                 th=1*np.random.normal(0,sigma_theta,size=(d,m))
                 # th=1*np.random.uniform(size=(d,m))
                 for x,y,z,sfb,rr_m,sirr_m,opgd in zip(x_sgd,x_agd,x_rgd,x_sfb,rr_model,sirr_model,x_opgd):
-                    z1,z2,th_x = ddg.distribution_map(x,th)
-                    error_sgd.append((la.norm(z1-th_x.T@x[0])**2 + la.norm(z2-th_x.T@x[1])**2)/(2*m))
+                    z_list, th_x = ddg.distribution_map(x,th)
+                    loss_x = sum(la.norm(z_list[i]-th_x.T@x[i])**2 for i in range(n)) / (n*m)
+                    error_sgd.append(loss_x)
 
-                    z1,z2,th_y = ddg.distribution_map(y,th)
-                    error_agd.append((la.norm(z1-th_y.T@y[0])**2 + la.norm(z2-th_y.T@y[1])**2)/(2*m))
+                    z_list, th_y = ddg.distribution_map(y,th)
+                    loss_y = sum(la.norm(z_list[i]-th_y.T@y[i])**2 for i in range(n)) / (n*m)
+                    error_agd.append(loss_y)
 
-                    z1,z2,th_z = ddg.distribution_map(z,th)
-                    error_rgd.append((la.norm(z1-th_z.T@z[0])**2 + la.norm(z2-th_z.T@z[1])**2)/(2*m))
+                    z_list, th_z = ddg.distribution_map(z,th)
+                    loss_z = sum(la.norm(z_list[i]-th_z.T@z[i])**2 for i in range(n)) / (n*m)
+                    error_rgd.append(loss_z)
 
-                    z1,z2,th_sfb = ddg.distribution_map(sfb,th)
-                    error_sfb.append((la.norm(z1-th_sfb.T@sfb[0])**2 + la.norm(z2-th_sfb.T@sfb[1])**2)/(2*m))
+                    z_list, th_sfb = ddg.distribution_map(sfb,th)
+                    loss_sfb = sum(la.norm(z_list[i]-th_sfb.T@sfb[i])**2 for i in range(n)) / (n*m)
+                    error_sfb.append(loss_sfb)
 
-                    z1,z2,th_opgd = ddg.distribution_map(opgd,th)
-                    error_opgd.append((la.norm(z1-th_opgd.T@opgd[0])**2 + la.norm(z2-th_opgd.T@opgd[1])**2)/(2*m))
+                    z_list, th_opgd = ddg.distribution_map(opgd,th)
+                    loss_opgd = sum(la.norm(z_list[i]-th_opgd.T@opgd[i])**2 for i in range(n)) / (n*m)
+                    error_opgd.append(loss_opgd)
 
-                    rr = np.vstack((rr_m[0].coef_,rr_m[1].coef_))
-                    z1,z2,th_rr = ddg.distribution_map(rr,th)
-                    error_rr.append((la.norm(z1-rr_m[0].predict(th_rr.T))**2 + la.norm(z2-rr_m[1].predict(th_rr.T))**2)/(2*m))
+                    rr = np.vstack((rr_m[0].coef_,) + tuple(rr_m[i].coef_ for i in range(1, n)))
+                    z_list, th_rr = ddg.distribution_map(rr,th)
+                    loss_rr = sum(la.norm(z_list[i]-rr_m[i].predict(th_rr.T))**2 for i in range(n)) / (n*m)
+                    error_rr.append(loss_rr)
 
-                    sirr = np.vstack((sirr_m[0].coef_,sirr_m[1].coef_))
-                    z1,z2,th_sirr = ddg.distribution_map(sirr,th)
-                    error_sirr.append((la.norm(z1-sirr_m[0].predict(th_sirr.T))**2 + la.norm(z2-sirr_m[1].predict(th_sirr.T))**2)/(2*m))
+                    sirr = np.vstack((sirr_m[0].coef_,) + tuple(sirr_m[i].coef_ for i in range(1, n)))
+                    z_list, th_sirr = ddg.distribution_map(sirr,th)
+                    loss_sirr = sum(la.norm(z_list[i]-sirr_m[i].predict(th_sirr.T))**2 for i in range(n)) / (n*m)
+                    error_sirr.append(loss_sirr)
 
                 err_agd=np.asarray(np.sqrt(error_agd))
                 err_sgd=np.asarray(np.sqrt(error_sgd))
