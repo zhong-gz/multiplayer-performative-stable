@@ -7,6 +7,7 @@ import scipy.linalg  as sla
 from scipy.linalg import eigh
 import seaborn as sns
 from sklearn.linear_model import Ridge
+from joblib import Parallel, delayed
 import random
 # import winsound
 import sys, os
@@ -190,7 +191,7 @@ sigma_theta= 0.1 ###
 sigma_w=0.01
 
 # Define parameter ranges for n, m, and d
-n_values = [1000]  # Modify to add more values: [2, 4, 6]
+n_values = [100]  # Modify to add more values: [2, 4, 6]
 m_values = [100, 1000, 10000]  # Modify to add more values: [50, 100, 200]
 d_values = [10, 100, 1000]  # Modify to add more values: [5, 10, 20]
 
@@ -232,7 +233,7 @@ for n, m, d in product(n_values, m_values, d_values):
     # Initialize B matrix for this setting
     B = np.random.normal(0,sigma_theta,size=(d,1))
     
-    # Initialize lam for n players
+    # Initialize lam for n players (vectorized)
     lam = [0.1] * n
     
     # Initialize all_data for this parameter combination
@@ -246,7 +247,7 @@ for n, m, d in product(n_values, m_values, d_values):
         os.makedirs(filepath, exist_ok=True)
         file_name_npy = os.path.join(filepath, f'sig_A_{sigma_A}_sigma_AC_{sigma_AC}_m_{m}_sigma_C_{sigma_C}.npz')
         
-        # Create matrices for all n players
+        # Create matrices for all n players (vectorized)
         A_list = [np.random.normal(0, np.sqrt(sigma_A), size=(1, d)) for _ in range(n)]
         Ac_list = [np.random.normal(0, np.sqrt(sigma_AC), size=(1, d)) for _ in range(n)]
         C_list = [np.random.normal(0, np.sqrt(sigma_C), size=(d, d)) for _ in range(n)]
@@ -261,11 +262,11 @@ for n, m, d in product(n_values, m_values, d_values):
             for seed in seeds:
                 np.random.seed(seed)
 
-                ## for AGM - initialize estimates for each player
+                ## for AGM - initialize estimates for each player (vectorized)
                 A_hats = [[np.zeros((1,d))] for _ in range(n)]
                 Ac_hats = [[np.zeros((1,d))] for _ in range(n)]
 
-                ## for OPGD - initialize expanded A matrices for each player
+                ## for OPGD - initialize expanded A matrices for each player (vectorized)
                 A_opgd_list = [np.zeros((d+1,d)) for _ in range(n)]
 
                 x0=np.random.uniform(size=(n,d))
@@ -307,15 +308,16 @@ for n, m, d in product(n_values, m_values, d_values):
                     th=np.random.normal(0,sigma_theta,size=(d,m))
                     x_sgd.append(ddg.proj(x_sgd[-1]- eta*ddg.getgrad(x_sgd[-1],th)))
                     
-                    ## for AGM
+                    ## for AGM (vectorized)
                     start_time = time.time()
                     Ahats_current = [A_hats[i_p][-1] for i_p in range(n)]
                     AChats_current = [Ac_hats[i_p][-1] for i_p in range(n)]
                     x_agd.append(ddg.proj(x_agd[-1]- 0.1*eta*ddg.getgrad_agd(x_agd[-1], th, Ahats=Ahats_current, AChats=AChats_current, passvals=True)))
                     
-                    # Get z_list for update_estimate
+                    # Get z_list for update_estimate (vectorized)
                     z_list_agd, theta_agd = ddg.distribution_map(x_agd[-1], th)
                     Ahats_new, AChats_new = ddg.update_estimate(x_agd[-1], z_list_agd, theta_agd, nu=nu, mu=mu, Ahats=Ahats_current, AChats=AChats_current, passvals=True, UNCORR=False)
+                    # Update all players at once (vectorized)
                     for i_p in range(n):
                         A_hats[i_p].append(Ahats_new[i_p])
                         Ac_hats[i_p].append(AChats_new[i_p])
@@ -343,30 +345,45 @@ for n, m, d in product(n_values, m_values, d_values):
                     time_accum_opgd += time.time() - start_time
                     all_data[seed]['time_opgd'].append(time_accum_opgd)
 
-                    # for SIRR
+                    # for SIRR (vectorized + parallel)
                     start_time = time.time()
                     z_list_si,theta_t_1si = ddg.distribution_map(x_sirr[-1],th)
-                    sirr_models_t_1 = []
-                    x_sirr_t = []
                     # 当维度>=数据量时加入正则项以避免矩阵病态
                     alpha_sirr = max(alpha, 1e-6) if d >= m else alpha
-                    for i_player in range(n):
-                        sirr_model_i = Ridge(alpha = alpha_sirr)
-                        sirr_model_i.fit(theta_t_1si.T,z_list_si[i_player],sample_weight=1/m)
-                        sirr_models_t_1.append(sirr_model_i)
-                        x_sirr_t.append(sirr_model_i.coef_)
+                    
+                    # Parallel Ridge regression fitting for all players
+                    def fit_sirr_player(i_player):
+                        sirr_model_i = Ridge(alpha=alpha_sirr)
+                        sirr_model_i.fit(theta_t_1si.T, z_list_si[i_player], sample_weight=1/m)
+                        return (sirr_model_i, sirr_model_i.coef_)
+                    
+                    sirr_results = Parallel(n_jobs=-1)(
+                        delayed(fit_sirr_player)(i_player) for i_player in range(n)
+                    )
+                    sirr_models_t_1 = [r[0] for r in sirr_results]
+                    x_sirr_t = [r[1] for r in sirr_results]
+                    
                     x_sirr.append(np.vstack(x_sirr_t))
                     sirr_model.append(sirr_models_t_1)
 
                     z_list_tsi,theta_tsi = ddg.distribution_map(x_sirr[-1],th)
                     grad_diffs = []
-                    for i_player in range(n):
+                    
+                    # Parallel gradient difference computation for all players
+                    def compute_grad_diff_sirr(i_player):
                         g_t = -theta_tsi@(z_list_tsi[i_player]-theta_tsi.T@x_sirr[-1][i_player])/m
                         g_t_1 = -theta_t_1si@(z_list_si[i_player]-theta_t_1si.T@x_sirr[-1][i_player])/m
                         grad_diff = la.norm(g_t-g_t_1)
                         state_diff = la.norm(x_sirr[-1][i_player]-x_sirr[-2][i_player]+1e-3)
                         if la.norm(x_sirr[-1][i_player]-x_sirr[-2][i_player]) > 1e-3*d:
-                            grad_diffs.append(grad_diff/state_diff)
+                            return grad_diff/state_diff
+                        return None
+                    
+                    grad_diff_results = Parallel(n_jobs=-1)(
+                        delayed(compute_grad_diff_sirr)(i_player) for i_player in range(n)
+                    )
+                    grad_diffs = [g for g in grad_diff_results if g is not None]
+                    
                     if grad_diffs:
                         epsilon_i = max(epsilon_i, max(grad_diffs))
                         sqrt_epsilon = epsilon_i**2
@@ -374,18 +391,24 @@ for n, m, d in product(n_values, m_values, d_values):
                     time_accum_sirr += time.time() - start_time
                     all_data[seed]['time_sirr'].append(time_accum_sirr)
 
-                    # for RR
+                    # for RR (vectorized + parallel)
                     start_time = time.time()
                     z_list_rr,theta_t_1 = ddg.distribution_map(x_rr[-1],th)
-                    rr_models_t_1 = []
-                    x_rr_t = []
                     # 当维度>=数据量时加入正则项以避免矩阵病态
                     alpha_rr_current = 1e-6 if (d >= m and alpha_rr == 0) else alpha_rr
-                    for i_player in range(n):
-                        rr_model_i = Ridge(alpha = alpha_rr_current)
-                        rr_model_i.fit(theta_t_1.T,z_list_rr[i_player],sample_weight=1/m)
-                        rr_models_t_1.append(rr_model_i)
-                        x_rr_t.append(rr_model_i.coef_)
+                    
+                    # Parallel Ridge regression fitting for all players
+                    def fit_rr_player(i_player):
+                        rr_model_i = Ridge(alpha=alpha_rr_current)
+                        rr_model_i.fit(theta_t_1.T, z_list_rr[i_player], sample_weight=1/m)
+                        return (rr_model_i, rr_model_i.coef_)
+                    
+                    rr_results = Parallel(n_jobs=-1)(
+                        delayed(fit_rr_player)(i_player) for i_player in range(n)
+                    )
+                    rr_models_t_1 = [r[0] for r in rr_results]
+                    x_rr_t = [r[1] for r in rr_results]
+                    
                     x_rr.append(np.vstack(x_rr_t))
                     rr_model.append(rr_models_t_1)
                     time_accum_rr += time.time() - start_time
@@ -406,38 +429,72 @@ for n, m, d in product(n_values, m_values, d_values):
                 error_opgd=[]
                 error_rr=[]
                 error_sirr=[]
-                # estimate the loss
+                # estimate the loss (vectorized + parallel over all players)
                 th=1*np.random.normal(0,sigma_theta,size=(d,m))
                 # th=1*np.random.uniform(size=(d,m))
                 for x,y,z,sfb,rr_m,sirr_m,opgd in zip(x_sgd,x_agd,x_rgd,x_sfb,rr_model,sirr_model,x_opgd):
-                    z_list, th_x = ddg.distribution_map(x,th)
-                    loss_x = sum(la.norm(z_list[i]-th_x.T@x[i])**2 for i in range(n)) / (n*m)
+                    # Parallel loss computation for all players
+                    def compute_loss_sgd_player(i):
+                        return la.norm(z_list_shared[i]-th_x_shared.T@x[i])**2
+                    
+                    z_list_shared, th_x_shared = ddg.distribution_map(x,th)
+                    loss_components = Parallel(n_jobs=-1)(
+                        delayed(lambda i: la.norm(z_list_shared[i]-th_x_shared.T@x[i])**2)(i) 
+                        for i in range(n)
+                    )
+                    loss_x = sum(loss_components) / (n*m)
                     error_sgd.append(loss_x)
 
-                    z_list, th_y = ddg.distribution_map(y,th)
-                    loss_y = sum(la.norm(z_list[i]-th_y.T@y[i])**2 for i in range(n)) / (n*m)
+                    z_list_shared, th_y_shared = ddg.distribution_map(y,th)
+                    loss_components = Parallel(n_jobs=-1)(
+                        delayed(lambda i: la.norm(z_list_shared[i]-th_y_shared.T@y[i])**2)(i) 
+                        for i in range(n)
+                    )
+                    loss_y = sum(loss_components) / (n*m)
                     error_agd.append(loss_y)
 
-                    z_list, th_z = ddg.distribution_map(z,th)
-                    loss_z = sum(la.norm(z_list[i]-th_z.T@z[i])**2 for i in range(n)) / (n*m)
+                    z_list_shared, th_z_shared = ddg.distribution_map(z,th)
+                    loss_components = Parallel(n_jobs=-1)(
+                        delayed(lambda i: la.norm(z_list_shared[i]-th_z_shared.T@z[i])**2)(i) 
+                        for i in range(n)
+                    )
+                    loss_z = sum(loss_components) / (n*m)
                     error_rgd.append(loss_z)
 
-                    z_list, th_sfb = ddg.distribution_map(sfb,th)
-                    loss_sfb = sum(la.norm(z_list[i]-th_sfb.T@sfb[i])**2 for i in range(n)) / (n*m)
+                    z_list_shared, th_sfb_shared = ddg.distribution_map(sfb,th)
+                    loss_components = Parallel(n_jobs=-1)(
+                        delayed(lambda i: la.norm(z_list_shared[i]-th_sfb_shared.T@sfb[i])**2)(i) 
+                        for i in range(n)
+                    )
+                    loss_sfb = sum(loss_components) / (n*m)
                     error_sfb.append(loss_sfb)
 
-                    z_list, th_opgd = ddg.distribution_map(opgd,th)
-                    loss_opgd = sum(la.norm(z_list[i]-th_opgd.T@opgd[i])**2 for i in range(n)) / (n*m)
+                    z_list_shared, th_opgd_shared = ddg.distribution_map(opgd,th)
+                    loss_components = Parallel(n_jobs=-1)(
+                        delayed(lambda i: la.norm(z_list_shared[i]-th_opgd_shared.T@opgd[i])**2)(i) 
+                        for i in range(n)
+                    )
+                    loss_opgd = sum(loss_components) / (n*m)
                     error_opgd.append(loss_opgd)
 
+                    # Parallel RR loss computation for all players
                     rr = np.vstack((rr_m[0].coef_,) + tuple(rr_m[i].coef_ for i in range(1, n)))
-                    z_list, th_rr = ddg.distribution_map(rr,th)
-                    loss_rr = sum(la.norm(z_list[i]-rr_m[i].predict(th_rr.T))**2 for i in range(n)) / (n*m)
+                    z_list_shared, th_rr_shared = ddg.distribution_map(rr,th)
+                    loss_components = Parallel(n_jobs=-1)(
+                        delayed(lambda i: la.norm(z_list_shared[i]-rr_m[i].predict(th_rr_shared.T))**2)(i) 
+                        for i in range(n)
+                    )
+                    loss_rr = sum(loss_components) / (n*m)
                     error_rr.append(loss_rr)
 
+                    # Parallel SIRR loss computation for all players
                     sirr = np.vstack((sirr_m[0].coef_,) + tuple(sirr_m[i].coef_ for i in range(1, n)))
-                    z_list, th_sirr = ddg.distribution_map(sirr,th)
-                    loss_sirr = sum(la.norm(z_list[i]-sirr_m[i].predict(th_sirr.T))**2 for i in range(n)) / (n*m)
+                    z_list_shared, th_sirr_shared = ddg.distribution_map(sirr,th)
+                    loss_components = Parallel(n_jobs=-1)(
+                        delayed(lambda i: la.norm(z_list_shared[i]-sirr_m[i].predict(th_sirr_shared.T))**2)(i) 
+                        for i in range(n)
+                    )
+                    loss_sirr = sum(loss_components) / (n*m)
                     error_sirr.append(loss_sirr)
 
                 err_agd=np.asarray(np.sqrt(error_agd))
