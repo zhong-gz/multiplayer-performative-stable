@@ -185,9 +185,9 @@ seeds= range(42,52)
 run_experiment = 1 # 1: run the experiment, 0: load the data
 sigma_theta= 0.1 ###
 sigma_w=0.01
-n=2
+n=2    # number of players
 m= 100 # both players dimension of z_i
-d= 10 # size of each players action
+d= 10  # size of each players action
 B = np.random.normal(0,sigma_theta,size=(d,1))
 k = 10
 sigma_A_values = [0.25, 0.5, 0.75, 1.0]
