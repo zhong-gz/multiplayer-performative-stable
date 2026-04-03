@@ -11,8 +11,14 @@ import scipy.linalg  as sla
 import random
 from scipy.special import softmax
 from joblib import Parallel, delayed
-
 from scipy.sparse import random as scirand
+import os
+
+# Get number of CPU cores for parallel processing
+N_JOBS = os.cpu_count() or 4  # Default to 4 if cpu_count() fails
+
+# Get number of CPU cores for parallel processing
+N_JOBS = os.cpu_count() or 4  # Default to 4 if cpu_count() fails
 
 def running_mean(x, N):
     cumsum = np.cumsum(np.insert(x, 0, 0)) 
@@ -82,7 +88,11 @@ class ddstrategic_prediction:
         self.mu_theta = mu_theta
 
     def distribution_map(self, x, theta):
-        """Map state to distribution for n players (vectorized + parallel)"""
+        """Map state to distribution for n players (fully vectorized, no Parallel calls)"""
+        # Convert x to numpy array if it's a list
+        if isinstance(x, list):
+            x = np.vstack(x)
+        
         # Get B contribution: B should be (d,) or (d, 1)
         if self.B.ndim == 1:
             B_vec = self.B
@@ -91,28 +101,32 @@ class ddstrategic_prediction:
         else:
             B_vec = self.B.flatten()
         
-        # Compute theta contribution once (shared across all players)
+        # Compute theta contribution once (shared across all players): (m,)
         theta_contrib = theta.T @ B_vec  # (m,)
         
-        # Parallel computation of z_i for each player
-        def compute_z_i(i):
-            # Noise for player i
-            z_i = self.D_w(i)
-            
-            # Own action contribution
-            z_i = z_i + (self.A[i] @ x[i]).flatten()[0]
-            
-            # Cross-player interactions
-            for j in range(self.n):
-                if i != j:
-                    z_i = z_i + (self.Ac[i] @ x[j]).flatten()[0]
-            
-            # Add theta contribution
-            z_i = z_i + theta_contrib
-            return z_i
+        # Vectorized z computation for all players simultaneously
+        # Stack matrices: each A[i] is (1, d), so A_stacked is (n, d)
+        A_stacked = np.vstack(self.A)  # (n, d)
+        Ac_stacked = np.vstack(self.Ac)  # (n, d)
         
-        # Parallelize z computation across all players
-        z = Parallel(n_jobs=-1)(delayed(compute_z_i)(i) for i in range(self.n))
+        # Generate noise for all players at once: (n, m)
+        noise = np.random.normal(self.mu_w1, self.sigma_w, size=(self.n, self.m))
+        
+        # Own action contribution for all players: A[i] @ x[i] for each i (n,)
+        diag_terms = np.sum(A_stacked * x, axis=1)  # (n,)
+        
+        # Cross-player interactions for all players
+        # cross_interaction[i,j] = Ac[i] @ x[j]
+        cross_interaction = Ac_stacked @ x.T  # (n, n) matrix
+        # cross_terms[i] = sum_{j!=i}(Ac[i] @ x[j]) = row sum - diagonal element
+        cross_terms = np.sum(cross_interaction, axis=1) - np.diag(cross_interaction)  # (n,)
+        
+        # Combine all terms: z_i = noise[i] + diag_terms[i] + cross_terms[i] + theta_contrib
+        # Use numpy broadcasting: (n, m) = (n, m) + (n, 1) + (n, 1) + (1, m)
+        z_array = noise + diag_terms[:, np.newaxis] + cross_terms[:, np.newaxis] + theta_contrib[np.newaxis, :]
+        
+        # Convert to list of (m,) arrays for compatibility with rest of code
+        z = [z_array[i] for i in range(self.n)]
         
         # Update theta: vectorized (not parallelized as it's small)
         theta_sum = np.zeros(self.d)
@@ -168,7 +182,7 @@ class ddstrategic_prediction:
             return p_i
         
         # Parallelize gradient computation
-        grads = Parallel(n_jobs=-1)(delayed(compute_grad_i)(i) for i in range(self.n))
+        grads = Parallel(n_jobs=N_JOBS, backend='loky')(delayed(compute_grad_i)(i) for i in range(self.n))
         
         return np.vstack([g for g in grads])
 
@@ -187,15 +201,19 @@ class ddstrategic_prediction:
             return H_i
         
         # Parallelize Hessian computation
-        Hessians = Parallel(n_jobs=-1)(delayed(compute_hess_i)(i) for i in range(self.n))
+        Hessians = Parallel(n_jobs=N_JOBS, backend='loky')(delayed(compute_hess_i)(i) for i in range(self.n))
         
         return Hessians
 
     def getgrad_agd(self, x, theta, Ahats=[], AChats=[], passvals=False):
-        """AGD gradient for all players using estimates (vectorized + parallel)"""
+        """AGD gradient for all players (fully vectorized, no Parallel calls)"""
         if not passvals:
             Ahats = [self.A_hat[i][-1] if i < len(self.A_hat) else self.A[i] for i in range(self.n)]
             AChats = [self.Ac_hat[i][-1] if i < len(self.Ac_hat) else self.Ac[i] for i in range(self.n)]
+        
+        # Convert x to numpy array if needed
+        if isinstance(x, list):
+            x = np.vstack(x)
         
         # Get B vector
         if self.B.ndim == 1:
@@ -208,24 +226,26 @@ class ddstrategic_prediction:
         # Compute theta mean (shared)
         theta_mean = theta.mean(axis=1)  # (d,)
         
-        # Parallel AGD gradient computation
-        def compute_agd_grad_i(i):
-            A_hat_i = Ahats[i].flatten()  # (1, d) -> (d,)
-            
-            # Compute signal estimate: sum of estimated interactions
-            z_approx = (A_hat_i @ x[i])
-            for j in range(self.n):
-                if i != j:
-                    z_approx += (AChats[i].flatten() @ x[j])
-            
-            # Gradient: (A_hat[i] - theta_mean) * signal / m + lambda * x[i]
-            p_i = (A_hat_i - theta_mean) * z_approx / self.m + self.lam[i] * x[i]
-            return p_i
+        # Vectorized computation for all players at once
+        # Stack matrices
+        A_hat_stacked = np.vstack(Ahats)  # (n, d)
+        Ac_stacked = np.vstack(AChats)  # (n, d)
         
-        # Parallelize AGD gradient computation
-        grads = Parallel(n_jobs=-1)(delayed(compute_agd_grad_i)(i) for i in range(self.n))
+        # Diagonal terms: A_hat[i] @ x[i] for each player
+        diag_terms = np.sum(A_hat_stacked * x, axis=1)  # (n,)
         
-        return np.vstack([g for g in grads])
+        # Cross terms: sum_{j!=i}(Ac[i] @ x[j])
+        cross_interaction = Ac_stacked @ x.T  # (n, n) matrix
+        cross_terms = np.sum(cross_interaction, axis=1) - np.diag(cross_interaction)  # (n,)
+        
+        # Combined signal estimate for all players
+        z_approx = diag_terms + cross_terms  # (n,)
+        
+        # Compute gradients for all players at once
+        # (A_hat[i] - theta_mean) * z_approx[i] / m + lambda[i] * x[i]
+        grads = (A_hat_stacked - theta_mean[np.newaxis, :]) * z_approx[:, np.newaxis] / self.m + np.array(self.lam)[:, np.newaxis] * x
+        
+        return grads
     
     def getgrad_opgd(self, x, theta, Ahats_opgd=[]):
         """OPGD gradient for all players using expanded A_hat matrices (vectorized)"""
@@ -285,10 +305,14 @@ class ddstrategic_prediction:
         return Ahats_opgd_new
 
     def update_estimate(self, x, z_list, theta, nu=1e-3, mu=1, Ahats=[], AChats=[], UNCORR=False, passvals=False):
-        """Update A_hat and Ac_hat estimates for all players (vectorized + parallel)"""
+        """Update A_hat and Ac_hat estimates for all players (fully vectorized, no Parallel calls)"""
         if not passvals:
             Ahats = [self.A_hat[i][-1] if i < len(self.A_hat) else self.A[i].copy() for i in range(self.n)]
             AChats = [self.Ac_hat[i][-1] if i < len(self.Ac_hat) else self.Ac[i].copy() for i in range(self.n)]
+        
+        # Convert x to numpy array if needed
+        if isinstance(x, list):
+            x = np.vstack(x)
         
         # Random perturbations for all players (generated once, reused)
         u_list = [np.random.normal(0, mu, size=(self.d,)) for _ in range(self.n)]
@@ -298,8 +322,20 @@ class ddstrategic_prediction:
         q_list, theta_plus = self.distribution_map(x_u, theta)
         z_list_orig, theta_orig = self.distribution_map(x, theta)
         
-        # Parallel parameter update for each player
-        def update_estimate_i(i):
+        # Vectorized residual computation for all players
+        q_means = np.array([np.mean(q_list[i]) for i in range(self.n)])  # (n,)
+        z_means = np.array([np.mean(z_list_orig[i]) for i in range(self.n)])  # (n,)
+        residuals = q_means - z_means  # (n,)
+        
+        # Stack all perturbations: u = [u_0, u_1, ..., u_{n-1}]
+        u_stack = np.hstack(u_list).reshape(-1, 1)  # (n*d, 1)
+        u_norm_sq = np.sum(u_stack**2)
+        
+        # Update all players' estimates (vectorized)
+        Ahats_new = []
+        AChats_new = []
+        
+        for i in range(self.n):
             # Construct combined [A_hat | Ac_hat] matrix for player i
             A_mats = [Ahats[i]]  # Start with A_hat
             for j in range(self.n):
@@ -308,20 +344,12 @@ class ddstrategic_prediction:
             
             barA_hat = np.hstack(A_mats)  # (1, n*d)
             
-            # Stack all perturbations: u = [u_0, u_1, ..., u_{n-1}].T (n*d, 1)
-            u_stack = np.hstack(u_list).reshape(-1, 1)
-            
-            # Residual computation (average across samples)
-            q_mean = np.mean(q_list[i])
-            z_mean = np.mean(z_list_orig[i])
-            residual_mean = q_mean - z_mean
-            
-            # Update rule: barA_hat_new = barA_hat + nu * residual * u.T / ||u||^2
-            u_norm_sq = np.sum(u_stack**2)
-            barA_hat_new = barA_hat + nu * residual_mean * u_stack.T / u_norm_sq
+            # Update rule: barA_hat_new = barA_hat + nu * residual_i * u_stack.T / ||u||^2
+            barA_hat_new = barA_hat + nu * residuals[i] * u_stack.T / u_norm_sq  # (1, n*d)
             
             # Extract A_hat and Ac_hat from updated combined matrix
-            A_hat_new = barA_hat_new[:, :self.d]
+            A_hat_new = barA_hat_new[:, :self.d]  # (1, d)
+            Ahats_new.append(A_hat_new)
             
             # Extract Ac_hat components
             Ac_mats_new = []
@@ -332,15 +360,7 @@ class ddstrategic_prediction:
                     col_idx += self.d
             
             Ac_hat_new = np.mean(Ac_mats_new, axis=0) if Ac_mats_new else np.zeros_like(AChats[i])
-            
-            return (A_hat_new, Ac_hat_new)
-        
-        # Parallelize parameter updates
-        results = Parallel(n_jobs=-1)(delayed(update_estimate_i)(i) for i in range(self.n))
-        
-        # Unpack results
-        Ahats_new = [r[0] for r in results]
-        AChats_new = [r[1] for r in results]
+            AChats_new.append(Ac_hat_new)
         
         return Ahats_new, AChats_new
 
@@ -383,18 +403,19 @@ class ddstrategic_prediction:
             return loss_i
         
         # Parallelize loss computation
-        losses = Parallel(n_jobs=-1)(delayed(compute_loss_i)(i) for i in range(self.n))
+        losses = Parallel(n_jobs=N_JOBS, backend='loky')(delayed(compute_loss_i)(i) for i in range(self.n))
         
         return losses
 
     def getgrad_rgd(self, x, z_, theta):
-        """RGD gradient for all players (vectorized)"""
+        """RGD gradient for all players (fully vectorized)"""
         # z_: list of (m,) arrays, one for each player
         # theta: (d, m)
         # x: (n, d)
         
-        # Vectorized computation for all players
-        # gamma_i = theta @ (z_i - theta.T @ x[i]) for each player i
+        # Convert x to numpy array if needed
+        if isinstance(x, list):
+            x = np.vstack(x)
         
         # Compute theta.T @ x[i] for all players at once
         # theta.T is (m, d), x is (n, d)
@@ -402,13 +423,12 @@ class ddstrategic_prediction:
         theta_T = theta.T  # (m, d)
         predictions = np.dot(x, theta_T.T)  # (n, d) @ (d, m) = (n, m)
         
-        grads = []
-        for i in range(self.n):
-            # Signal for player i: z_i - theta.T @ x[i]
-            signal = z_[i] - predictions[i]  # (m,)
-            
-            # Gradient: -theta @ signal / m + lambda * x[i]
-            p_i = -theta @ signal / self.m + self.lam[i] * x[i]
-            grads.append(p_i)
+        # Create signals for all players: (n, m)
+        signals = np.array([z_[i] - predictions[i] for i in range(self.n)])  # (n, m)
         
-        return np.vstack([g for g in grads])
+        # Compute gradients: theta @ signals.T = (d, m) @ (m, n) = (d, n)
+        # Transpose to (n, d) then add lambda term
+        theta_sigs = (-theta @ signals.T / self.m).T  # (d, n) -> (n, d)
+        grads = theta_sigs + np.array(self.lam)[:, np.newaxis] * x  # (n, d) + (n, d)
+        
+        return grads
