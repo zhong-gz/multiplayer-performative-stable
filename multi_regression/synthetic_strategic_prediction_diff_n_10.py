@@ -196,9 +196,9 @@ sigma_theta= 0.1 ###
 sigma_w=0.01
 
 # Define parameter ranges for n, m, and d
-n_values = [10]  # Modify to add more values: [2, 4, 6]
-m_values = [10000]  # Modify to add more values: [50, 100, 200]
-d_values = [1000]  # Modify to add more values: [5, 10, 20]
+n_values = [100]  # Modify to add more values: [2, 4, 6]
+m_values = [1000, 10000]  # Modify to add more values: [50, 100, 200]
+d_values = [10, 100, 1000]  # Modify to add more values: [5, 10, 20]
 
 k = 10
 sigma_A_values = [0.25, 0.5, 0.75, 1.0]
