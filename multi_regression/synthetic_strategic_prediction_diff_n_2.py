@@ -191,13 +191,13 @@ from itertools import product
 seed = 42
 np.random.seed(seed)
 seeds= range(42,52)
-run_experiment = 1 # 1: run the experiment, 0: load the data
+run_experiment = 0 # 1: run the experiment, 0: load the data
 sigma_theta= 0.1 ###
 sigma_w=0.01
 
 # Define parameter ranges for n, m, and d
-n_values = [2]  # Modify to add more values: [2, 4, 6]
-m_values = [100,1000,10000]  # Modify to add more values: [50, 100, 200]
+n_values = [10,100]  # Modify to add more values: [2, 4, 6]
+m_values = [10000]  # Modify to add more values: [50, 100, 200]
 d_values = [10,100,1000]  # Modify to add more values: [5, 10, 20]
 
 k = 10
@@ -211,7 +211,7 @@ alpha_rr = 0
 models = ['SIR$^2$', 'RR','RGD','SFB','AGM','OPGD']
 lw = 4
 fs=40
-figuresize = (25, 5)
+figuresize = (25, 6)
 style_dict = {
     'SIR$^2$': {'color': '#FF7F50', 'linestyle': '-', 'linewidth': lw+1},
     'RR': {'color': "#9b0000", 'linestyle': (0, (2, 2)), 'linewidth': lw},
@@ -397,7 +397,7 @@ for n, m, d in product(n_values, m_values, d_values):
                     start_time = time.time()
                     z_list_rr,theta_t_1 = ddg.distribution_map(x_rr[-1],th)
                     # 当维度>=数据量时加入正则项以避免矩阵病态
-                    alpha_rr_current = 1e-6 if (d >= m and alpha_rr == 0) else alpha_rr
+                    alpha_rr_current = 1e-10 if (d >= m and alpha_rr == 0) else alpha_rr
                     
                     # Ridge regression fitting for all players (no Parallel - too light for overhead)
                     rr_models_t_1 = []
